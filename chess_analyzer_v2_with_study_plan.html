@@ -1,0 +1,3010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess.com Game Analyzer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .input-section {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+        }
+        
+        .hero-section.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .hero-section.good {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .hero-title {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2em;
+            opacity: 0.95;
+            margin-bottom: 20px;
+        }
+        
+        .hero-stat {
+            font-size: 3em;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+        
+        .hero-action {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid white;
+        }
+        
+        .leaks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .leak-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .leak-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+        
+        .leak-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .leak-card:hover {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        
+        .leak-card.critical {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+        }
+        
+        .leak-card.warning {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+        }
+        
+        .leak-card.good {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+        }
+        
+        .leak-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        
+        .leak-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .leak-metric {
+            font-size: 2.2em;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+        
+        .leak-card.critical .leak-metric {
+            color: #dc2626;
+        }
+        
+        .leak-card.warning .leak-metric {
+            color: #d97706;
+        }
+        
+        .leak-card.good .leak-metric {
+            color: #059669;
+        }
+        
+        .leak-description {
+            color: #718096;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .insights-section {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .insight-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .insight-item.critical {
+            border-left-color: #ef4444;
+        }
+        
+        .insight-item.warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .insight-item.tip {
+            border-left-color: #3b82f6;
+        }
+        
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .insight-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .insight-badge.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .insight-badge.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .insight-badge.tip {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .insight-text {
+            color: #2d3748;
+            line-height: 1.6;
+            font-size: 1.05em;
+        }
+        
+        .study-recommendations {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .study-card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #2d3748;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+        }
+        
+        .study-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .study-priority {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .study-priority.medium {
+            background: #f59e0b;
+        }
+        
+        .study-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .study-impact {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        
+        .study-resources {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .resource-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+        
+        .resource-link:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .resource-link.article {
+            background: #10b981;
+        }
+        
+        .resource-link.article:hover {
+            background: #059669;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            color: #2d3748;
+            font-weight: 700;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .chart-container {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-title {
+            font-size: 1.4em;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        canvas {
+            max-height: 400px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tbody tr {
+            transition: all 0.2s;
+        }
+        
+        tbody tr:hover {
+            background: #f7fafc;
+            transform: scale(1.01);
+        }
+        
+        .clickable-row {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .clickable-row:hover {
+            background: #e6f3ff !important;
+        }
+        
+        .opening-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1.05em;
+        }
+        
+        .opening-eco {
+            color: #718096;
+            font-size: 0.85em;
+            margin-top: 4px;
+        }
+        
+        .stat-number {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .win-rate-high {
+            color: #059669;
+            font-weight: 700;
+        }
+        
+        .win-rate-medium {
+            color: #d97706;
+            font-weight: 700;
+        }
+        
+        .win-rate-low {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        
+        .show-more-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .show-more-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .opening-row-hidden {
+            display: none;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background: white;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 40px;
+            border-radius: 16px;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #718096;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .modal-close:hover {
+            background: #f7fafc;
+            color: #2d3748;
+        }
+        
+        .game-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .game-card.win {
+            border-left-color: #10b981;
+        }
+        
+        .game-card.loss {
+            border-left-color: #ef4444;
+        }
+        
+        .game-card.draw {
+            border-left-color: #f59e0b;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .game-players {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .game-result {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .game-result.win {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .game-result.loss {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .game-result.draw {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .game-details {
+            font-size: 0.9em;
+            color: #718096;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .game-link {
+            margin-top: 10px;
+        }
+        
+        .game-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .game-link a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Study Plan Styles */
+        .study-plan-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 12px;
+            margin-top: 40px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .study-plan-intro {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .study-plan-intro h2 {
+            color: white;
+            font-size: 2em;
+            margin-bottom: 12px;
+        }
+        
+        .study-plan-intro p {
+            opacity: 0.95;
+            font-size: 1.1em;
+            margin-bottom: 25px;
+        }
+        
+        .generate-plan-btn {
+            background: white;
+            color: #667eea;
+            padding: 16px 40px;
+            font-size: 1.1em;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .generate-plan-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .generate-plan-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #groqApiKey::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        #groqApiKey:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .study-plan-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        
+        .study-plan-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .analysis-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+        
+        .summary-column {
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 5px solid;
+        }
+        
+        .summary-column.critical {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        
+        .summary-column.strength {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+        }
+        
+        .summary-column h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .summary-column ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .summary-column ul li {
+            padding: 8px 0;
+            color: #4a5568;
+            font-size: 0.95em;
+            line-height: 1.5;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .summary-column.critical ul li:before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
+        }
+        
+        .summary-column.strength ul li:before {
+            content: '✅';
+            position: absolute;
+            left: 0;
+        }
+        
+        .ai-study-plan {
+            background: #f7fafc;
+            padding: 35px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        
+        .plan-content {
+            color: #2d3748;
+            line-height: 1.8;
+        }
+        
+        .plan-content h2 {
+            color: #2d3748;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        
+        .plan-content h3 {
+            color: #4a5568;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.4em;
+        }
+        
+        .plan-content h4 {
+            color: #667eea;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .plan-content strong {
+            color: #2d3748;
+            font-weight: 700;
+        }
+        
+        .plan-content em {
+            color: #718096;
+            font-style: italic;
+        }
+        
+        .study-plan-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .action-btn.secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .analysis-summary {
+                grid-template-columns: 1fr;
+            }
+            
+            .study-plan-actions {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>♟️ Chess.com Game Analyzer</h1>
+        <p class="subtitle">Analyze your chess games with detailed statistics and insights</p>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="input-section">
+            <div class="form-group">
+                <label for="username">Chess.com Username</label>
+                <input type="text" id="username" placeholder="Enter your chess.com username" value="">
+            </div>
+            
+            <div class="form-group">
+                <label>Game Types</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="rapid" checked>
+                        <label for="rapid" style="margin: 0;">Rapid</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="blitz" checked>
+                        <label for="blitz" style="margin: 0;">Blitz</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="bullet">
+                        <label for="bullet" style="margin: 0;">Bullet</label>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="startAnalysis()">Analyze Games</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Fetching and analyzing your games...</p>
+        </div>
+        
+        <div class="results" id="results">
+            <div id="heroSection"></div>
+            <div class="section-header">
+                <h2 class="section-title">🔍 Your Biggest Leaks</h2>
+            </div>
+            <div class="leaks-grid" id="leaksGrid"></div>
+            <div class="insights-section">
+                <h2 class="section-title" style="margin-bottom: 20px;">💡 Personal Insights</h2>
+                <div id="insightsContainer"></div>
+            </div>
+            <div class="study-recommendations">
+                <h2 style="font-size: 1.8em; margin-bottom: 20px;">📚 What to Study Next</h2>
+                <div id="studyContainer"></div>
+            </div>
+            <div id="timeManagementSection"></div>
+            <div id="gamesToReviewSection"></div>
+            <div class="section-header">
+                <h2 class="section-title">📊 Overall Statistics</h2>
+            </div>
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="chart-container">
+                <h3 class="chart-title">Win/Loss/Draw by Color</h3>
+                <canvas id="colorChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Performance by Opening</h3>
+                <canvas id="openingChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Opening Statistics</h3>
+                <table id="openingTable"></table>
+            </div>
+            <div id="endgameAnalysisSection"></div>
+            
+            <!-- Study Plan Section -->
+            <div class="study-plan-section">
+                <div class="study-plan-intro">
+                    <h2>🎯 Personalized Study Plan</h2>
+                    <p>Get an AI-powered, customized 4-week study plan based on your game analysis</p>
+                    <p style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">
+                        Powered by Groq AI (Fast & Free) • Llama 3.3 70B Model
+                    </p>
+                    <div style="max-width: 500px; margin: 0 auto 20px;">
+                        <input 
+                            type="password" 
+                            id="groqApiKey" 
+                            placeholder="Optional: Enter your own Groq API key for unlimited usage"
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-size: 0.95em;"
+                        />
+                        <p style="font-size: 0.85em; opacity: 0.8; margin-top: 8px;">
+                            💡 Leave blank to use our demo key, or 
+                            <a href="https://console.groq.com/keys" target="_blank" style="color: white; text-decoration: underline;">get your own free key</a> 
+                            for unlimited access
+                        </p>
+                    </div>
+                    <button class="generate-plan-btn" id="generateStudyPlanBtn" onclick="generateStudyPlan()">
+                        🤖 Generate My Study Plan (Free!)
+                    </button>
+                </div>
+                <div id="studyPlanResults" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="modal" id="gameModal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <h2 id="modalTitle"></h2>
+                <div id="gamesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let allGames = [];
+        let username = '';
+        let openingsVisible = 10;
+        let stats = {}; // Global stats object for study plan generation
+        
+        // Main analysis function
+        async function startAnalysis() {
+            console.log('Analysis button clicked');
+            username = document.getElementById('username').value.trim();
+            
+            if (!username) {
+                showError('Please enter a username');
+                return;
+            }
+            
+            const gameTypes = [];
+            if (document.getElementById('rapid').checked) gameTypes.push('rapid');
+            if (document.getElementById('blitz').checked) gameTypes.push('blitz');
+            if (document.getElementById('bullet').checked) gameTypes.push('bullet');
+            
+            if (gameTypes.length === 0) {
+                showError('Please select at least one game type');
+                return;
+            }
+            
+            hideError();
+            showLoading();
+            openingsVisible = 10;
+            
+            try {
+                allGames = await fetchGames(username, gameTypes);
+                
+                if (allGames.length === 0) {
+                    showError('No games found for this user');
+                    hideLoading();
+                    return;
+                }
+                
+                analyzeAndDisplay(allGames);
+                hideLoading();
+                showResults();
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'Failed to fetch games. Please check the username.');
+                hideLoading();
+            }
+        }
+        
+        // Fetch games from Chess.com API
+        async function fetchGames(username, gameTypes) {
+            const games = [];
+            const currentDate = new Date();
+            const monthsToFetch = 6;
+            const corsProxy = 'https://corsproxy.io/?';
+            
+            for (let i = 0; i < monthsToFetch; i++) {
+                const date = new Date(currentDate);
+                date.setMonth(date.getMonth() - i);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                
+                try {
+                    const apiUrl = `https://api.chess.com/pub/player/${username}/games/${year}/${month}`;
+                    const response = await fetch(corsProxy + encodeURIComponent(apiUrl));
+                    
+                    if (!response.ok) {
+                        if (response.status === 404) continue;
+                        throw new Error('Failed to fetch games');
+                    }
+                    
+                    const data = await response.json();
+                    if (data.games) {
+                        const filteredGames = data.games.filter(game => 
+                            gameTypes.includes(game.time_class)
+                        );
+                        games.push(...filteredGames);
+                    }
+                } catch (error) {
+                    console.error(`Error fetching ${year}/${month}:`, error);
+                }
+            }
+            
+            return games;
+        }
+        
+        // Main analysis function
+        function analyzeAndDisplay(games) {
+            stats = initializeStats(); // Assign to global stats variable
+            
+            games.forEach(game => {
+                processGame(game, stats);
+            });
+            
+            stats.recentGames.sort((a, b) => b.date - a.date);
+            stats.streaks = calculateStreaks(stats.recentGames);
+            
+            displayAll(stats);
+        }
+        
+        function initializeStats() {
+            return {
+                totalGames: 0,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+                whiteWins: 0,
+                whiteLosses: 0,
+                whiteDraws: 0,
+                blackWins: 0,
+                blackLosses: 0,
+                blackDraws: 0,
+                openings: {},
+                openingPhaseLosses: 0,
+                middlegameLosses: 0,
+                endgameLosses: 0,
+                endgameTypes: {},
+                timePressureLosses: 0,
+                gamesByHour: {},
+                recentGames: [],
+                streaks: [],
+                timeManagement: {
+                    lostInTimeTrouble: 0,
+                    wonInTimeTrouble: 0,
+                    lostWithGoodTime: 0,
+                    wonWithGoodTime: 0,
+                    byTimeControl: {}
+                },
+                gamesToReview: {
+                    quickCollapses: [],
+                    middlegameBlunders: [],
+                    openingDisasters: [],
+                    tacticalGames: []
+                }
+            };
+        }
+        
+        function processGame(game, stats) {
+            stats.totalGames++;
+            const isWhite = game.white.username.toLowerCase() === username.toLowerCase();
+            const result = game.white.result;
+            const opening = game.eco || 'Unknown';
+            const openingName = extractOpeningName(game.pgn);
+            const moveCount = countMoves(game.pgn);
+            const gameDate = new Date(game.end_time * 1000);
+            const hour = gameDate.getHours();
+            const timeControl = game.time_class;
+            
+            // Track games by hour
+            if (!stats.gamesByHour[hour]) {
+                stats.gamesByHour[hour] = { wins: 0, losses: 0, draws: 0, total: 0 };
+            }
+            
+            // Initialize opening stats
+            if (!stats.openings[opening]) {
+                stats.openings[opening] = {
+                    name: openingName,
+                    whiteWins: 0,
+                    whiteLosses: 0,
+                    whiteDraws: 0,
+                    blackWins: 0,
+                    blackLosses: 0,
+                    blackDraws: 0,
+                    totalGames: 0
+                };
+            }
+            stats.openings[opening].totalGames++;
+            
+            // Time management tracking
+            const lostOnTime = (isWhite && (result.includes('timeout') || result.includes('abandoned'))) ||
+                               (!isWhite && (game.black.result.includes('timeout') || game.black.result.includes('abandoned')));
+            const wonOnTime = (isWhite && (game.black.result.includes('timeout') || game.black.result.includes('abandoned'))) ||
+                              (!isWhite && (result.includes('timeout') || result.includes('abandoned')));
+            
+            if (!stats.timeManagement.byTimeControl[timeControl]) {
+                stats.timeManagement.byTimeControl[timeControl] = {
+                    wins: 0,
+                    losses: 0,
+                    draws: 0,
+                    timeoutLosses: 0,
+                    timeoutWins: 0
+                };
+            }
+            
+            // Process based on color and result
+            let playerWon = false;
+            let playerLost = false;
+            let playerDrew = false;
+            
+            if (isWhite) {
+                processWhiteGame(game, stats, result, opening, moveCount, hour, timeControl, lostOnTime, wonOnTime);
+            } else {
+                processBlackGame(game, stats, result, opening, moveCount, hour, timeControl, lostOnTime, wonOnTime);
+            }
+            
+            // Determine result for recent games tracking
+            if (isWhite) {
+                if (result === 'win') playerWon = true;
+                else if (result === 'lose' || result.includes('resigned') || result.includes('checkmated')) playerLost = true;
+                else playerDrew = true;
+            } else {
+                if (result === 'win') playerLost = true;
+                else if (result === 'lose' || result.includes('resigned') || result.includes('checkmated')) playerWon = true;
+                else playerDrew = true;
+            }
+            
+            stats.recentGames.push({
+                result: playerWon ? 'win' : playerLost ? 'loss' : 'draw',
+                date: game.end_time,
+                opening: openingName,
+                eco: opening
+            });
+        }
+        
+        function processWhiteGame(game, stats, result, opening, moveCount, hour, timeControl, lostOnTime, wonOnTime) {
+            if (result === 'win') {
+                stats.wins++;
+                stats.whiteWins++;
+                stats.openings[opening].whiteWins++;
+                stats.gamesByHour[hour].wins++;
+                stats.timeManagement.byTimeControl[timeControl].wins++;
+                
+                if (wonOnTime) {
+                    stats.timeManagement.timeoutWins++;
+                    stats.timeManagement.byTimeControl[timeControl].timeoutWins++;
+                    stats.timeManagement.wonInTimeTrouble++;
+                } else {
+                    stats.timeManagement.wonWithGoodTime++;
+                }
+            } else if (result === 'lose' || result.includes('resigned') || result.includes('checkmated')) {
+                stats.losses++;
+                stats.whiteLosses++;
+                stats.openings[opening].whiteLosses++;
+                stats.gamesByHour[hour].losses++;
+                stats.timeManagement.byTimeControl[timeControl].losses++;
+                
+                if (lostOnTime) {
+                    stats.timePressureLosses++;
+                    stats.timeManagement.lostInTimeTrouble++;
+                    stats.timeManagement.byTimeControl[timeControl].timeoutLosses++;
+                } else {
+                    stats.timeManagement.lostWithGoodTime++;
+                }
+                
+                // Games to review
+                trackGamesToReview(game, stats, moveCount, timeControl, result, game.black.username, game.white.result);
+                
+                // Categorize loss by game phase
+                categorizeLoss(game, stats, moveCount, game.black.username);
+            } else {
+                stats.draws++;
+                stats.whiteDraws++;
+                stats.openings[opening].whiteDraws++;
+                stats.gamesByHour[hour].draws++;
+                stats.timeManagement.byTimeControl[timeControl].draws++;
+            }
+            stats.gamesByHour[hour].total++;
+        }
+        
+        function processBlackGame(game, stats, result, opening, moveCount, hour, timeControl, lostOnTime, wonOnTime) {
+            if (result === 'win') {
+                stats.losses++;
+                stats.blackLosses++;
+                stats.openings[opening].blackLosses++;
+                stats.gamesByHour[hour].losses++;
+                stats.timeManagement.byTimeControl[timeControl].losses++;
+                
+                if (lostOnTime) {
+                    stats.timePressureLosses++;
+                    stats.timeManagement.lostInTimeTrouble++;
+                    stats.timeManagement.byTimeControl[timeControl].timeoutLosses++;
+                } else {
+                    stats.timeManagement.lostWithGoodTime++;
+                }
+                
+                // Games to review
+                trackGamesToReview(game, stats, moveCount, timeControl, game.black.result, game.white.username, game.black.result);
+                
+                // Categorize loss by game phase
+                categorizeLoss(game, stats, moveCount, game.white.username);
+            } else if (result === 'lose' || result.includes('resigned') || result.includes('checkmated')) {
+                stats.wins++;
+                stats.blackWins++;
+                stats.openings[opening].blackWins++;
+                stats.gamesByHour[hour].wins++;
+                stats.timeManagement.byTimeControl[timeControl].wins++;
+                
+                if (wonOnTime) {
+                    stats.timeManagement.timeoutWins++;
+                    stats.timeManagement.byTimeControl[timeControl].timeoutWins++;
+                    stats.timeManagement.wonInTimeTrouble++;
+                } else {
+                    stats.timeManagement.wonWithGoodTime++;
+                }
+            } else {
+                stats.draws++;
+                stats.blackDraws++;
+                stats.openings[opening].blackDraws++;
+                stats.gamesByHour[hour].draws++;
+                stats.timeManagement.byTimeControl[timeControl].draws++;
+            }
+            stats.gamesByHour[hour].total++;
+        }
+        
+        function trackGamesToReview(game, stats, moveCount, timeControl, result, opponent, resultString) {
+            const captureCount = (game.pgn.match(/x/g) || []).length;
+            const wasResignation = resultString.includes('resigned');
+            const openingName = extractOpeningName(game.pgn);
+            
+            const gameToReview = {
+                url: game.url,
+                date: game.end_time,
+                opponent: opponent,
+                opening: openingName,
+                moves: moveCount,
+                timeControl: timeControl
+            };
+            
+            if (moveCount < 25) {
+                stats.gamesToReview.quickCollapses.push(gameToReview);
+            }
+            
+            if (moveCount <= 15) {
+                stats.gamesToReview.openingDisasters.push(gameToReview);
+            }
+            
+            if (wasResignation && moveCount > 15 && moveCount <= 40) {
+                stats.gamesToReview.middlegameBlunders.push(gameToReview);
+            }
+            
+            if (captureCount >= 8) {
+                stats.gamesToReview.tacticalGames.push({...gameToReview, captures: captureCount});
+            }
+        }
+        
+        function categorizeLoss(game, stats, moveCount, opponent) {
+            if (moveCount <= 15) {
+                stats.openingPhaseLosses++;
+            } else if (moveCount <= 40) {
+                stats.middlegameLosses++;
+            } else {
+                const downMaterial = isDownMaterial(game);
+                
+                if (downMaterial) {
+                    stats.middlegameLosses++;
+                } else {
+                    stats.endgameLosses++;
+                    const endgameType = classifyEndgame(game.pgn);
+                    if (!stats.endgameTypes[endgameType]) {
+                        stats.endgameTypes[endgameType] = { losses: 0, games: [] };
+                    }
+                    stats.endgameTypes[endgameType].losses++;
+                    stats.endgameTypes[endgameType].games.push({
+                        url: game.url,
+                        date: game.end_time,
+                        opponent: opponent,
+                        moveCount: moveCount
+                    });
+                }
+            }
+        }
+        
+        function isDownMaterial(game) {
+            const pgn = game.pgn.toLowerCase();
+            const moveCount = countMoves(game.pgn);
+            
+            if (moveCount >= 50) {
+                return false;
+            }
+            
+            if (moveCount >= 40 && moveCount < 50) {
+                if (pgn.includes('resigns') || pgn.includes('resigned')) {
+                    const captures = (pgn.match(/x/g) || []).length;
+                    if (captures >= 8) {
+                        return true;
+                    }
+                }
+                
+                if (pgn.includes('checkmate')) {
+                    const lastPart = pgn.slice(-500);
+                    if (lastPart.includes('q#') || lastPart.includes('r#')) {
+                        const queenCount = (lastPart.match(/q/g) || []).length;
+                        const rookCount = (lastPart.match(/r/g) || []).length;
+                        if (queenCount >= 2 || rookCount >= 2) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        function classifyEndgame(pgn) {
+            const moves = pgn.split(/\d+\./).filter(m => m.trim());
+            if (moves.length === 0) return 'Unknown';
+            
+            const lastMoves = moves.slice(-15).join(' ').toLowerCase();
+            const withoutPromotions = lastMoves.replace(/=[qrbn]/gi, '');
+            
+            const hasQueenMove = /q[a-h][1-8]/i.test(withoutPromotions);
+            const hasRookMove = /r[a-h][1-8]/i.test(withoutPromotions);
+            const hasBishopMove = /b[a-h][1-8]/i.test(withoutPromotions);
+            const hasKnightMove = /n[a-h][1-8]/i.test(withoutPromotions);
+            
+            const pawnMoveCount = (withoutPromotions.match(/\b[a-h]x?[a-h]?[1-8]/g) || []).length;
+            const kingMoveCount = (withoutPromotions.match(/k[a-h][1-8]/gi) || []).length;
+            
+            if (!hasQueenMove && !hasRookMove && !hasBishopMove && !hasKnightMove) {
+                if (pawnMoveCount >= 3 || kingMoveCount >= 3) {
+                    return 'Pawn Endgame';
+                }
+            }
+            
+            const queenMoves = (withoutPromotions.match(/q[a-h][0-9]/gi) || []).length;
+            const rookMoves = (withoutPromotions.match(/r[a-h][0-9]/gi) || []).length;
+            const bishopMoves = (withoutPromotions.match(/b[a-h][0-9]/gi) || []).length;
+            const knightMoves = (withoutPromotions.match(/n[a-h][0-9]/gi) || []).length;
+            
+            if (queenMoves >= 2 && rookMoves === 0 && bishopMoves === 0 && knightMoves === 0) {
+                return 'Queen Endgame';
+            } else if (queenMoves >= 1 && rookMoves >= 1) {
+                return 'Queen vs Rook';
+            } else if (queenMoves >= 1 && (bishopMoves > 0 || knightMoves > 0)) {
+                return 'Queen + Minor Piece';
+            } else if (rookMoves >= 2 && queenMoves === 0) {
+                return 'Rook Endgame';
+            } else if (rookMoves >= 1 && queenMoves === 0 && bishopMoves === 0 && knightMoves === 0) {
+                return 'Rook Endgame';
+            } else if (rookMoves === 1 && queenMoves === 0 && (bishopMoves > 0 || knightMoves > 0)) {
+                return 'Rook + Minor Piece';
+            } else if (bishopMoves > 0 && knightMoves > 0 && rookMoves === 0 && queenMoves === 0) {
+                return 'Bishop vs Knight';
+            } else if (bishopMoves >= 1 && knightMoves === 0 && rookMoves === 0 && queenMoves === 0) {
+                return 'Bishop Endgame';
+            } else if (knightMoves >= 1 && bishopMoves === 0 && rookMoves === 0 && queenMoves === 0) {
+                return 'Knight Endgame';
+            } else {
+                return 'Complex Position';
+            }
+        }
+        
+        function countMoves(pgn) {
+            const moves = pgn.match(/\d+\./g);
+            return moves ? moves.length : 0;
+        }
+        
+        function extractOpeningName(pgn) {
+            const match = pgn.match(/\[ECOUrl ".*\/(.+)"\]/);
+            if (match && match[1]) {
+                return match[1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+            return 'Unknown Opening';
+        }
+        
+        function calculateStreaks(recentGames) {
+            const streaks = [];
+            let currentStreak = { type: null, count: 0, games: [] };
+            
+            recentGames.slice(0, 20).forEach(game => {
+                if (game.result === currentStreak.type) {
+                    currentStreak.count++;
+                    currentStreak.games.push(game);
+                } else {
+                    if (currentStreak.count >= 3) {
+                        streaks.push({ ...currentStreak });
+                    }
+                    currentStreak = { type: game.result, count: 1, games: [game] };
+                }
+            });
+            
+            if (currentStreak.count >= 3) {
+                streaks.push(currentStreak);
+            }
+            
+            return streaks;
+        }
+        
+        function displayAll(stats) {
+            displayHeroSection(stats);
+            displayLeaksGrid(stats);
+            displayInsights(stats);
+            displayStudyRecommendations(stats);
+            displayTimeManagement(stats);
+            displayGamesToReview(stats);
+            displayStats(stats);
+            displayColorChart(stats);
+            displayOpeningChart(stats);
+            displayOpeningTable(stats);
+            
+            if (stats.endgameLosses > 0) {
+                displayEndgameAnalysis(stats);
+            }
+        }
+        
+        // Continue with display functions...
+        // Due to length, I'll split this into another part
+        
+        function displayHeroSection(stats) {
+            const winRate = ((stats.wins / stats.totalGames) * 100).toFixed(1);
+            const recentWinRate = stats.recentGames.length > 0 
+                ? ((stats.recentGames.slice(0, 10).filter(g => g.result === 'win').length / 10) * 100).toFixed(0)
+                : 0;
+            
+            const lossStreaks = stats.streaks.filter(s => s.type === 'loss' && s.count >= 3);
+            const worstPhase = [
+                { name: 'opening', count: stats.openingPhaseLosses },
+                { name: 'middlegame', count: stats.middlegameLosses },
+                { name: 'endgame', count: stats.endgameLosses }
+            ].sort((a, b) => b.count - a.count)[0];
+            
+            let heroClass = 'hero-section';
+            let heroTitle = '🎯 Priority Focus Area';
+            let heroSubtitle = '';
+            let heroStat = '';
+            let heroAction = '';
+            
+            if (lossStreaks.length > 0 && lossStreaks[0].count >= 5) {
+                heroClass += ' critical';
+                heroTitle = '🚨 Alert: Losing Streak!';
+                heroSubtitle = `You're on a ${lossStreaks[0].count}-game losing streak`;
+                heroStat = `-${lossStreaks[0].count}`;
+                heroAction = 'Take a break! Analyze your recent games, identify the pattern, and come back refreshed.';
+            } else if (stats.openingPhaseLosses > stats.totalGames * 0.3) {
+                heroClass += ' critical';
+                heroTitle = '💥 Opening Problems Detected';
+                heroSubtitle = `${stats.openingPhaseLosses} losses in the opening phase`;
+                heroStat = `${((stats.openingPhaseLosses / stats.losses) * 100).toFixed(0)}%`;
+                heroAction = 'You\'re getting crushed early. Focus on opening principles and study your most-played openings.';
+            } else if (recentWinRate < 35) {
+                heroClass += ' warning';
+                heroTitle = '⚠️ Recent Form Dip';
+                heroSubtitle = `Only ${recentWinRate}% wins in last 10 games`;
+                heroStat = `${recentWinRate}%`;
+                heroAction = 'Your recent performance is below your average. Review your latest losses and take a mental reset.';
+            } else {
+                heroClass += ' good';
+                heroTitle = '🎉 You\'re Doing Well!';
+                heroSubtitle = `${winRate}% overall win rate`;
+                heroStat = `${winRate}%`;
+                heroAction = `Keep it up! Your main area for improvement is the ${worstPhase.name}.`;
+            }
+            
+            const html = `
+                <div class="${heroClass}">
+                    <div class="hero-title">${heroTitle}</div>
+                    <div class="hero-subtitle">${heroSubtitle}</div>
+                    <div class="hero-stat">${heroStat}</div>
+                    <div class="hero-action">${heroAction}</div>
+                </div>
+            `;
+            
+            document.getElementById('heroSection').innerHTML = html;
+        }
+        
+        function displayLeaksGrid(stats) {
+            const phases = [
+                { name: 'opening', count: stats.openingPhaseLosses, total: stats.losses },
+                { name: 'middlegame', count: stats.middlegameLosses, total: stats.losses },
+                { name: 'endgame', count: stats.endgameLosses, total: stats.losses }
+            ];
+            
+            const worstPhase = phases.sort((a, b) => b.count - a.count)[0];
+            const phasePct = ((worstPhase.count / worstPhase.total) * 100).toFixed(0);
+            
+            const whiteGames = stats.whiteWins + stats.whiteLosses + stats.whiteDraws;
+            const blackGames = stats.blackWins + stats.blackLosses + stats.blackDraws;
+            const whiteWinRate = whiteGames > 0 ? ((stats.whiteWins / whiteGames) * 100).toFixed(0) : 0;
+            const blackWinRate = blackGames > 0 ? ((stats.blackWins / blackGames) * 100).toFixed(0) : 0;
+            const colorImbalance = Math.abs(whiteWinRate - blackWinRate);
+            
+            const hourlyPerf = Object.entries(stats.gamesByHour)
+                .map(([hour, data]) => ({
+                    hour: parseInt(hour),
+                    winRate: data.total > 0 ? ((data.wins / data.total) * 100).toFixed(0) : 0,
+                    total: data.total
+                }))
+                .filter(h => h.total >= 3)
+                .sort((a, b) => a.winRate - b.winRate);
+            
+            const worstHour = hourlyPerf.length > 0 ? hourlyPerf[0] : null;
+            
+            const recentForm = stats.recentGames.slice(0, 10);
+            const recentWins = recentForm.filter(g => g.result === 'win').length;
+            const recentWinRate = (recentWins / 10) * 100;
+            const overallWinRate = ((stats.wins / stats.totalGames) * 100).toFixed(0);
+            const formDiff = recentWinRate - overallWinRate;
+            
+            let html = `
+                <div class="leak-card ${worstPhase.count >= stats.losses * 0.4 ? 'critical' : worstPhase.count >= stats.losses * 0.3 ? 'warning' : 'good'}">
+                    <div class="leak-icon">${worstPhase.name === 'opening' ? '📖' : worstPhase.name === 'middlegame' ? '⚔️' : '🏁'}</div>
+                    <div class="leak-title">${worstPhase.name.charAt(0).toUpperCase() + worstPhase.name.slice(1)} Phase</div>
+                    <div class="leak-metric">${worstPhase.count}</div>
+                    <div class="leak-description">
+                        ${phasePct}% of your losses
+                        ${worstPhase.count >= stats.losses * 0.4 ? '<br><strong>Critical!</strong> Major weakness here.' : 
+                          worstPhase.count >= stats.losses * 0.3 ? '<br><strong>Focus area</strong> for improvement.' : 
+                          '<br>Your strongest phase!'}
+                    </div>
+                </div>
+                
+                <div class="leak-card ${colorImbalance >= 15 ? 'critical' : colorImbalance >= 10 ? 'warning' : 'good'}">
+                    <div class="leak-icon">⚖️</div>
+                    <div class="leak-title">Color Imbalance</div>
+                    <div class="leak-metric">${colorImbalance}%</div>
+                    <div class="leak-description">
+                        White: ${whiteWinRate}% | Black: ${blackWinRate}%
+                        ${colorImbalance >= 15 ? '<br><strong>Big gap!</strong> One color much weaker.' : 
+                          colorImbalance >= 10 ? '<br><strong>Notable difference</strong> between colors.' : 
+                          '<br>Well balanced!'}
+                    </div>
+                </div>
+            `;
+            
+            if (worstHour && worstHour.winRate < 40) {
+                html += `
+                    <div class="leak-card warning">
+                        <div class="leak-icon">🕐</div>
+                        <div class="leak-title">Time of Day</div>
+                        <div class="leak-metric">${worstHour.winRate}%</div>
+                        <div class="leak-description">
+                            At ${worstHour.hour}:00 (${worstHour.total} games)
+                            <br><strong>Avoid this time!</strong> Your worst performance window.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="leak-card ${Math.abs(formDiff) >= 15 ? 'warning' : 'good'}">
+                    <div class="leak-icon">📊</div>
+                    <div class="leak-title">Recent Form</div>
+                    <div class="leak-metric">${recentWins}/10</div>
+                    <div class="leak-description">
+                        Last 10 games: ${recentWinRate.toFixed(0)}%
+                        ${formDiff < -15 ? '<br><strong>Slump detected!</strong> Below your average.' : 
+                          formDiff > 15 ? '<br><strong>Hot streak!</strong> Above your average.' : 
+                          '<br>Consistent with your average.'}
+                    </div>
+                </div>
+            `;
+            
+            const openingVariety = Object.keys(stats.openings).length;
+            const gamesPerOpening = stats.totalGames / openingVariety;
+            
+            html += `
+                <div class="leak-card ${gamesPerOpening > 20 ? 'warning' : 'good'}">
+                    <div class="leak-icon">🎯</div>
+                    <div class="leak-title">Repertoire Variety</div>
+                    <div class="leak-metric">${openingVariety}</div>
+                    <div class="leak-description">
+                        Different openings played
+                        ${gamesPerOpening > 20 ? '<br><strong>Too narrow!</strong> Expand your repertoire.' : 
+                          '<br>Good variety in your openings.'}
+                    </div>
+                </div>
+            `;
+            
+            const timeoutRate = stats.losses > 0 ? ((stats.timePressureLosses / stats.losses) * 100).toFixed(0) : 0;
+            html += `
+                <div class="leak-card ${timeoutRate >= 20 ? 'critical' : timeoutRate >= 10 ? 'warning' : 'good'}">
+                    <div class="leak-icon">⏰</div>
+                    <div class="leak-title">Time Pressure</div>
+                    <div class="leak-metric">${stats.timePressureLosses}</div>
+                    <div class="leak-description">
+                        ${timeoutRate}% of losses are timeouts
+                        ${timeoutRate >= 20 ? '<br><strong>Critical issue!</strong> Flagging too often.' : 
+                          timeoutRate >= 10 ? '<br><strong>Improve time management.</strong>' : 
+                          '<br>Good time management!'}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('leaksGrid').innerHTML = html;
+        }
+        
+        function displayInsights(stats) {
+            const insights = [];
+            
+            // Streaks
+            const lossStreaks = stats.streaks.filter(s => s.type === 'loss');
+            if (lossStreaks.length > 0 && lossStreaks[0].count >= 3) {
+                insights.push({
+                    type: 'critical',
+                    badge: 'ALERT',
+                    text: `You're currently on a ${lossStreaks[0].count}-game losing streak. This is the perfect time to take a break, review those games carefully, and identify the common mistakes before playing more.`
+                });
+            }
+            
+            // Color preference
+            const whiteGames = stats.whiteWins + stats.whiteLosses + stats.whiteDraws;
+            const blackGames = stats.blackWins + stats.blackLosses + stats.blackDraws;
+            const whiteWinRate = whiteGames > 0 ? (stats.whiteWins / whiteGames) * 100 : 0;
+            const blackWinRate = blackGames > 0 ? (stats.blackWins / blackGames) * 100 : 0;
+            
+            if (Math.abs(whiteWinRate - blackWinRate) > 12) {
+                const weaker = whiteWinRate < blackWinRate ? 'white' : 'black';
+                const stronger = whiteWinRate > blackWinRate ? 'white' : 'black';
+                insights.push({
+                    type: 'warning',
+                    badge: 'COLOR IMBALANCE',
+                    text: `You score ${Math.abs(whiteWinRate - blackWinRate).toFixed(0)}% better with ${stronger} pieces. Your ${weaker}-piece openings need work. Consider expanding your ${weaker}-piece repertoire.`
+                });
+            }
+            
+            // Repertoire
+            const openingCount = Object.keys(stats.openings).length;
+            if (openingCount < 5) {
+                insights.push({
+                    type: 'tip',
+                    badge: 'TIP',
+                    text: `You're only playing ${openingCount} different openings. While focus is good, having 2-3 solid options per color makes you less predictable and gives you flexibility against different opponents.`
+                });
+            }
+            
+            // Recent form
+            const recentWins = stats.recentGames.slice(0, 10).filter(g => g.result === 'win').length;
+            const overallWinRate = (stats.wins / stats.totalGames) * 100;
+            const recentWinRate = (recentWins / 10) * 100;
+            
+            if (recentWinRate > overallWinRate + 15) {
+                insights.push({
+                    type: 'tip',
+                    badge: 'MOMENTUM',
+                    text: `You're playing ${(recentWinRate - overallWinRate).toFixed(0)}% better than your average lately! You're on a hot streak. Keep the momentum going!`
+                });
+            }
+            
+            let html = '';
+            insights.forEach(insight => {
+                html += `
+                    <div class="insight-item ${insight.type}">
+                        <div class="insight-header">
+                            <span class="insight-badge ${insight.type}">${insight.badge}</span>
+                        </div>
+                        <div class="insight-text">${insight.text}</div>
+                    </div>
+                `;
+            });
+            
+            if (insights.length === 0) {
+                html = `
+                    <div class="insight-item tip">
+                        <div class="insight-header">
+                            <span class="insight-badge tip">LOOKING GOOD</span>
+                        </div>
+                        <div class="insight-text">No critical patterns detected in your recent games. Keep up the consistent play!</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('insightsContainer').innerHTML = html;
+        }
+        
+        function displayStudyRecommendations(stats) {
+            const recommendations = [];
+            
+            // Priority 1: Biggest leak by game phase
+            const phases = [
+                { name: 'Opening', count: stats.openingPhaseLosses, pct: (stats.openingPhaseLosses / stats.losses) * 100 },
+                { name: 'Middlegame', count: stats.middlegameLosses, pct: (stats.middlegameLosses / stats.losses) * 100 },
+                { name: 'Endgame', count: stats.endgameLosses, pct: (stats.endgameLosses / stats.losses) * 100 }
+            ].sort((a, b) => b.count - a.count);
+            
+            if (phases[0].pct > 30) {
+                let resources = [];
+                if (phases[0].name === 'Opening') {
+                    resources = [
+                        { type: 'youtube', url: 'https://www.youtube.com/results?search_query=chess+opening+principles', label: '📺 Opening Principles' },
+                        { type: 'article', url: 'https://www.chess.com/lessons', label: '📖 Chess Lessons' }
+                    ];
+                } else if (phases[0].name === 'Middlegame') {
+                    resources = [
+                        { type: 'youtube', url: 'https://www.youtube.com/results?search_query=chess+middlegame+tactics', label: '📺 Middlegame Tactics' },
+                        { type: 'article', url: 'https://www.chess.com/puzzles', label: '📖 Tactics Puzzles' }
+                    ];
+                } else {
+                    resources = [
+                        { type: 'youtube', url: 'https://www.youtube.com/results?search_query=chess+endgame+basics', label: '📺 Endgame Basics' },
+                        { type: 'article', url: 'https://www.chess.com/drills/practice', label: '📖 Endgame Practice' }
+                    ];
+                }
+                
+                recommendations.push({
+                    priority: 'HIGH',
+                    title: `${phases[0].name} Training`,
+                    impact: `Could save you ${phases[0].count} losses (${phases[0].pct.toFixed(0)}% of total)`,
+                    actions: phases[0].name === 'Opening' 
+                        ? 'Spend 20 minutes daily reviewing your opening lines. Focus on understanding plans and ideas, not just memorizing moves.'
+                        : phases[0].name === 'Middlegame'
+                        ? 'Work on tactics puzzles daily (15-20 min). Study strategic concepts like pawn structures and piece placement.'
+                        : 'Study basic endgame positions: K+P endings, rook endgames, and basic checkmates. Aim for technical precision.',
+                    resources: resources
+                });
+            }
+            
+            // Priority 2: Worst performing opening
+            const worstOpenings = Object.entries(stats.openings)
+                .filter(([_, data]) => data.totalGames >= 5)
+                .map(([eco, data]) => ({
+                    name: data.name,
+                    eco,
+                    winRate: ((data.whiteWins + data.blackWins) / data.totalGames) * 100,
+                    total: data.totalGames,
+                    losses: data.whiteLosses + data.blackLosses
+                }))
+                .sort((a, b) => a.winRate - b.winRate);
+            
+            if (worstOpenings.length > 0 && worstOpenings[0].winRate < 40) {
+                const openingSearchName = worstOpenings[0].name.toLowerCase().replace(/ /g, '+');
+                recommendations.push({
+                    priority: 'HIGH',
+                    title: `Fix Your ${worstOpenings[0].name}`,
+                    impact: `Currently losing ${worstOpenings[0].losses} games with this opening (${worstOpenings[0].winRate.toFixed(0)}% win rate)`,
+                    actions: `Study the key ideas and common traps in this opening. Consider whether to deepen your knowledge or switch to a more reliable alternative.`,
+                    resources: [
+                        { type: 'youtube', url: `https://www.youtube.com/results?search_query=${openingSearchName}+chess`, label: `📺 ${worstOpenings[0].name}` },
+                        { type: 'article', url: `https://www.chess.com/explorer`, label: '📖 Opening Explorer' }
+                    ]
+                });
+            }
+            
+            let studyHTML = '';
+            recommendations.forEach((rec, idx) => {
+                const priorityClass = rec.priority === 'HIGH' ? '' : 'medium';
+                studyHTML += `
+                    <div class="study-card">
+                        <span class="study-priority ${priorityClass}">#${idx + 1} Priority: ${rec.priority}</span>
+                        <div class="study-title">${rec.title}</div>
+                        <div class="study-impact">💰 Potential Impact: ${rec.impact}</div>
+                        <div style="margin-top: 12px; color: #4a5568; line-height: 1.6;">
+                            <strong>Action Steps:</strong> ${rec.actions}
+                        </div>
+                        <div class="study-resources">
+                            ${rec.resources.map(r => `
+                                <a href="${r.url}" target="_blank" rel="noopener noreferrer" class="resource-link ${r.type}">
+                                    ${r.label}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (recommendations.length === 0) {
+                studyHTML = `
+                    <div class="study-card">
+                        <div class="study-title">You're doing great! 🎉</div>
+                        <div style="margin-top: 12px; color: #4a5568; line-height: 1.6;">
+                            No critical issues detected. Keep reviewing your games, solving tactics puzzles daily, 
+                            and gradually expanding your opening repertoire. Consistency is key!
+                        </div>
+                        <div class="study-resources">
+                            <a href="https://www.youtube.com/results?search_query=chess+improvement+tips" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
+                                📺 Chess Improvement
+                            </a>
+                            <a href="https://www.chess.com/lessons" target="_blank" rel="noopener noreferrer" class="resource-link article">
+                                📖 Chess Lessons
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('studyContainer').innerHTML = studyHTML;
+        }
+        
+        function displayTimeManagement(stats) {
+            const timeoutLossRate = stats.losses > 0 ? ((stats.timePressureLosses / stats.losses) * 100).toFixed(0) : 0;
+            const timeControlData = Object.entries(stats.timeManagement.byTimeControl)
+                .map(([control, data]) => ({
+                    control,
+                    ...data,
+                    total: data.wins + data.losses + data.draws,
+                    winRate: (data.wins + data.losses) > 0 ? ((data.wins / (data.wins + data.losses)) * 100).toFixed(1) : 0,
+                    timeoutRate: data.losses > 0 ? ((data.timeoutLosses / data.losses) * 100).toFixed(0) : 0
+                }))
+                .sort((a, b) => b.total - a.total);
+            
+            let html = `
+                <div class="chart-container" style="margin-top: 30px;">
+                    <div class="section-header">
+                        <h2 class="section-title">⏱️ Time Management Analysis</h2>
+                    </div>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        Understanding how you manage your time is crucial for tournament success.
+                    </p>
+                    
+                    <div class="leaks-grid" style="margin-bottom: 30px;">
+                        <div class="leak-card ${timeoutLossRate >= 20 ? 'critical' : timeoutLossRate >= 10 ? 'warning' : 'good'}">
+                            <div class="leak-icon">⏰</div>
+                            <div class="leak-title">Time Trouble Losses</div>
+                            <div class="leak-metric">${stats.timePressureLosses}</div>
+                            <div class="leak-description">
+                                ${timeoutLossRate}% of all losses
+                                ${timeoutLossRate >= 20 ? '<br><strong>Major issue!</strong> Flagging too often.' : 
+                                  timeoutLossRate >= 10 ? '<br><strong>Warning:</strong> Improve time management.' : 
+                                  '<br>Good time management!'}
+                            </div>
+                        </div>
+                        
+                        <div class="leak-card ${stats.timeManagement.wonInTimeTrouble >= 5 ? 'good' : ''}">
+                            <div class="leak-icon">🏃</div>
+                            <div class="leak-title">Time Pressure Wins</div>
+                            <div class="leak-metric">${stats.timeManagement.timeoutWins}</div>
+                            <div class="leak-description">
+                                Won when opponent ran out of time
+                                ${stats.timeManagement.timeoutWins >= 10 ? '<br>Great! You play fast when needed.' : '<br>Stay solid in time scrambles.'}
+                            </div>
+                        </div>
+                        
+                        <div class="leak-card ${stats.timeManagement.lostWithGoodTime >= 10 ? 'warning' : 'good'}">
+                            <div class="leak-icon">🤔</div>
+                            <div class="leak-title">Positional Losses</div>
+                            <div class="leak-metric">${stats.timeManagement.lostWithGoodTime}</div>
+                            <div class="leak-description">
+                                Lost with time remaining
+                                ${stats.timeManagement.lostWithGoodTime >= 10 ? '<br>Focus: Not about time, about decisions.' : '<br>These are about moves, not time.'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="font-size: 1.4em; color: #2d3748; margin: 30px 0 20px; font-weight: 600;">
+                        Performance by Time Control
+                    </h3>
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Time Control</th>
+                                <th>Games</th>
+                                <th>Win Rate</th>
+                                <th>W/L/D</th>
+                                <th>Timeout Losses</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            timeControlData.forEach(tc => {
+                const winRateClass = tc.winRate >= 55 ? 'win-rate-high' : 
+                                    tc.winRate >= 45 ? 'win-rate-medium' : 
+                                    'win-rate-low';
+                
+                html += `
+                    <tr>
+                        <td><strong>${tc.control.charAt(0).toUpperCase() + tc.control.slice(1)}</strong></td>
+                        <td><span class="stat-number">${tc.total}</span></td>
+                        <td><span class="${winRateClass}">${tc.winRate}%</span></td>
+                        <td><span class="stat-number">${tc.wins}/${tc.losses}/${tc.draws}</span></td>
+                        <td>
+                            <span class="${tc.timeoutLosses >= 5 ? 'win-rate-low' : tc.timeoutLosses >= 2 ? 'win-rate-medium' : ''}">
+                                ${tc.timeoutLosses} (${tc.timeoutRate}%)
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            if (timeoutLossRate >= 15) {
+                html += `
+                    <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 24px; border-radius: 12px; margin-top: 20px;">
+                        <h4 style="font-size: 1.3em; margin-bottom: 15px;">⚠️ Critical: Time Management Issue</h4>
+                        <p style="opacity: 0.95; margin-bottom: 15px;">
+                            You're losing ${timeoutLossRate}% of games (${stats.timePressureLosses} games) to timeout!
+                        </p>
+                        <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <strong>Quick Fixes:</strong>
+                            <ul style="margin: 10px 0 0 20px; line-height: 1.8;">
+                                <li>Pre-move in obvious positions</li>
+                                <li>Set time checkpoints: 50% time by move 20</li>
+                                <li>Play increment time controls</li>
+                                <li>Avoid deep calculation in time pressure</li>
+                            </ul>
+                        </div>
+                        <div class="study-resources">
+                            <a href="https://www.youtube.com/results?search_query=chess+time+management" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
+                                📺 Time Management Tips
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            document.getElementById('timeManagementSection').innerHTML = html;
+        }
+        
+        function displayGamesToReview(stats) {
+            const totalSuspicious = stats.gamesToReview.quickCollapses.length + 
+                                   stats.gamesToReview.middlegameBlunders.length + 
+                                   stats.gamesToReview.openingDisasters.length;
+            
+            if (totalSuspicious === 0) return;
+            
+            let html = `
+                <div class="chart-container" style="margin-top: 30px;">
+                    <div class="section-header">
+                        <h2 class="section-title">🔍 Games to Review - Likely Blunders</h2>
+                    </div>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        These games likely contain tactical mistakes or blunders. Review them with Chess.com's engine.
+                    </p>
+                    
+                    <div class="leaks-grid" style="margin-bottom: 30px;">
+            `;
+            
+            if (stats.gamesToReview.openingDisasters.length > 0) {
+                html += `
+                    <div class="leak-card critical">
+                        <div class="leak-icon">💥</div>
+                        <div class="leak-title">Opening Disasters</div>
+                        <div class="leak-metric">${stats.gamesToReview.openingDisasters.length}</div>
+                        <div class="leak-description">
+                            Lost in ≤15 moves
+                            <br><strong>Critical!</strong> Getting crushed early.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (stats.gamesToReview.quickCollapses.length > 0) {
+                html += `
+                    <div class="leak-card ${stats.gamesToReview.quickCollapses.length >= 10 ? 'critical' : 'warning'}">
+                        <div class="leak-icon">⚡</div>
+                        <div class="leak-title">Quick Collapses</div>
+                        <div class="leak-metric">${stats.gamesToReview.quickCollapses.length}</div>
+                        <div class="leak-description">
+                            Lost in <25 moves
+                            <br><strong>Review these!</strong> Likely major blunders.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (stats.gamesToReview.middlegameBlunders.length > 0) {
+                html += `
+                    <div class="leak-card ${stats.gamesToReview.middlegameBlunders.length >= 10 ? 'critical' : 'warning'}">
+                        <div class="leak-icon">🎯</div>
+                        <div class="leak-title">Middlegame Blunders</div>
+                        <div class="leak-metric">${stats.gamesToReview.middlegameBlunders.length}</div>
+                        <div class="leak-description">
+                            Resigned in middlegame
+                            <br><strong>Tactical errors</strong> - missing tactics?
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div><div style="display: grid; gap: 20px;">';
+            
+            if (stats.gamesToReview.openingDisasters.length > 0) {
+                html += displayGameList(
+                    '💥 Opening Disasters',
+                    stats.gamesToReview.openingDisasters,
+                    'These games ended in 15 moves or less. Critical opening mistakes or traps.',
+                    true
+                );
+            }
+            
+            if (stats.gamesToReview.quickCollapses.length > 5) {
+                html += displayGameList(
+                    '⚡ Quick Collapses (Sample)',
+                    stats.gamesToReview.quickCollapses.slice(0, 5),
+                    'Short games where you lost quickly. Likely blunders or tactical oversights.',
+                    false
+                );
+            }
+            
+            html += '</div></div>';
+            document.getElementById('gamesToReviewSection').innerHTML = html;
+        }
+        
+        function displayGameList(title, games, description, showAll) {
+            const gamesToShow = showAll ? games : games.slice(0, 5);
+            
+            let html = `
+                <div style="background: #f7fafc; padding: 25px; border-radius: 12px;">
+                    <h3 style="color: #2d3748; font-size: 1.3em; margin-bottom: 10px;">${title}</h3>
+                    <p style="color: #718096; margin-bottom: 20px; font-size: 0.95em;">${description}</p>
+                    <div style="display: grid; gap: 12px;">
+            `;
+            
+            gamesToShow.forEach(game => {
+                const date = new Date(game.date * 1000);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                
+                html += `
+                    <div style="background: white; padding: 16px; border-radius: 8px; border-left: 4px solid #ef4444; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: #2d3748; margin-bottom: 4px;">
+                                vs ${game.opponent} • ${game.opening}
+                            </div>
+                            <div style="font-size: 0.85em; color: #718096;">
+                                ${formattedDate} • ${game.moves} moves • ${game.timeControl}
+                            </div>
+                        </div>
+                        <a href="${game.url}" target="_blank" style="background: #667eea; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9em; white-space: nowrap;">
+                            Review Game →
+                        </a>
+                    </div>
+                `;
+            });
+            
+            if (!showAll && games.length > 5) {
+                html += `
+                    <div style="text-align: center; padding: 12px; color: #718096; font-size: 0.9em;">
+                        ...and ${games.length - 5} more similar games
+                    </div>
+                `;
+            }
+            
+            html += '</div></div>';
+            return html;
+        }
+        
+        function displayStats(stats) {
+            const winRate = ((stats.wins / stats.totalGames) * 100).toFixed(1);
+            const html = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.totalGames}</div>
+                    <div class="stat-label">Total Games</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${winRate}%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.wins}</div>
+                    <div class="stat-label">Wins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.losses}</div>
+                    <div class="stat-label">Losses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.draws}</div>
+                    <div class="stat-label">Draws</div>
+                </div>
+            `;
+            document.getElementById('statsGrid').innerHTML = html;
+        }
+        
+        function displayColorChart(stats) {
+            const ctx = document.getElementById('colorChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['White', 'Black'],
+                    datasets: [
+                        {
+                            label: 'Wins',
+                            data: [stats.whiteWins, stats.blackWins],
+                            backgroundColor: '#10b981'
+                        },
+                        {
+                            label: 'Losses',
+                            data: [stats.whiteLosses, stats.blackLosses],
+                            backgroundColor: '#ef4444'
+                        },
+                        {
+                            label: 'Draws',
+                            data: [stats.whiteDraws, stats.blackDraws],
+                            backgroundColor: '#f59e0b'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function displayOpeningChart(stats) {
+            const openingData = Object.entries(stats.openings)
+                .map(([eco, data]) => ({
+                    name: data.name,
+                    total: data.totalGames,
+                    wins: data.whiteWins + data.blackWins,
+                    losses: data.whiteLosses + data.blackLosses,
+                    draws: data.whiteDraws + data.blackDraws
+                }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 8);
+            
+            const ctx = document.getElementById('openingChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: openingData.map(o => o.name),
+                    datasets: [
+                        {
+                            label: 'Wins',
+                            data: openingData.map(o => o.wins),
+                            backgroundColor: '#10b981'
+                        },
+                        {
+                            label: 'Losses',
+                            data: openingData.map(o => o.losses),
+                            backgroundColor: '#ef4444'
+                        },
+                        {
+                            label: 'Draws',
+                            data: openingData.map(o => o.draws),
+                            backgroundColor: '#f59e0b'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function displayOpeningTable(stats) {
+            const openingData = Object.entries(stats.openings)
+                .map(([eco, data]) => ({
+                    eco,
+                    name: data.name,
+                    total: data.totalGames,
+                    whiteWins: data.whiteWins,
+                    whiteLosses: data.whiteLosses,
+                    whiteDraws: data.whiteDraws,
+                    blackWins: data.blackWins,
+                    blackLosses: data.blackLosses,
+                    blackDraws: data.blackDraws,
+                    totalWins: data.whiteWins + data.blackWins,
+                    totalLosses: data.whiteLosses + data.blackLosses,
+                    winRate: (((data.whiteWins + data.blackWins) / data.totalGames) * 100).toFixed(0)
+                }))
+                .sort((a, b) => b.total - a.total);
+            
+            let tableHTML = `
+                <thead>
+                    <tr>
+                        <th>Opening</th>
+                        <th>Games</th>
+                        <th>Win Rate</th>
+                        <th>White (W/L/D)</th>
+                        <th>Black (W/L/D)</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            openingData.forEach((opening, idx) => {
+                const winRateClass = opening.winRate >= 55 ? 'win-rate-high' : 
+                                    opening.winRate >= 45 ? 'win-rate-medium' : 
+                                    'win-rate-low';
+                
+                const rowClass = idx >= 10 ? 'opening-row-hidden' : '';
+                
+                tableHTML += `
+                    <tr class="clickable-row ${rowClass}" onclick="showOpeningGames('${opening.eco}', '${opening.name.replace(/'/g, "\\'")}')">
+                        <td>
+                            <div class="opening-name">${opening.name}</div>
+                            <div class="opening-eco">${opening.eco}</div>
+                        </td>
+                        <td><span class="stat-number">${opening.total}</span></td>
+                        <td><span class="${winRateClass}">${opening.winRate}%</span></td>
+                        <td><span class="stat-number">${opening.whiteWins}/${opening.whiteLosses}/${opening.whiteDraws}</span></td>
+                        <td><span class="stat-number">${opening.blackWins}/${opening.blackLosses}/${opening.blackDraws}</span></td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody>';
+            document.getElementById('openingTable').innerHTML = tableHTML;
+            
+            if (openingData.length > 10) {
+                const showMoreBtn = document.createElement('button');
+                showMoreBtn.className = 'show-more-btn';
+                showMoreBtn.textContent = `Show More (${openingData.length - 10} more openings)`;
+                showMoreBtn.onclick = showMoreOpenings;
+                document.getElementById('openingTable').parentElement.appendChild(showMoreBtn);
+            }
+        }
+        
+        function showMoreOpenings() {
+            const hiddenRows = document.querySelectorAll('.opening-row-hidden');
+            const rowsToShow = Math.min(10, hiddenRows.length);
+            
+            for (let i = 0; i < rowsToShow; i++) {
+                hiddenRows[i].classList.remove('opening-row-hidden');
+            }
+            
+            openingsVisible += rowsToShow;
+            const remaining = hiddenRows.length - rowsToShow;
+            const btn = event.target;
+            
+            if (remaining > 0) {
+                btn.textContent = `Show More (${remaining} more openings)`;
+            } else {
+                btn.remove();
+            }
+        }
+        
+        function displayEndgameAnalysis(stats) {
+            if (Object.keys(stats.endgameTypes).length === 0) return;
+            
+            const endgameData = Object.entries(stats.endgameTypes)
+                .map(([type, data]) => ({
+                    type,
+                    losses: data.losses,
+                    percentage: ((data.losses / stats.endgameLosses) * 100).toFixed(0),
+                    games: data.games
+                }))
+                .sort((a, b) => b.losses - a.losses);
+            
+            const endgameIcons = {
+                'Rook Endgame': '♜',
+                'Queen Endgame': '♛',
+                'Queen vs Rook': '♛♜',
+                'Bishop Endgame': '♝♟',
+                'Knight Endgame': '♞♟',
+                'Bishop vs Knight': '♝♞',
+                'Pawn Endgame': '♔♟',
+                'Queen + Minor Piece': '♛♝',
+                'Rook + Minor Piece': '♜♝',
+                'Complex Position': '♔',
+                'Unknown': '?'
+            };
+            
+            const endgameDescriptions = {
+                'Pawn Endgame': 'Only Kings + Pawns',
+                'Rook Endgame': 'Rook + Pawns vs Rook + Pawns',
+                'Queen Endgame': 'Queen + Pawns',
+                'Bishop Endgame': 'Bishop + Pawns',
+                'Knight Endgame': 'Knight + Pawns',
+                'Bishop vs Knight': 'Bishop vs Knight + Pawns',
+                'Queen vs Rook': 'Queen vs Rook (imbalanced)',
+                'Rook + Minor Piece': 'Rook + Bishop/Knight',
+                'Queen + Minor Piece': 'Queen + Bishop/Knight',
+                'Complex Position': 'Multiple pieces active',
+                'Unknown': 'Unknown position'
+            };
+            
+            let html = `
+                <div class="chart-container" style="margin-top: 30px;">
+                    <div class="section-header">
+                        <h2 class="section-title">🏁 Endgame Breakdown - Technical Losses</h2>
+                    </div>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        You lost ${stats.endgameLosses} games in true endgame positions (balanced material, move 40+).
+                    </p>
+                    
+                    <div class="leaks-grid" style="margin-bottom: 20px;">
+            `;
+            
+            endgameData.slice(0, 8).forEach(endgame => {
+                const severity = endgame.losses >= 5 ? 'critical' : endgame.losses >= 3 ? 'warning' : 'good';
+                const description = endgameDescriptions[endgame.type] || endgame.type;
+                
+                html += `
+                    <div class="leak-card ${severity}" onclick="showEndgameGames('${endgame.type.replace(/'/g, "\\'")}')">
+                        <div class="leak-icon">${endgameIcons[endgame.type] || '♔'}</div>
+                        <div class="leak-title">${endgame.type}</div>
+                        <div style="color: #718096; font-size: 0.85em; margin-bottom: 8px;">${description}</div>
+                        <div class="leak-metric">${endgame.losses}</div>
+                        <div class="leak-description">
+                            ${endgame.percentage}% of endgame losses
+                            ${endgame.losses >= 5 ? '<br><strong>Critical!</strong> Master this endgame.' : 
+                              endgame.losses >= 3 ? '<br><strong>Study needed</strong>' : 
+                              '<br>Minor issue.'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            if (endgameData.length > 0 && endgameData[0].losses >= 3) {
+                const worstEndgame = endgameData[0];
+                const searchTerm = worstEndgame.type.toLowerCase().replace(/ /g, '+');
+                const description = endgameDescriptions[worstEndgame.type] || worstEndgame.type;
+                
+                html += `
+                    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 24px; border-radius: 12px; margin-top: 20px;">
+                        <h4 style="font-size: 1.3em; margin-bottom: 8px;">🎯 Priority: Master ${worstEndgame.type}</h4>
+                        <p style="opacity: 0.9; margin-bottom: 12px; font-size: 0.95em; font-weight: 500;">${description}</p>
+                        <p style="opacity: 0.95; margin-bottom: 15px;">
+                            You've lost ${worstEndgame.losses} games in ${worstEndgame.type} positions with equal material.
+                        </p>
+                        <div class="study-resources">
+                            <a href="https://www.youtube.com/results?search_query=${searchTerm}+chess+endgame" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
+                                📺 ${worstEndgame.type} Tutorial
+                            </a>
+                            <a href="https://www.chess.com/drills/practice" target="_blank" rel="noopener noreferrer" class="resource-link article">
+                                📖 Practice Endgames
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            document.getElementById('endgameAnalysisSection').innerHTML = html;
+            window.endgameTypesData = stats.endgameTypes;
+        }
+        
+        function showOpeningGames(eco, openingName) {
+            const games = allGames.filter(g => (g.eco || 'Unknown') === eco);
+            document.getElementById('modalTitle').textContent = openingName;
+            
+            let gamesHTML = '';
+            games.forEach(game => {
+                const isWhite = game.white.username.toLowerCase() === username.toLowerCase();
+                const result = isWhite ? game.white.result : game.black.result;
+                
+                let gameResult = 'Draw';
+                let resultClass = 'draw';
+                
+                if (result === 'win' || result.includes('won')) {
+                    gameResult = 'Win';
+                    resultClass = 'win';
+                } else if (result === 'lose' || result.includes('resigned') || result.includes('checkmated')) {
+                    gameResult = 'Loss';
+                    resultClass = 'loss';
+                }
+                
+                const date = new Date(game.end_time * 1000);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                gamesHTML += `
+                    <div class="game-card ${resultClass}">
+                        <div class="game-header">
+                            <div class="game-players">
+                                ${game.white.username} vs ${game.black.username}
+                            </div>
+                            <div class="game-result ${resultClass}">${gameResult}</div>
+                        </div>
+                        <div class="game-details">
+                            <span><strong>Playing as:</strong> ${isWhite ? 'White' : 'Black'}</span>
+                            <span><strong>Date:</strong> ${formattedDate}</span>
+                            <span><strong>Time Control:</strong> ${game.time_class}</span>
+                        </div>
+                        <div class="game-link">
+                            <a href="${game.url}" target="_blank">View game on Chess.com →</a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('gamesList').innerHTML = gamesHTML;
+            document.getElementById('gameModal').style.display = 'block';
+        }
+        
+        function showEndgameGames(endgameType) {
+            if (!window.endgameTypesData || !window.endgameTypesData[endgameType]) return;
+            
+            const data = window.endgameTypesData[endgameType];
+            document.getElementById('modalTitle').textContent = `${endgameType} - ${data.losses} losses`;
+            
+            let gamesHTML = '';
+            data.games.forEach(game => {
+                const date = new Date(game.date * 1000);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                gamesHTML += `
+                    <div class="game-card loss">
+                        <div class="game-header">
+                            <div class="game-players">
+                                vs ${game.opponent}
+                            </div>
+                            <div class="game-result loss">Loss</div>
+                        </div>
+                        <div class="game-details">
+                            <span><strong>Endgame Type:</strong> ${endgameType}</span>
+                            <span><strong>Date:</strong> ${formattedDate}</span>
+                            <span><strong>Moves:</strong> ${game.moveCount || 'N/A'}</span>
+                        </div>
+                        <div class="game-link">
+                            <a href="${game.url}" target="_blank">View game on Chess.com →</a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('gamesList').innerHTML = gamesHTML;
+            document.getElementById('gameModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('gameModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('gameModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        // Helper functions
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function showResults() {
+            document.getElementById('results').style.display = 'block';
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+        
+        console.log('Chess Analyzer loaded successfully');
+        
+        // Study Plan Generator
+        async function generateStudyPlan() {
+            const studyPlanBtn = document.getElementById('generateStudyPlanBtn');
+            const studyPlanSection = document.getElementById('studyPlanResults');
+            
+            // Check if stats is available
+            if (!stats || !stats.totalGames) {
+                studyPlanSection.innerHTML = `
+                    <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
+                        <h3>⚠️ No Analysis Data Found</h3>
+                        <p>Please analyze your games first before generating a study plan.</p>
+                        <p style="margin-top: 12px;">Click "Analyze Games" at the top to get started!</p>
+                    </div>
+                `;
+                studyPlanSection.style.display = 'block';
+                return;
+            }
+            
+            studyPlanBtn.disabled = true;
+            studyPlanBtn.textContent = '🤖 Generating Your Personalized Study Plan...';
+            studyPlanSection.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div><p style="text-align: center; color: white;">Analyzing your games and creating custom recommendations...</p>';
+            studyPlanSection.style.display = 'block';
+            
+            try {
+                // Get API key (user's key or default demo key)
+                let apiKey = document.getElementById('groqApiKey').value.trim();
+                
+                // If no API key provided, use the default demo key
+                if (!apiKey) {
+                    apiKey = 'YOUR_GROQ_API_KEY_HERE';
+                }
+                
+                // Gather COMPREHENSIVE analysis data
+                const weaknesses = [];
+                const strengths = [];
+                const specificIssues = {};
+                
+                // Calculate phase performance
+                const worstPhase = [
+                    { name: 'Opening', count: stats.openingPhaseLosses },
+                    { name: 'Middlegame', count: stats.middlegameLosses },
+                    { name: 'Endgame', count: stats.endgameLosses }
+                ].sort((a, b) => b.count - a.count)[0];
+                
+                // Phase analysis
+                const totalLosses = stats.losses;
+                const openingPct = ((stats.openingPhaseLosses / totalLosses) * 100).toFixed(1);
+                const middlegamePct = ((stats.middlegameLosses / totalLosses) * 100).toFixed(1);
+                const endgamePct = ((stats.endgameLosses / totalLosses) * 100).toFixed(1);
+                
+                specificIssues.worstPhase = worstPhase.name;
+                if (stats.openingPhaseLosses >= totalLosses * 0.3) {
+                    weaknesses.push(`CRITICAL: Opening phase weakness (${stats.openingPhaseLosses} losses, ${openingPct}% of all losses)`);
+                    specificIssues.openingProblems = true;
+                }
+                if (stats.middlegameLosses >= totalLosses * 0.3) {
+                    weaknesses.push(`Middlegame tactical issues (${stats.middlegameLosses} losses, ${middlegamePct}% of all losses)`);
+                }
+                if (stats.endgameLosses >= totalLosses * 0.3) {
+                    weaknesses.push(`Endgame technique needs work (${stats.endgameLosses} losses, ${endgamePct}% of all losses)`);
+                }
+                
+                // Time pressure analysis
+                const timeoutRate = ((stats.timePressureLosses / totalLosses) * 100).toFixed(1);
+                if (stats.timePressureLosses >= totalLosses * 0.15) {
+                    weaknesses.push(`CRITICAL: Time management problems (${stats.timePressureLosses} timeout losses, ${timeoutRate}% of losses)`);
+                    specificIssues.timePressure = true;
+                }
+                
+                // Color performance analysis
+                const whiteGames = stats.whiteWins + stats.whiteLosses + stats.whiteDraws;
+                const blackGames = stats.blackWins + stats.blackLosses + stats.blackDraws;
+                const whiteWinRate = whiteGames > 0 ? ((stats.whiteWins / whiteGames) * 100).toFixed(1) : 0;
+                const blackWinRate = blackGames > 0 ? ((stats.blackWins / blackGames) * 100).toFixed(1) : 0;
+                const colorImbalance = Math.abs(whiteWinRate - blackWinRate);
+                
+                if (colorImbalance >= 12) {
+                    const weakerColor = whiteWinRate < blackWinRate ? 'White' : 'Black';
+                    weaknesses.push(`${weakerColor} piece performance is weak (White: ${whiteWinRate}% vs Black: ${blackWinRate}%)`);
+                    specificIssues.colorWeakness = weakerColor;
+                }
+                
+                // Analyze specific openings
+                const openingPerformance = Object.entries(stats.openings)
+                    .map(([eco, data]) => ({
+                        eco,
+                        name: data.name,
+                        wins: data.wins,
+                        losses: data.losses,
+                        draws: data.draws,
+                        total: data.total,
+                        winRate: ((data.wins / data.total) * 100).toFixed(1)
+                    }))
+                    .filter(o => o.total >= 3)
+                    .sort((a, b) => a.winRate - b.winRate);
+                
+                const worstOpenings = openingPerformance.slice(0, 3);
+                const bestOpenings = openingPerformance.slice(-2).reverse();
+                
+                if (worstOpenings.length > 0) {
+                    worstOpenings.forEach(opening => {
+                        if (opening.winRate < 40) {
+                            weaknesses.push(`Struggling with ${opening.name} (${opening.wins}-${opening.losses}-${opening.draws}, ${opening.winRate}% win rate)`);
+                        }
+                    });
+                }
+                
+                if (bestOpenings.length > 0) {
+                    bestOpenings.forEach(opening => {
+                        if (opening.winRate > 55) {
+                            strengths.push(`Strong in ${opening.name} (${opening.wins}-${opening.losses}-${opening.draws}, ${opening.winRate}% win rate)`);
+                        }
+                    });
+                }
+                
+                // Endgame type analysis
+                if (stats.endgameLosses > 0 && stats.endgameTypes) {
+                    const endgameData = Object.entries(stats.endgameTypes)
+                        .map(([type, data]) => ({
+                            type,
+                            losses: data.losses,
+                            percentage: ((data.losses / stats.endgameLosses) * 100).toFixed(1)
+                        }))
+                        .sort((a, b) => b.losses - a.losses);
+                    
+                    const worstEndgames = endgameData.filter(e => e.losses >= 3).slice(0, 3);
+                    if (worstEndgames.length > 0) {
+                        specificIssues.endgameTypes = worstEndgames.map(e => e.type);
+                        worstEndgames.forEach(endgame => {
+                            weaknesses.push(`Weak in ${endgame.type} endgames (${endgame.losses} losses, ${endgame.percentage}% of endgame losses)`);
+                        });
+                    }
+                }
+                
+                // Recent form
+                const recentForm = stats.recentGames.slice(0, 10);
+                const recentWins = recentForm.filter(g => g.result === 'win').length;
+                const recentWinRate = (recentWins / 10) * 100;
+                const overallWinRate = ((stats.wins / stats.totalGames) * 100).toFixed(1);
+                
+                if (recentWinRate < overallWinRate - 15) {
+                    weaknesses.push(`Recent form dip (${recentWins}/10 wins in last 10 games vs ${overallWinRate}% overall)`);
+                }
+                
+                // Calculate overall stats
+                const avgAccuracy = stats.avgAccuracy ? stats.avgAccuracy.toFixed(1) : 'N/A';
+                
+                // Create comprehensive prompt for AI
+                const prompt = `You are a professional chess coach analyzing a tournament player's performance. Create a detailed, actionable 4-week study plan.
+
+COMPREHENSIVE PLAYER STATISTICS:
+
+📊 OVERALL PERFORMANCE:
+- Total Games Analyzed: ${stats.totalGames}
+- Win Rate: ${overallWinRate}%
+- Record: ${stats.wins}W - ${stats.losses}L - ${stats.draws}D
+- Average Accuracy: ${avgAccuracy}%
+
+🎯 CRITICAL WEAKNESSES (PRIORITIZE THESE):
+${weaknesses.length > 0 ? weaknesses.map(w => `- ${w}`).join('\n') : '- General improvement needed'}
+
+📖 PHASE BREAKDOWN:
+- Opening Phase Losses: ${stats.openingPhaseLosses} (${openingPct}% of total losses)
+- Middlegame Losses: ${stats.middlegameLosses} (${middlegamePct}% of total losses)  
+- Endgame Losses: ${stats.endgameLosses} (${endgamePct}% of total losses)
+- WORST PHASE: ${worstPhase.name}
+
+⚖️ COLOR PERFORMANCE:
+- As White: ${whiteWinRate}% win rate (${stats.whiteWins}W - ${stats.whiteLosses}L - ${stats.whiteDraws}D)
+- As Black: ${blackWinRate}% win rate (${stats.blackWins}W - ${stats.blackLosses}L - ${stats.blackDraws}D)
+${colorImbalance >= 12 ? `- ⚠️ IMBALANCE DETECTED: ${colorImbalance.toFixed(1)}% difference` : ''}
+
+⏰ TIME MANAGEMENT:
+- Timeout Losses: ${stats.timePressureLosses} (${timeoutRate}% of all losses)
+${stats.timePressureLosses >= totalLosses * 0.15 ? '- ⚠️ CRITICAL TIME PRESSURE ISSUE' : ''}
+
+📚 OPENING REPERTOIRE:
+${worstOpenings.length > 0 ? 'Weakest Openings:\n' + worstOpenings.map(o => `  - ${o.name}: ${o.winRate}% (${o.wins}-${o.losses}-${o.draws})`).join('\n') : '- Need more games for opening analysis'}
+
+🏁 ENDGAME ISSUES:
+${specificIssues.endgameTypes ? 'Specific endgame weaknesses:\n' + specificIssues.endgameTypes.map(t => `  - ${t}`).join('\n') : '- Endgame performance acceptable'}
+
+💪 YOUR STRENGTHS:
+${strengths.length > 0 ? strengths.map(s => `- ${s}`).join('\n') : '- Building on current foundation'}
+
+🎯 SPECIFIC FOCUS AREAS IDENTIFIED:
+${specificIssues.openingProblems ? '- Opening theory and principles' : ''}
+${specificIssues.timePressure ? '- Time management and clock discipline' : ''}
+${specificIssues.colorWeakness ? `- ${specificIssues.colorWeakness} piece play` : ''}
+${specificIssues.endgameTypes ? '- Endgame technique in: ' + specificIssues.endgameTypes.join(', ') : ''}
+
+TASK: Create a comprehensive, personalized 4-week study plan that:
+
+1. **PRIORITIZES THE MOST CRITICAL WEAKNESSES FIRST** (especially ${worstPhase.name} phase and any critical issues)
+2. Provides week-by-week breakdown with specific daily focus areas (30-60 min sessions)
+3. Includes concrete, actionable tasks for each day
+4. Recommends specific resources:
+   - YouTube channels/videos for visual learners
+   - Chess.com/Lichess training tools
+   - Books for deeper study
+   - Online courses if applicable
+5. Sets measurable improvement goals
+6. Addresses time management if it's an issue
+7. Balances opening study, tactical training, endgame practice, and game analysis
+8. Makes it practical for someone with limited time
+
+Format each week clearly with:
+## Week [Number]: [Theme]
+### Day 1-7: Specific daily tasks
+- Include exact exercises, puzzles counts, video links when possible
+
+Make this actionable and specific, not generic advice. The player needs concrete steps to improve.`;
+
+                // Call Groq API
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are a professional chess coach with expertise in player development and personalized training plans. You create detailed, actionable study plans based on game analysis data."
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 4000
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `API request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const studyPlan = data.choices[0].message.content;
+                
+                // Display the study plan
+                displayStudyPlan(studyPlan, weaknesses, strengths);
+                
+            } catch (error) {
+                console.error('Error generating study plan:', error);
+                
+                let errorMessage = error.message;
+                let helpText = '';
+                
+                // Check if it's a rate limit error
+                if (error.message.includes('rate_limit') || error.message.includes('429')) {
+                    errorMessage = 'Rate limit reached on the demo API key.';
+                    helpText = `
+                        <p style="margin-top: 12px;">
+                            <strong>Get your own free unlimited API key:</strong><br>
+                            1. Visit <a href="https://console.groq.com/keys" target="_blank" style="color: #c53030; text-decoration: underline;">console.groq.com</a><br>
+                            2. Sign up (free, 30 seconds)<br>
+                            3. Create an API key<br>
+                            4. Paste it in the field above and try again
+                        </p>
+                    `;
+                } else if (error.message.includes('api_key') || error.message.includes('401') || error.message.includes('invalid')) {
+                    errorMessage = 'API authentication failed.';
+                    helpText = `
+                        <p style="margin-top: 12px;">
+                            This might be a temporary issue. Try:
+                            <br>1. Refreshing the page and trying again
+                            <br>2. Getting your own free API key from <a href="https://console.groq.com/keys" target="_blank" style="color: #c53030; text-decoration: underline;">console.groq.com</a>
+                        </p>
+                    `;
+                } else {
+                    helpText = `
+                        <p style="margin-top: 12px;">
+                            If the problem persists, try getting your own free API key from 
+                            <a href="https://console.groq.com/keys" target="_blank" style="color: #c53030; text-decoration: underline;">console.groq.com</a>
+                        </p>
+                    `;
+                }
+                    
+                studyPlanSection.innerHTML = `
+                    <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
+                        <h3>⚠️ Error Generating Study Plan</h3>
+                        <p>${errorMessage}</p>
+                        ${helpText}
+                    </div>
+                `;
+            } finally {
+                studyPlanBtn.disabled = false;
+                studyPlanBtn.textContent = '🤖 Generate My Study Plan';
+            }
+        }
+        
+        function displayStudyPlan(plan, weaknesses, strengths) {
+            const studyPlanSection = document.getElementById('studyPlanResults');
+            
+            const html = `
+                <div class="study-plan-container">
+                    <div class="study-plan-header">
+                        <h2 style="color: #2d3748; margin-bottom: 12px;">📚 Your Personalized Chess Study Plan</h2>
+                        <p style="color: #718096; font-size: 1.05em;">Based on analysis of ${stats.totalGames} games</p>
+                    </div>
+                    
+                    <div class="analysis-summary">
+                        <div class="summary-column critical">
+                            <h3>🎯 Priority Areas</h3>
+                            <ul>
+                                ${weaknesses.slice(0, 5).map(w => `<li>${w}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="summary-column strength">
+                            <h3>💪 Your Strengths</h3>
+                            <ul>
+                                ${strengths.length > 0 
+                                    ? strengths.map(s => `<li>${s}</li>`).join('') 
+                                    : '<li>Building on your current level</li>'}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="ai-study-plan">
+                        <div class="ai-badge">🤖 AI-Generated Custom Plan</div>
+                        ${formatStudyPlan(plan)}
+                    </div>
+                    
+                    <div class="study-plan-actions">
+                        <button onclick="downloadStudyPlan()" class="action-btn primary">
+                            📥 Download Study Plan
+                        </button>
+                        <button onclick="copyStudyPlan()" class="action-btn secondary">
+                            📋 Copy to Clipboard
+                        </button>
+                        <button onclick="emailStudyPlan()" class="action-btn secondary">
+                            ✉️ Email to Myself
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            studyPlanSection.innerHTML = html;
+            window.currentStudyPlan = plan;
+        }
+        
+        function formatStudyPlan(plan) {
+            // Convert markdown-style formatting to HTML
+            let formatted = plan
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^### (.*$)/gm, '<h4>$1</h4>')
+                .replace(/^## (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^# (.*$)/gm, '<h2>$1</h2>')
+                .replace(/\n/g, '<br>');
+            
+            return `<div class="plan-content">${formatted}</div>`;
+        }
+        
+        function downloadStudyPlan() {
+            if (!window.currentStudyPlan) return;
+            
+            const blob = new Blob([`
+CHESS STUDY PLAN
+Generated: ${new Date().toLocaleDateString()}
+Based on analysis of ${stats.totalGames} games
+
+${window.currentStudyPlan}
+
+---
+Generated by Chess Analyzer
+            `], { type: 'text/plain' });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chess-study-plan-${username}-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function copyStudyPlan() {
+            if (!window.currentStudyPlan) return;
+            
+            navigator.clipboard.writeText(window.currentStudyPlan).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        function emailStudyPlan() {
+            if (!window.currentStudyPlan) return;
+            
+            const subject = encodeURIComponent(`Chess Study Plan - ${username}`);
+            const body = encodeURIComponent(`
+My Personalized Chess Study Plan
+Generated: ${new Date().toLocaleDateString()}
+
+${window.currentStudyPlan}
+            `);
+            
+            window.open(`mailto:?subject=${subject}&body=${body}`);
+        }
+    </script>
+</body>
+</html>

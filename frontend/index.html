@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess.com Game Analyzer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>♟️ Chess.com Game Analyzer</h1>
+        <p class="subtitle">Analyze your chess games with detailed statistics and insights</p>
+
+        <div class="error" id="error"></div>
+
+        <div class="input-section">
+            <div class="form-group">
+                <label for="username">Chess.com Username</label>
+                <input type="text" id="username" placeholder="Enter your chess.com username" value="">
+            </div>
+
+            <div class="form-group">
+                <label>Game Types</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="rapid" checked>
+                        <label for="rapid" style="margin: 0;">Rapid</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="blitz" checked>
+                        <label for="blitz" style="margin: 0;">Blitz</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="bullet">
+                        <label for="bullet" style="margin: 0;">Bullet</label>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startAnalysis()">Analyze Games</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Fetching and analyzing your games...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div id="heroSection"></div>
+            <div class="section-header">
+                <h2 class="section-title">🔍 Your Biggest Leaks</h2>
+            </div>
+            <div class="leaks-grid" id="leaksGrid"></div>
+            <div class="insights-section">
+                <h2 class="section-title" style="margin-bottom: 20px;">💡 Personal Insights</h2>
+                <div id="insightsContainer"></div>
+            </div>
+            <div class="study-recommendations">
+                <h2 style="font-size: 1.8em; margin-bottom: 20px;">📚 What to Study Next</h2>
+                <div id="studyContainer"></div>
+            </div>
+            <div id="timeManagementSection"></div>
+            <div id="gamesToReviewSection"></div>
+            <div class="section-header">
+                <h2 class="section-title">📊 Overall Statistics</h2>
+            </div>
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="chart-container">
+                <h3 class="chart-title">Win/Loss/Draw by Color</h3>
+                <canvas id="colorChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Performance by Opening</h3>
+                <canvas id="openingChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Opening Statistics</h3>
+                <table id="openingTable"></table>
+            </div>
+            <div id="endgameAnalysisSection"></div>
+
+            <!-- Study Plan Section -->
+            <div class="study-plan-section">
+                <div class="study-plan-intro">
+                    <h2>🎯 Personalized Study Plan</h2>
+                    <p>Get an AI-powered, customized 4-week study plan based on your game analysis</p>
+                    <p style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">
+                        Powered by Groq AI (Fast & Free) • Llama 3.3 70B Model
+                    </p>
+                    <button class="generate-plan-btn" id="generateStudyPlanBtn" onclick="generateStudyPlan()">
+                        🤖 Generate My Study Plan
+                    </button>
+                </div>
+                <div id="studyPlanResults" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="modal" id="gameModal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <h2 id="modalTitle"></h2>
+                <div id="gamesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts: load order matters -->
+    <script src="/js/config.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/analysis.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/display.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

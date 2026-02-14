@@ -1,0 +1,34 @@
+databases:
+  - name: chess-analyzer-db
+    plan: free
+    databaseName: chess_analyzer
+    user: chess_user
+
+services:
+  - type: web
+    name: chess-analyzer
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chess-analyzer-db
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 60
+      - key: CORS_ORIGINS
+        value: https://chess-analyzer.onrender.com
+      - key: ENVIRONMENT
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.7
+    healthCheckPath: /health
+    autoDeploy: true

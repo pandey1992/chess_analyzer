@@ -1,0 +1,13 @@
+.env
+.env.production
+__pycache__/
+*.pyc
+*.pyo
+*.db
+node_modules/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.claude/
