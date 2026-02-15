@@ -214,7 +214,7 @@ async def fetch_lichess_games(
     return {"games": all_games, "total": len(all_games)}
 
 
-def _normalize_lichess_game(game: dict, username: str) -> dict | None:
+def _normalize_lichess_game(game: dict, username: str):
     """
     Normalize a Lichess game object to match the Chess.com format
     expected by the frontend analysis engine.
@@ -300,7 +300,7 @@ def _normalize_lichess_game(game: dict, username: str) -> dict | None:
         return None
 
 
-def _lichess_result(winner: str | None, status: str, color: str) -> str:
+def _lichess_result(winner, status: str, color: str) -> str:
     """Convert Lichess winner/status into Chess.com-style result string."""
     if winner is None:
         # Draw
