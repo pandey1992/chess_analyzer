@@ -13,17 +13,6 @@ function selectPlatform(platform) {
     document.querySelectorAll('.platform-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.platform === platform);
     });
-
-    // Update label and placeholder
-    const label = document.getElementById('usernameLabel');
-    const input = document.getElementById('username');
-    if (platform === 'lichess') {
-        label.textContent = 'Lichess Username';
-        input.placeholder = 'Enter your Lichess username';
-    } else {
-        label.textContent = 'Chess.com Username';
-        input.placeholder = 'Enter your Chess.com username';
-    }
 }
 
 async function startAnalysis() {
