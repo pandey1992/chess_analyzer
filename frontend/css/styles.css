@@ -82,7 +82,7 @@
             cursor: pointer;
         }
 
-        button {
+        button:not(.platform-btn) {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 14px 32px;
@@ -94,12 +94,12 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        button:hover {
+        button:not(.platform-btn):hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
         }
 
-        button:disabled {
+        button:not(.platform-btn):disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
