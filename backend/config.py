@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     # External APIs
     chess_com_api_base: str = "https://api.chess.com/pub"
+    lichess_api_base: str = "https://lichess.org/api"
 
     # CORS
     cors_origins: str = "http://localhost:8000,http://localhost:3000"

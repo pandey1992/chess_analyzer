@@ -362,10 +362,18 @@ function countMoves(pgn) {
 }
 
 function extractOpeningName(pgn) {
-    const match = pgn.match(/\[ECOUrl ".*\/(.+)"\]/);
-    if (match && match[1]) {
-        return match[1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    // Try Chess.com ECOUrl first
+    const chessComMatch = pgn.match(/\[ECOUrl ".*\/(.+)"\]/);
+    if (chessComMatch && chessComMatch[1]) {
+        return chessComMatch[1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
+
+    // Try Lichess/standard PGN Opening header
+    const openingMatch = pgn.match(/\[Opening "(.+?)"\]/);
+    if (openingMatch && openingMatch[1]) {
+        return openingMatch[1];
+    }
+
     return 'Unknown Opening';
 }
 

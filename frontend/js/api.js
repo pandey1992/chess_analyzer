@@ -1,13 +1,16 @@
 // API client - replaces direct CORS proxy and Groq API calls
 
 const ChessAPI = {
-    async fetchGames(username, gameTypes) {
-        const response = await fetch(
-            `${CONFIG.API_BASE}/games/${encodeURIComponent(username)}?game_types=${gameTypes.join(',')}`
-        );
+    async fetchGames(username, gameTypes, platform = 'chesscom') {
+        const endpoint = platform === 'lichess'
+            ? `${CONFIG.API_BASE}/lichess/games/${encodeURIComponent(username)}?game_types=${gameTypes.join(',')}`
+            : `${CONFIG.API_BASE}/games/${encodeURIComponent(username)}?game_types=${gameTypes.join(',')}`;
+
+        const response = await fetch(endpoint);
 
         if (!response.ok) {
-            if (response.status === 404) throw new Error('User not found on Chess.com');
+            const platformName = platform === 'lichess' ? 'Lichess' : 'Chess.com';
+            if (response.status === 404) throw new Error(`User not found on ${platformName}`);
             const error = await response.json().catch(() => ({}));
             throw new Error(error.detail || 'Failed to fetch games');
         }

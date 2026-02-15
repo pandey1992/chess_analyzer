@@ -3,21 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess.com Game Analyzer</title>
+    <title>Chess Game Analyzer</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>♟️ Chess.com Game Analyzer</h1>
+        <h1>♟️ Chess Game Analyzer</h1>
         <p class="subtitle">Analyze your chess games with detailed statistics and insights</p>
 
         <div class="error" id="error"></div>
 
         <div class="input-section">
             <div class="form-group">
-                <label for="username">Chess.com Username</label>
-                <input type="text" id="username" placeholder="Enter your chess.com username" value="">
+                <label>Platform</label>
+                <div class="platform-selector">
+                    <button type="button" class="platform-btn active" data-platform="chesscom" onclick="selectPlatform('chesscom')">
+                        <span class="platform-icon">♚</span>
+                        <span>Chess.com</span>
+                    </button>
+                    <button type="button" class="platform-btn" data-platform="lichess" onclick="selectPlatform('lichess')">
+                        <span class="platform-icon">♞</span>
+                        <span>Lichess</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="username" id="usernameLabel">Chess.com Username</label>
+                <input type="text" id="username" placeholder="Enter your Chess.com username" value="">
             </div>
 
             <div class="form-group">

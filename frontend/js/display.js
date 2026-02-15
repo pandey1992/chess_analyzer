@@ -521,7 +521,7 @@ function displayGamesToReview(stats) {
                 <h2 class="section-title">🔍 Games to Review - Likely Blunders</h2>
             </div>
             <p style="color: #718096; margin-bottom: 20px;">
-                These games likely contain tactical mistakes or blunders. Review them with Chess.com's engine.
+                These games likely contain tactical mistakes or blunders. Review them with the analysis board.
             </p>
 
             <div class="leaks-grid" style="margin-bottom: 30px;">
@@ -874,7 +874,7 @@ function showOpeningGames(eco, openingName) {
                     <span><strong>Time Control:</strong> ${game.time_class}</span>
                 </div>
                 <div class="game-link">
-                    <a href="${game.url}" target="_blank">View game on Chess.com →</a>
+                    <a href="${game.url}" target="_blank">View game on ${currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
                 </div>
             </div>
         `;
@@ -913,7 +913,7 @@ function showEndgameGames(endgameType) {
                     <span><strong>Moves:</strong> ${game.moveCount || 'N/A'}</span>
                 </div>
                 <div class="game-link">
-                    <a href="${game.url}" target="_blank">View game on Chess.com →</a>
+                    <a href="${game.url}" target="_blank">View game on ${currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
                 </div>
             </div>
         `;
@@ -955,7 +955,7 @@ function showReviewGames(category) {
                     <span><strong>Time Control:</strong> ${game.timeControl}</span>
                 </div>
                 <div class="game-link">
-                    <a href="${game.url}" target="_blank">View game on Chess.com →</a>
+                    <a href="${game.url}" target="_blank">View game on ${currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
                 </div>
             </div>
         `;

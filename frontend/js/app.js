@@ -4,6 +4,27 @@ let allGames = [];
 let username = '';
 let openingsVisible = 10;
 let stats = {};
+let currentPlatform = 'chesscom';
+
+function selectPlatform(platform) {
+    currentPlatform = platform;
+
+    // Update button styles
+    document.querySelectorAll('.platform-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.platform === platform);
+    });
+
+    // Update label and placeholder
+    const label = document.getElementById('usernameLabel');
+    const input = document.getElementById('username');
+    if (platform === 'lichess') {
+        label.textContent = 'Lichess Username';
+        input.placeholder = 'Enter your Lichess username';
+    } else {
+        label.textContent = 'Chess.com Username';
+        input.placeholder = 'Enter your Chess.com username';
+    }
+}
 
 async function startAnalysis() {
     console.log('Analysis button clicked');
@@ -28,12 +49,14 @@ async function startAnalysis() {
     showLoading();
     openingsVisible = 10;
 
+    const platformName = currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com';
+
     try {
-        // Call backend API instead of CORS proxy
-        allGames = await ChessAPI.fetchGames(username, gameTypes);
+        // Call backend API with platform selection
+        allGames = await ChessAPI.fetchGames(username, gameTypes, currentPlatform);
 
         if (allGames.length === 0) {
-            showError('No games found for this user');
+            showError(`No games found for this user on ${platformName}`);
             hideLoading();
             return;
         }
@@ -44,7 +67,7 @@ async function startAnalysis() {
         showResults();
     } catch (error) {
         console.error('Error:', error);
-        showError(error.message || 'Failed to fetch games. Please check the username.');
+        showError(error.message || `Failed to fetch games from ${platformName}. Please check the username.`);
         hideLoading();
     }
 }
