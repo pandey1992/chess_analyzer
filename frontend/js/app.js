@@ -8,11 +8,6 @@ let currentPlatform = 'chesscom';
 
 function selectPlatform(platform) {
     currentPlatform = platform;
-
-    // Update button styles
-    document.querySelectorAll('.platform-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.platform === platform);
-    });
 }
 
 async function startAnalysis() {

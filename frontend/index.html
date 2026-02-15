@@ -16,17 +16,11 @@
 
         <div class="input-section">
             <div class="form-group">
-                <label>Platform</label>
-                <div class="platform-selector">
-                    <button type="button" class="platform-btn active" data-platform="chesscom" onclick="selectPlatform('chesscom')">
-                        <span class="platform-icon">♚</span>
-                        <span>Chess.com</span>
-                    </button>
-                    <button type="button" class="platform-btn" data-platform="lichess" onclick="selectPlatform('lichess')">
-                        <span class="platform-icon">♞</span>
-                        <span>Lichess</span>
-                    </button>
-                </div>
+                <label for="platform">Platform</label>
+                <select id="platform" onchange="selectPlatform(this.value)">
+                    <option value="chesscom">♚ Chess.com</option>
+                    <option value="lichess">♞ Lichess</option>
+                </select>
             </div>
 
             <div class="form-group">
