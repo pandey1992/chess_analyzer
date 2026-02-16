@@ -285,8 +285,8 @@ def _analyze_single_game(
 
     evals = []
 
-    # Use time limit for faster analysis: depth + 0.1s per move cap
-    analysis_limit = chess.engine.Limit(depth=depth, time=0.1)
+    # Use depth limit + generous time cap for accurate analysis
+    analysis_limit = chess.engine.Limit(depth=depth, time=2.0)
 
     # Evaluate starting position
     info = engine.analyse(board, analysis_limit)

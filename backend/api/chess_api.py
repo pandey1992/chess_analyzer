@@ -709,13 +709,13 @@ async def chesscom_dashboard(
     if games_for_stockfish:
         try:
             loop = asyncio.get_event_loop()
-            logger.info(f"Running Stockfish batch analysis on {len(games_for_stockfish)} games (depth 8)...")
+            logger.info(f"Running Stockfish batch analysis on {len(games_for_stockfish)} games (depth 15)...")
             batch_results = await loop.run_in_executor(
                 None,
                 analyze_games_batch,
                 games_for_stockfish,
                 stockfish_path,
-                8,
+                15,
             )
             logger.info(f"Stockfish batch done: {sum(1 for r in batch_results if r)}/{len(batch_results)} games analyzed")
 

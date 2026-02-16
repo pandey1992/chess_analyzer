@@ -67,7 +67,7 @@ async function fetchWeeklyDashboard(username, gameTypes) {
     dashboardSection.innerHTML = `
         <div class="dashboard-loading">
             <div class="spinner"></div>
-            <p>Loading weekly accuracy dashboard${currentPlatform === 'chesscom' ? ' (analyzing up to 20 games with Stockfish — this may take a minute...)' : ''}...</p>
+            <p>Loading weekly accuracy dashboard${currentPlatform === 'chesscom' ? ' (deep-analyzing up to 20 games with Stockfish at depth 15 — this may take a few minutes...)' : ''}...</p>
         </div>
     `;
 
