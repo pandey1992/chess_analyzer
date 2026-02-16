@@ -49,10 +49,51 @@ async function startAnalysis() {
         analyzeAndDisplay(allGames);
         hideLoading();
         showResults();
+
+        // Fetch weekly accuracy dashboard in background
+        fetchWeeklyDashboard(username, gameTypes);
     } catch (error) {
         console.error('Error:', error);
         showError(error.message || `Failed to fetch games from ${platformName}. Please check the username.`);
         hideLoading();
+    }
+}
+
+async function fetchWeeklyDashboard(username, gameTypes) {
+    const dashboardSection = document.getElementById('dashboardSection');
+
+    // Show loading state
+    dashboardSection.style.display = 'block';
+    dashboardSection.innerHTML = `
+        <div class="dashboard-loading">
+            <div class="spinner"></div>
+            <p>Loading weekly accuracy dashboard${currentPlatform === 'chesscom' ? ' (analyzing up to 20 games with Stockfish — this may take a minute...)' : ''}...</p>
+        </div>
+    `;
+
+    try {
+        const dashboardData = await ChessAPI.fetchDashboard(username, gameTypes, currentPlatform);
+
+        if (dashboardData.total_analyzed_games === 0) {
+            dashboardSection.innerHTML = `
+                <div class="chart-container" style="text-align: center; padding: 30px;">
+                    <h2>📊 Weekly Accuracy Dashboard</h2>
+                    <p style="color: #718096; margin-top: 12px;">No analyzed games found for the past week.
+                    ${currentPlatform === 'lichess' ? 'Request computer analysis on your Lichess games to see accuracy data.' : ''}</p>
+                </div>
+            `;
+            return;
+        }
+
+        displayDashboard(dashboardData);
+    } catch (error) {
+        console.error('Dashboard error:', error);
+        dashboardSection.innerHTML = `
+            <div class="chart-container" style="text-align: center; padding: 30px;">
+                <h2>📊 Weekly Accuracy Dashboard</h2>
+                <p style="color: #e53e3e; margin-top: 12px;">Could not load dashboard: ${error.message}</p>
+            </div>
+        `;
     }
 }
 

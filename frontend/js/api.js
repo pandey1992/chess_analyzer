@@ -19,6 +19,21 @@ const ChessAPI = {
         return data.games;
     },
 
+    async fetchDashboard(username, gameTypes, platform = 'chesscom') {
+        const endpoint = platform === 'lichess'
+            ? `${CONFIG.API_BASE}/lichess/dashboard/${encodeURIComponent(username)}?game_types=${gameTypes.join(',')}`
+            : `${CONFIG.API_BASE}/dashboard/${encodeURIComponent(username)}?game_types=${gameTypes.join(',')}`;
+
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to fetch dashboard');
+        }
+
+        return await response.json();
+    },
+
     async generateStudyPlan(statsPayload) {
         const response = await fetch(`${CONFIG.API_BASE}/study-plan`, {
             method: 'POST',

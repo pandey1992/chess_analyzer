@@ -1019,6 +1019,203 @@ function displayStudyPlan(plan, weaknesses, strengths) {
     window.currentStudyPlan = plan;
 }
 
+// ============================================================
+// WEEKLY ACCURACY DASHBOARD
+// ============================================================
+
+function displayDashboard(data) {
+    const section = document.getElementById('dashboardSection');
+    const accColor = (acc) => acc >= 80 ? '#38a169' : acc >= 60 ? '#d69e2e' : '#e53e3e';
+    const accLabel = (acc) => acc !== null ? `${acc}%` : 'N/A';
+
+    const bestGame = data.game_accuracies.length > 0
+        ? data.game_accuracies.reduce((best, g) => g.accuracy > best.accuracy ? g : best)
+        : null;
+
+    const overall = data.overall;
+    const byColor = data.by_color;
+    const byPhase = data.by_phase;
+    const mq = data.move_quality;
+
+    let html = `
+        <div class="dashboard-section">
+            <div class="dashboard-header">
+                <h2>📊 Weekly Accuracy Dashboard</h2>
+                <p class="dashboard-period">${data.period} &bull; ${data.total_analyzed_games} analyzed games</p>
+            </div>
+
+            <!-- Overview Cards -->
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <div class="dash-card-label">Games Analyzed</div>
+                    <div class="dash-card-value">${data.total_analyzed_games}</div>
+                    <div class="dash-card-sub">⬜ ${data.games_as_white} White &bull; ⬛ ${data.games_as_black} Black</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Overall Accuracy</div>
+                    <div class="dash-card-value" style="color: ${accColor(overall.accuracy)}">${accLabel(overall.accuracy)}</div>
+                    <div class="accuracy-bar">
+                        <div class="accuracy-bar-fill" style="width: ${overall.accuracy || 0}%; background: ${accColor(overall.accuracy)}"></div>
+                    </div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Win Rate</div>
+                    <div class="dash-card-value">${data.total_analyzed_games > 0 ? Math.round((overall.wins / data.total_analyzed_games) * 100) : 0}%</div>
+                    <div class="dash-card-sub">${overall.wins}W / ${overall.losses}L / ${overall.draws}D</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-label">Best Game</div>
+                    ${bestGame ? `
+                        <div class="dash-card-value" style="color: ${accColor(bestGame.accuracy)}">${bestGame.accuracy}%</div>
+                        <div class="dash-card-sub"><a href="${bestGame.url}" target="_blank" style="color: #667eea;">vs ${bestGame.opponent}</a></div>
+                    ` : `<div class="dash-card-value">-</div>`}
+                </div>
+            </div>
+
+            <!-- Phase Accuracy -->
+            <div class="dashboard-phase-section">
+                <h3>🎯 Accuracy by Game Phase</h3>
+                <div class="phase-grid">
+                    ${_phaseCard('Opening', 'moves 1-15', '📖', byPhase.opening)}
+                    ${_phaseCard('Middlegame', 'moves 16-30', '⚔️', byPhase.middlegame)}
+                    ${_phaseCard('Endgame', 'moves 31+', '🏁', byPhase.endgame)}
+                </div>
+            </div>
+
+            <!-- Accuracy by Color -->
+            <div class="dashboard-color-section">
+                <h3>⚖️ Accuracy by Color</h3>
+                <div class="color-accuracy-grid">
+                    <div class="color-acc-card white-card">
+                        <div class="color-acc-label">⬜ White</div>
+                        <div class="color-acc-value" style="color: ${accColor(byColor.white.accuracy)}">${accLabel(byColor.white.accuracy)}</div>
+                        <div class="color-acc-games">${byColor.white.games} games</div>
+                        <div class="accuracy-bar"><div class="accuracy-bar-fill" style="width: ${byColor.white.accuracy || 0}%; background: ${accColor(byColor.white.accuracy)}"></div></div>
+                    </div>
+                    <div class="color-acc-card black-card">
+                        <div class="color-acc-label">⬛ Black</div>
+                        <div class="color-acc-value" style="color: ${accColor(byColor.black.accuracy)}">${accLabel(byColor.black.accuracy)}</div>
+                        <div class="color-acc-games">${byColor.black.games} games</div>
+                        <div class="accuracy-bar"><div class="accuracy-bar-fill" style="width: ${byColor.black.accuracy || 0}%; background: ${accColor(byColor.black.accuracy)}"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Move Quality -->
+            <div class="dashboard-quality-section">
+                <h3>🔍 Move Quality</h3>
+                <div class="quality-grid">
+                    <div class="quality-card inaccuracy">
+                        <div class="quality-count">${mq.inaccuracy}</div>
+                        <div class="quality-label">Inaccuracies</div>
+                    </div>
+                    <div class="quality-card mistake">
+                        <div class="quality-count">${mq.mistake}</div>
+                        <div class="quality-label">Mistakes</div>
+                    </div>
+                    <div class="quality-card blunder">
+                        <div class="quality-count">${mq.blunder}</div>
+                        <div class="quality-label">Blunders</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accuracy Trend -->
+            ${data.game_accuracies.length > 1 ? `
+                <div class="dashboard-trend-section">
+                    <h3>📈 Accuracy Trend</h3>
+                    <canvas id="accuracyTrendChart"></canvas>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    section.innerHTML = html;
+    section.style.display = 'block';
+
+    // Render trend chart
+    if (data.game_accuracies.length > 1) {
+        renderAccuracyTrendChart(data.game_accuracies);
+    }
+}
+
+function _phaseCard(name, movesDesc, icon, phaseData) {
+    const acc = phaseData ? phaseData.accuracy : null;
+    const moves = phaseData ? phaseData.moves_analyzed : 0;
+    const accColor = acc !== null ? (acc >= 80 ? '#38a169' : acc >= 60 ? '#d69e2e' : '#e53e3e') : '#a0aec0';
+
+    return `
+        <div class="phase-card">
+            <div class="phase-icon">${icon}</div>
+            <div class="phase-name">${name}</div>
+            <div class="phase-moves">${movesDesc}</div>
+            <div class="phase-accuracy" style="color: ${accColor}">${acc !== null ? acc + '%' : 'N/A'}</div>
+            <div class="accuracy-bar">
+                <div class="accuracy-bar-fill" style="width: ${acc || 0}%; background: ${accColor}"></div>
+            </div>
+            ${moves > 0 ? `<div class="phase-detail">${moves} games analyzed</div>` : ''}
+        </div>
+    `;
+}
+
+function renderAccuracyTrendChart(gameAccuracies) {
+    const ctx = document.getElementById('accuracyTrendChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if any
+    const existing = Chart.getChart(ctx);
+    if (existing) existing.destroy();
+
+    const labels = gameAccuracies.map(g => {
+        const d = new Date(g.date * 1000);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    const accuracies = gameAccuracies.map(g => g.accuracy);
+    const colors = gameAccuracies.map(g =>
+        g.result === 'win' ? '#38a169' : g.result === 'loss' ? '#e53e3e' : '#d69e2e'
+    );
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Accuracy %',
+                data: accuracies,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: colors,
+                pointBorderColor: colors,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    title: { display: true, text: 'Accuracy %' }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const g = gameAccuracies[context.dataIndex];
+                            return `${g.result.toUpperCase()} as ${g.color} vs ${g.opponent}\n${g.opening}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 function formatStudyPlan(plan) {
     // Convert markdown-style formatting to HTML
     let formatted = plan

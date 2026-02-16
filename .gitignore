@@ -11,3 +11,6 @@ venv/
 dist/
 build/
 .claude/
+stockfish.exe
+stockfish
+nul

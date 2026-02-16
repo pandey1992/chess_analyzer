@@ -936,6 +936,259 @@
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
 
+        /* ============================
+           WEEKLY ACCURACY DASHBOARD
+           ============================ */
+
+        .dashboard-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h2 {
+            font-size: 1.8em;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-period {
+            color: #718096;
+            font-size: 1em;
+        }
+
+        .dashboard-loading {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .dashboard-loading p {
+            color: #718096;
+            margin-top: 15px;
+        }
+
+        /* Overview cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .dash-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .dash-card-label {
+            font-size: 0.85em;
+            color: #718096;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .dash-card-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 6px;
+        }
+
+        .dash-card-sub {
+            font-size: 0.85em;
+            color: #a0aec0;
+        }
+
+        .dash-card-sub a {
+            text-decoration: none;
+        }
+
+        /* Accuracy bar */
+        .accuracy-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .accuracy-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+
+        /* Phase section */
+        .dashboard-phase-section,
+        .dashboard-color-section,
+        .dashboard-quality-section,
+        .dashboard-trend-section {
+            margin-top: 30px;
+        }
+
+        .dashboard-phase-section h3,
+        .dashboard-color-section h3,
+        .dashboard-quality-section h3,
+        .dashboard-trend-section h3 {
+            font-size: 1.3em;
+            color: #2d3748;
+            margin-bottom: 16px;
+        }
+
+        .phase-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .phase-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .phase-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .phase-name {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 1.1em;
+            margin-bottom: 4px;
+        }
+
+        .phase-moves {
+            font-size: 0.8em;
+            color: #a0aec0;
+            margin-bottom: 12px;
+        }
+
+        .phase-accuracy {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .phase-detail {
+            font-size: 0.8em;
+            color: #a0aec0;
+            margin-top: 8px;
+        }
+
+        /* Color accuracy */
+        .color-accuracy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .color-acc-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .color-acc-label {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .color-acc-value {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .color-acc-games {
+            font-size: 0.85em;
+            color: #a0aec0;
+        }
+
+        /* Move quality */
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .quality-card {
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .quality-card.inaccuracy {
+            background: #fefcbf;
+            border: 2px solid #d69e2e;
+        }
+
+        .quality-card.mistake {
+            background: #fed7aa;
+            border: 2px solid #dd6b20;
+        }
+
+        .quality-card.blunder {
+            background: #fed7d7;
+            border: 2px solid #e53e3e;
+        }
+
+        .quality-count {
+            font-size: 2em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .quality-label {
+            font-size: 0.9em;
+            color: #4a5568;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Trend chart */
+        .dashboard-trend-section canvas {
+            max-height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .phase-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .color-accuracy-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quality-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .analysis-summary {
                 grid-template-columns: 1fr;
