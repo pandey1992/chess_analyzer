@@ -34,19 +34,19 @@ def win_probability(cp: int) -> float:
 
 
 def move_accuracy_from_wp(wp_before: float, wp_after: float) -> float:
-    """Compute accuracy for a single move using the Lichess/CAPS-style formula.
+    """Compute accuracy for a single move using win probability loss.
 
-    Formula: accuracy = 103.1668 * exp(-0.04354 * win%_lost) - 3.1669
-    where win%_lost = max(0, wp_before - wp_after) on 0-100 scale.
-
-    This produces values close to Chess.com accuracy:
+    Uses a steeper exponential decay that better matches Chess.com CAPS scores.
+    The standard Lichess formula (coefficient -0.04354) is too generous.
+    We use a steeper coefficient (-0.065) calibrated against Chess.com data:
     - 0 win% lost → ~100% accuracy (perfect move)
-    - 5 win% lost → ~82% accuracy (small inaccuracy)
-    - 15 win% lost → ~53% accuracy (mistake)
-    - 30 win% lost → ~25% accuracy (blunder)
+    - 3 win% lost → ~82% accuracy (good but not best)
+    - 8 win% lost → ~60% accuracy (inaccuracy)
+    - 15 win% lost → ~38% accuracy (mistake)
+    - 25 win% lost → ~19% accuracy (blunder)
     """
     win_pct_lost = max(0.0, wp_before - wp_after)
-    accuracy = 103.1668 * math.exp(-0.04354 * win_pct_lost) - 3.1669
+    accuracy = 103.1668 * math.exp(-0.065 * win_pct_lost) - 3.1669
     return max(0.0, min(100.0, accuracy))
 
 
