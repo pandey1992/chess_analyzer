@@ -27,15 +27,49 @@ BLUNDER_THRESHOLD = 200
 
 
 def win_probability(cp: int) -> float:
-    """Convert centipawn evaluation to win probability (from white's perspective)."""
-    return 1.0 / (1.0 + math.exp(-0.00368208 * cp))
+    """Convert centipawn evaluation to win probability (0-100 scale, from white's perspective).
+    Uses the Lichess formula: 50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1)
+    """
+    return 50.0 + 50.0 * (2.0 / (1.0 + math.exp(-0.00368208 * cp)) - 1.0)
 
 
 def move_accuracy_from_wp(wp_before: float, wp_after: float) -> float:
-    """Compute accuracy for a single move from win probability change."""
-    if wp_before < 0.001:
-        return 1.0 if wp_after >= wp_before else 0.0
-    return min(1.0, max(0.0, wp_after / wp_before))
+    """Compute accuracy for a single move using the Lichess/CAPS-style formula.
+
+    Formula: accuracy = 103.1668 * exp(-0.04354 * win%_lost) - 3.1669
+    where win%_lost = max(0, wp_before - wp_after) on 0-100 scale.
+
+    This produces values close to Chess.com accuracy:
+    - 0 win% lost → ~100% accuracy (perfect move)
+    - 5 win% lost → ~82% accuracy (small inaccuracy)
+    - 15 win% lost → ~53% accuracy (mistake)
+    - 30 win% lost → ~25% accuracy (blunder)
+    """
+    win_pct_lost = max(0.0, wp_before - wp_after)
+    accuracy = 103.1668 * math.exp(-0.04354 * win_pct_lost) - 3.1669
+    return max(0.0, min(100.0, accuracy))
+
+
+def aggregate_accuracy(accuracies: List[float]) -> float:
+    """Aggregate per-move accuracies using harmonic-arithmetic mean blend.
+
+    Uses the Lichess approach: average of arithmetic mean and harmonic mean.
+    Harmonic mean heavily penalizes bad moves (blunders tank the score),
+    while arithmetic mean represents the "typical" move quality.
+    The blend gives a balanced result that punishes blunders appropriately.
+    """
+    if not accuracies:
+        return 0.0
+
+    # Arithmetic mean
+    arith_mean = sum(accuracies) / len(accuracies)
+
+    # Harmonic mean (use small floor to avoid division by zero)
+    harmonic_sum = sum(1.0 / max(acc, 0.01) for acc in accuracies)
+    harmonic_mean = len(accuracies) / harmonic_sum if harmonic_sum > 0 else 0.0
+
+    # Blend: average of arithmetic and harmonic means
+    return (arith_mean + harmonic_mean) / 2.0
 
 
 def score_to_cp(score: chess.engine.PovScore, perspective: chess.Color) -> Optional[int]:
@@ -138,8 +172,8 @@ def analyze_game_pgn(
                     wp_after = win_probability(current_cp)
 
                     if user_color == chess.BLACK:
-                        wp_before = 1.0 - wp_before
-                        wp_after = 1.0 - wp_after
+                        wp_before = 100.0 - wp_before
+                        wp_after = 100.0 - wp_after
 
                     acc = move_accuracy_from_wp(wp_before, wp_after)
                     all_user_accuracies.append(acc)
@@ -169,14 +203,14 @@ def analyze_game_pgn(
                 prev_cp = current_cp
 
             # Compute aggregated results
-            overall_accuracy = (sum(all_user_accuracies) / len(all_user_accuracies) * 100) \
+            overall_accuracy = aggregate_accuracy(all_user_accuracies) \
                 if all_user_accuracies else 0
 
             phase_accuracy = {}
             for phase, accs in phase_moves.items():
                 if accs:
                     phase_accuracy[phase] = {
-                        "accuracy": round(sum(accs) / len(accs) * 100, 1),
+                        "accuracy": round(aggregate_accuracy(accs), 1),
                         "moves_analyzed": len(accs),
                     }
                 else:
@@ -321,8 +355,8 @@ def _analyze_single_game(
             wp_after = win_probability(current_cp)
 
             if user_color == chess.BLACK:
-                wp_before = 1.0 - wp_before
-                wp_after = 1.0 - wp_after
+                wp_before = 100.0 - wp_before
+                wp_after = 100.0 - wp_after
 
             acc = move_accuracy_from_wp(wp_before, wp_after)
             all_user_accuracies.append(acc)
@@ -348,14 +382,14 @@ def _analyze_single_game(
 
         prev_cp = current_cp
 
-    overall_accuracy = (sum(all_user_accuracies) / len(all_user_accuracies) * 100) \
+    overall_accuracy = aggregate_accuracy(all_user_accuracies) \
         if all_user_accuracies else 0
 
     phase_accuracy = {}
     for phase, accs in phase_moves.items():
         if accs:
             phase_accuracy[phase] = {
-                "accuracy": round(sum(accs) / len(accs) * 100, 1),
+                "accuracy": round(aggregate_accuracy(accs), 1),
                 "moves_analyzed": len(accs),
             }
         else:
@@ -405,8 +439,8 @@ def compute_lichess_phase_accuracy(
         wp_after = win_probability(curr["eval"])
 
         if not is_white:
-            wp_before = 1.0 - wp_before
-            wp_after = 1.0 - wp_after
+            wp_before = 100.0 - wp_before
+            wp_after = 100.0 - wp_after
 
         acc = move_accuracy_from_wp(wp_before, wp_after)
         all_user_accuracies.append(acc)
@@ -437,14 +471,14 @@ def compute_lichess_phase_accuracy(
         else:
             phase_moves["endgame"].append(acc)
 
-    overall_accuracy = (sum(all_user_accuracies) / len(all_user_accuracies) * 100) \
+    overall_accuracy = aggregate_accuracy(all_user_accuracies) \
         if all_user_accuracies else 0
 
     phase_accuracy = {}
     for phase, accs in phase_moves.items():
         if accs:
             phase_accuracy[phase] = {
-                "accuracy": round(sum(accs) / len(accs) * 100, 1),
+                "accuracy": round(aggregate_accuracy(accs), 1),
                 "moves_analyzed": len(accs),
             }
         else:

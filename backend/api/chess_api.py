@@ -719,12 +719,26 @@ async def chesscom_dashboard(
             )
             logger.info(f"Stockfish batch done: {sum(1 for r in batch_results if r)}/{len(batch_results)} games analyzed")
 
+            # Replace Chess.com accuracy with Stockfish accuracy for consistency
+            stockfish_accuracies = []
+            stockfish_white_accs = []
+            stockfish_black_accs = []
+
             stockfish_idx = 0
             for ga in game_accuracies:
                 if ga.get("_pgn"):
                     analysis = batch_results[stockfish_idx] if stockfish_idx < len(batch_results) else None
                     stockfish_idx += 1
                     if analysis:
+                        sf_acc = analysis["overall_accuracy"]
+                        stockfish_accuracies.append(sf_acc)
+                        ga["accuracy"] = round(sf_acc, 1)  # Override with Stockfish accuracy
+
+                        if ga["color"] == "white":
+                            stockfish_white_accs.append(sf_acc)
+                        else:
+                            stockfish_black_accs.append(sf_acc)
+
                         for phase in ("opening", "middlegame", "endgame"):
                             pa = analysis["phase_accuracy"].get(phase, {})
                             if pa.get("accuracy") is not None:
@@ -732,6 +746,14 @@ async def chesscom_dashboard(
                         total_move_quality["inaccuracy"] += analysis["move_quality"]["inaccuracy"]
                         total_move_quality["mistake"] += analysis["move_quality"]["mistake"]
                         total_move_quality["blunder"] += analysis["move_quality"]["blunder"]
+
+            # Use Stockfish-computed accuracies for overall/by-color so they're
+            # consistent with phase accuracy (same formula, same engine)
+            if stockfish_accuracies:
+                all_accuracies = stockfish_accuracies
+                white_accuracies = stockfish_white_accs
+                black_accuracies = stockfish_black_accs
+
         except Exception as e:
             logger.error(f"Batch Stockfish analysis failed: {e}", exc_info=True)
 
