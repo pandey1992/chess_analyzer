@@ -63,7 +63,7 @@ async def fetch_games(
     current_date = datetime.now()
 
     headers = {
-        "User-Agent": "ChessAnalyzer/1.0 (Chess analysis tool; contact: chessanalyzer.org)",
+        "User-Agent": "ChessAnalyzer/1.0 (Chess analysis tool; contact: chessaicoach.com)",
         "Accept": "application/json",
     }
 
@@ -568,7 +568,7 @@ async def chesscom_dashboard(
     seven_days_ago = current_date - timedelta(days=7)
 
     headers = {
-        "User-Agent": "ChessAnalyzer/1.0 (Chess analysis tool; contact: chessanalyzer.org)",
+        "User-Agent": "ChessAnalyzer/1.0 (Chess analysis tool; contact: chessaicoach.com)",
         "Accept": "application/json",
     }
 

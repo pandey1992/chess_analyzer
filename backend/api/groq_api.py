@@ -166,20 +166,42 @@ TASK: Create a comprehensive, personalized 4-week study plan that:
 1. **PRIORITIZES THE MOST CRITICAL WEAKNESSES FIRST** (especially {worst_phase} phase and any critical issues)
 2. Provides week-by-week breakdown with specific daily focus areas (30-60 min sessions)
 3. Includes concrete, actionable tasks for each day
-4. Recommends specific resources:
-   - YouTube channels/videos for visual learners
-   - Chess.com/Lichess training tools
-   - Books for deeper study
-   - Online courses if applicable
+4. Recommends resources ONLY from the APPROVED LIST below — do NOT invent or hallucinate any URLs
 5. Sets measurable improvement goals
 6. Addresses time management if it's an issue
 7. Balances opening study, tactical training, endgame practice, and game analysis
 8. Makes it practical for someone with limited time
 
+APPROVED RESOURCE LIST (use ONLY these links — do NOT generate any other URLs):
+- Tactics Training: https://lichess.org/training (free unlimited puzzles)
+- Endgame Puzzles: https://lichess.org/training/endgame
+- Lichess Practice Positions: https://lichess.org/practice (common positions to master)
+- Lichess Opening Explorer: https://lichess.org/opening
+- Lichess Studies: https://lichess.org/study (community studies)
+- Chess.com Lessons: https://www.chess.com/lessons
+- Chess.com Opening Lessons: https://www.chess.com/lessons/openings
+- Chess.com Strategy Lessons: https://www.chess.com/lessons/strategy
+- Chess.com Puzzles: https://www.chess.com/puzzles
+- Chess.com Endgame Practice: https://www.chess.com/practice/drills/endgame-practice
+- Chess.com Opening Explorer: https://www.chess.com/openings
+- YouTube — GothamChess (IM Levy Rozman): https://www.youtube.com/@GothamChess (openings, beginner-intermediate)
+- YouTube — GM Daniel Naroditsky: https://www.youtube.com/@DanielNaroditskyGM (endgames, rating climbs, all levels)
+- YouTube — Hanging Pawns (Stjepan Tomic): https://www.youtube.com/@HangingPawns (strategy, middlegame, advanced)
+- YouTube — John Bartholomew (IM): https://www.youtube.com/@JohnBartholomewChess (structured lessons, climbing ratings)
+- YouTube — ChessNetwork: https://www.youtube.com/@ChessNetwork (openings, master games)
+- YouTube — St. Louis Chess Club: https://www.youtube.com/@STLChessClub (GM lectures, all topics)
+- YouTube — Eric Rosen (IM): https://www.youtube.com/@Eric-Rosen (creative strategies, instructive)
+- Book: "Silman's Complete Endgame Course" by Jeremy Silman (endgames)
+- Book: "Logical Chess: Move by Move" by Irving Chernev (game understanding)
+- Book: "My System" by Aron Nimzowitsch (positional play)
+- Book: "Tactics Time" by Tim Brennan (tactical patterns)
+
+IMPORTANT: When recommending YouTube channels, link to the channel URL from the list above. Do NOT create specific video links as they may not exist. Instead, say "Search [channel name] for [topic]".
+
 Format each week clearly with:
 ## Week [Number]: [Theme]
 ### Day 1-7: Specific daily tasks
-- Include exact exercises, puzzles counts, video links when possible
+- Include exact exercises, puzzle counts, and resource recommendations from the approved list
 
 Make this actionable and specific, not generic advice. The player needs concrete steps to improve."""
 

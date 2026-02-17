@@ -2,5 +2,5 @@
 const CONFIG = {
     API_BASE: window.location.origin + '/api',
     APP_VERSION: '1.0.0',
-    APP_NAME: 'Chess Analyzer',
+    APP_NAME: 'Chess AI Coach',
 };

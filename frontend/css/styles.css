@@ -442,6 +442,14 @@
             background: #059669;
         }
 
+        .resource-link.lichess {
+            background: #b58863;
+        }
+
+        .resource-link.lichess:hover {
+            background: #9a7350;
+        }
+
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -901,6 +909,23 @@
         .plan-content em {
             color: #718096;
             font-style: italic;
+        }
+
+        .study-plan-link {
+            display: inline-block;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+            padding: 1px 4px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .study-plan-link:hover {
+            color: #5a67d8;
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom-color: #5a67d8;
         }
 
         .study-plan-actions {

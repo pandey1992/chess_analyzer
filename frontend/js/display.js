@@ -287,18 +287,21 @@ function displayStudyRecommendations(stats) {
         let resources = [];
         if (phases[0].name === 'Opening') {
             resources = [
-                { type: 'youtube', url: 'https://www.youtube.com/results?search_query=chess+opening+principles', label: '📺 Opening Principles' },
-                { type: 'article', url: 'https://www.chess.com/lessons', label: '📖 Chess Lessons' }
+                { type: 'youtube', url: 'https://www.youtube.com/@GothamChess/search?query=opening+principles', label: '📺 Opening Principles' },
+                { type: 'article', url: 'https://www.chess.com/lessons/openings', label: '📖 Opening Lessons' },
+                { type: 'lichess', url: 'https://lichess.org/practice', label: '♟️ Lichess Practice' }
             ];
         } else if (phases[0].name === 'Middlegame') {
             resources = [
-                { type: 'youtube', url: 'https://www.youtube.com/results?search_query=chess+middlegame+tactics', label: '📺 Middlegame Tactics' },
-                { type: 'article', url: 'https://www.chess.com/puzzles', label: '📖 Tactics Puzzles' }
+                { type: 'youtube', url: 'https://www.youtube.com/@HangingPawns/search?query=middlegame+strategy', label: '📺 Middlegame Strategy' },
+                { type: 'article', url: 'https://www.chess.com/puzzles', label: '📖 Tactics Puzzles' },
+                { type: 'lichess', url: 'https://lichess.org/training', label: '♟️ Lichess Puzzles' }
             ];
         } else {
             resources = [
-                { type: 'youtube', url: 'https://www.youtube.com/results?search_query=chess+endgame+basics', label: '📺 Endgame Basics' },
-                { type: 'article', url: 'https://www.chess.com/drills/practice', label: '📖 Endgame Practice' }
+                { type: 'youtube', url: 'https://www.youtube.com/@DanielNaroditskyGM/search?query=endgame', label: '📺 Endgame Lessons' },
+                { type: 'article', url: 'https://www.chess.com/practice/drills/endgame-practice', label: '📖 Endgame Drills' },
+                { type: 'lichess', url: 'https://lichess.org/practice', label: '♟️ Lichess Endgames' }
             ];
         }
 
@@ -328,15 +331,16 @@ function displayStudyRecommendations(stats) {
         .sort((a, b) => a.winRate - b.winRate);
 
     if (worstOpenings.length > 0 && worstOpenings[0].winRate < 40) {
-        const openingSearchName = worstOpenings[0].name.toLowerCase().replace(/ /g, '+');
+        const openingSearchName = encodeURIComponent(worstOpenings[0].name);
         recommendations.push({
             priority: 'HIGH',
             title: `Fix Your ${worstOpenings[0].name}`,
             impact: `Currently losing ${worstOpenings[0].losses} games with this opening (${worstOpenings[0].winRate.toFixed(0)}% win rate)`,
             actions: `Study the key ideas and common traps in this opening. Consider whether to deepen your knowledge or switch to a more reliable alternative.`,
             resources: [
-                { type: 'youtube', url: `https://www.youtube.com/results?search_query=${openingSearchName}+chess`, label: `📺 ${worstOpenings[0].name}` },
-                { type: 'article', url: `https://www.chess.com/explorer`, label: '📖 Opening Explorer' }
+                { type: 'youtube', url: `https://www.youtube.com/@GothamChess/search?query=${openingSearchName}`, label: `📺 ${worstOpenings[0].name}` },
+                { type: 'article', url: 'https://www.chess.com/openings', label: '📖 Opening Explorer' },
+                { type: 'lichess', url: `https://lichess.org/opening/${openingSearchName}`, label: '♟️ Lichess Opening' }
             ]
         });
     }
@@ -372,11 +376,14 @@ function displayStudyRecommendations(stats) {
                     and gradually expanding your opening repertoire. Consistency is key!
                 </div>
                 <div class="study-resources">
-                    <a href="https://www.youtube.com/results?search_query=chess+improvement+tips" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
-                        📺 Chess Improvement
+                    <a href="https://www.youtube.com/@DanielNaroditskyGM/playlists" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
+                        📺 GM Naroditsky
                     </a>
                     <a href="https://www.chess.com/lessons" target="_blank" rel="noopener noreferrer" class="resource-link article">
                         📖 Chess Lessons
+                    </a>
+                    <a href="https://lichess.org/training" target="_blank" rel="noopener noreferrer" class="resource-link lichess">
+                        ♟️ Daily Puzzles
                     </a>
                 </div>
             </div>
@@ -496,8 +503,11 @@ function displayTimeManagement(stats) {
                     </ul>
                 </div>
                 <div class="study-resources">
-                    <a href="https://www.youtube.com/results?search_query=chess+time+management" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
+                    <a href="https://www.youtube.com/@JohnBartholomewChess/search?query=time+management" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
                         📺 Time Management Tips
+                    </a>
+                    <a href="https://www.chess.com/article/view/the-art-of-time-management" target="_blank" rel="noopener noreferrer" class="resource-link article">
+                        📖 Time Strategy Guide
                     </a>
                 </div>
             </div>
@@ -817,11 +827,14 @@ function displayEndgameAnalysis(stats) {
                     You've lost ${worstEndgame.losses} games in ${worstEndgame.type} positions with equal material.
                 </p>
                 <div class="study-resources">
-                    <a href="https://www.youtube.com/results?search_query=${searchTerm}+chess+endgame" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
+                    <a href="https://www.youtube.com/@DanielNaroditskyGM/search?query=${searchTerm}+endgame" target="_blank" rel="noopener noreferrer" class="resource-link youtube">
                         📺 ${worstEndgame.type} Tutorial
                     </a>
-                    <a href="https://www.chess.com/drills/practice" target="_blank" rel="noopener noreferrer" class="resource-link article">
-                        📖 Practice Endgames
+                    <a href="https://www.chess.com/practice/drills/endgame-practice" target="_blank" rel="noopener noreferrer" class="resource-link article">
+                        📖 Endgame Drills
+                    </a>
+                    <a href="https://lichess.org/practice" target="_blank" rel="noopener noreferrer" class="resource-link lichess">
+                        ♟️ Lichess Endgames
                     </a>
                 </div>
             </div>
@@ -1217,14 +1230,51 @@ function renderAccuracyTrendChart(gameAccuracies) {
 }
 
 function formatStudyPlan(plan) {
+    // Approved domains — only make links clickable if they match trusted sources
+    const approvedDomains = [
+        'lichess.org',
+        'chess.com',
+        'www.chess.com',
+        'youtube.com',
+        'www.youtube.com'
+    ];
+
     // Convert markdown-style formatting to HTML
     let formatted = plan
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/^### (.*$)/gm, '<h4>$1</h4>')
         .replace(/^## (.*$)/gm, '<h3>$1</h3>')
-        .replace(/^# (.*$)/gm, '<h2>$1</h2>')
-        .replace(/\n/g, '<br>');
+        .replace(/^# (.*$)/gm, '<h2>$1</h2>');
+
+    // Convert markdown links [text](url) to clickable HTML links (only approved domains)
+    formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (match, text, url) => {
+        try {
+            const hostname = new URL(url).hostname;
+            if (approvedDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain))) {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="study-plan-link">${text}</a>`;
+            }
+        } catch (e) {}
+        return text;
+    });
+
+    // Convert raw URLs to clickable links (only approved domains)
+    formatted = formatted.replace(/(https?:\/\/[^\s<)"]+)/g, (match, url) => {
+        // Skip if already inside an <a> tag
+        if (formatted.indexOf(`href="${url}"`) !== -1) return match;
+        try {
+            const hostname = new URL(url).hostname;
+            if (approvedDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain))) {
+                const label = hostname.includes('youtube') ? '📺 Watch' :
+                              hostname.includes('lichess') ? '♟️ Lichess' :
+                              hostname.includes('chess.com') ? '📖 Chess.com' : '🔗 Link';
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="study-plan-link">${label}</a>`;
+            }
+        } catch (e) {}
+        return url;
+    });
+
+    formatted = formatted.replace(/\n/g, '<br>');
 
     return `<div class="plan-content">${formatted}</div>`;
 }

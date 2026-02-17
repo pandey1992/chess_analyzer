@@ -24,7 +24,7 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 60
       - key: CORS_ORIGINS
-        value: https://chess-analyzer.onrender.com
+        value: https://chessaicoach.com,https://www.chessaicoach.com
       - key: ENVIRONMENT
         value: production
       - key: STOCKFISH_PATH
