@@ -142,3 +142,13 @@ app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="
 @app.get("/")
 async def serve_frontend():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
+
+@app.get("/privacy")
+async def serve_privacy_policy():
+    return FileResponse(os.path.join(FRONTEND_DIR, "privacy.html"))
+
+
+@app.get("/terms")
+async def serve_terms_of_service():
+    return FileResponse(os.path.join(FRONTEND_DIR, "terms.html"))

@@ -1188,6 +1188,24 @@
             text-decoration: underline;
         }
 
+        .auth-legal {
+            margin-top: 12px;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 0.82em;
+            line-height: 1.5;
+        }
+
+        .auth-legal a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-legal a:hover {
+            text-decoration: underline;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
