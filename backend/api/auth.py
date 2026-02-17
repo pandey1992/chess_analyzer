@@ -132,6 +132,12 @@ def _verify_google_id_token(token: str) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Google token",
         )
+    except Exception:
+        logger.exception("Google token verification failed")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google sign-in verification is temporarily unavailable",
+        )
 
 
 @router.post("/register", response_model=TokenResponse)
