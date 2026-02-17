@@ -23,6 +23,8 @@ services:
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 60
+      - key: GOOGLE_CLIENT_ID
+        sync: false
       - key: CORS_ORIGINS
         value: https://chessaicoach.com,https://www.chessaicoach.com
       - key: ENVIRONMENT

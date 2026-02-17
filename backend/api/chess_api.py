@@ -538,6 +538,7 @@ async def lichess_dashboard(
             }
             for phase, accs in phase_all.items()
         },
+        "phase_data_points": {phase: len(accs) for phase, accs in phase_all.items()},
         "move_quality": total_move_quality,
         "game_accuracies": game_accuracies,
     }
@@ -705,6 +706,7 @@ async def chesscom_dashboard(
         for ga in game_accuracies
         if ga.get("_pgn")
     ]
+    batch_results = []
 
     if games_for_stockfish:
         try:
@@ -799,6 +801,11 @@ async def chesscom_dashboard(
                 "moves_analyzed": len(accs),
             }
             for phase, accs in phase_all.items()
+        },
+        "phase_data_points": {phase: len(accs) for phase, accs in phase_all.items()},
+        "stockfish_summary": {
+            "requested_games": len(games_for_stockfish),
+            "analyzed_games": sum(1 for r in batch_results if r) if games_for_stockfish else 0,
         },
         "move_quality": total_move_quality,
         "game_accuracies": game_accuracies,

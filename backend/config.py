@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     # Auth
     access_token_expire_minutes: int = 1440  # 24h dev, override to 60 in production
+    google_client_id: str = ""
 
     # External APIs
     chess_com_api_base: str = "https://api.chess.com/pub"

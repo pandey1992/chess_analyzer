@@ -87,6 +87,23 @@ const ChessAPI = {
         return data;
     },
 
+    async googleAuth(idToken) {
+        const response = await fetch(`${CONFIG.API_BASE}/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_token: idToken })
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Google authentication failed');
+        }
+
+        const data = await response.json();
+        this.setToken(data.access_token);
+        return data;
+    },
+
     // Token management
     getToken() {
         return localStorage.getItem('auth_token');

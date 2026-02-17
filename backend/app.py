@@ -1,5 +1,6 @@
 import os
 import logging
+import mimetypes
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
@@ -20,6 +21,11 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("chess_analyzer")
+
+# Ensure correct MIME types for static assets on Windows environments where
+# .js can be mapped to text/plain via system registry settings.
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
 
 # --- Rate Limiter ---
 limiter = Limiter(key_func=get_remote_address)
@@ -64,17 +70,23 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.url.path.startswith("/js/") or request.url.path.startswith("/css/"):
+        # Avoid stale browser cache metadata (e.g., old MIME types) for static assets.
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     if settings.is_production:
         response.headers["Strict-Transport-Security"] = (
             "max-age=31536000; includeSubDomains"
         )
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
-            "connect-src 'self'; "
-            "font-src 'self'"
+            "connect-src 'self' https://accounts.google.com; "
+            "font-src 'self'; "
+            "frame-src 'self' https://accounts.google.com"
         )
     return response
 
@@ -82,7 +94,19 @@ async def add_security_headers(request: Request, call_next):
 # --- Health Check Endpoints ---
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "environment": settings.environment.value}
+    return {
+        "status": "ok",
+        "environment": settings.environment.value,
+        "google_auth_enabled": bool(settings.google_client_id),
+    }
+
+
+@app.get("/health/auth")
+async def auth_health_check():
+    return {
+        "status": "ok",
+        "google_auth_enabled": bool(settings.google_client_id),
+    }
 
 
 @app.get("/ready")

@@ -376,4 +376,32 @@ window.onclick = function(event) {
     }
 }
 
-console.log('Chess Analyzer loaded successfully');
+// ==================== App Initialization ====================
+let appInitialized = false;
+
+async function initApp() {
+    if (appInitialized) return;
+    appInitialized = true;
+
+    // Check if user is already logged in, but do not block router boot.
+    try {
+        await Promise.race([
+            Auth.checkAuth(),
+            new Promise((resolve) => setTimeout(resolve, 3000))
+        ]);
+    } catch (error) {
+        console.warn('Auth check failed during startup:', error);
+    }
+
+    // Initialize the router (shows correct page based on hash + auth state)
+    Router.init();
+
+    console.log('Chess AI Coach loaded successfully');
+}
+
+// Initialize safely whether script runs before or after DOMContentLoaded.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp, { once: true });
+} else {
+    initApp();
+}

@@ -1156,13 +1156,14 @@ function _phaseCard(name, movesDesc, icon, phaseData) {
     const acc = phaseData ? phaseData.accuracy : null;
     const moves = phaseData ? phaseData.moves_analyzed : 0;
     const accColor = acc !== null ? (acc >= 80 ? '#38a169' : acc >= 60 ? '#d69e2e' : '#e53e3e') : '#a0aec0';
+    const accText = acc !== null ? `${acc}%` : 'Not enough analyzed data yet';
 
     return `
         <div class="phase-card">
             <div class="phase-icon">${icon}</div>
             <div class="phase-name">${name}</div>
             <div class="phase-moves">${movesDesc}</div>
-            <div class="phase-accuracy" style="color: ${accColor}">${acc !== null ? acc + '%' : 'N/A'}</div>
+            <div class="phase-accuracy" style="color: ${accColor}">${accText}</div>
             <div class="accuracy-bar">
                 <div class="accuracy-bar-fill" style="width: ${acc || 0}%; background: ${accColor}"></div>
             </div>
