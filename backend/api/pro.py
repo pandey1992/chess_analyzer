@@ -144,6 +144,43 @@ async def generate_puzzles(
         if len(generated) >= body.max_puzzles:
             break
 
+    # Fallback pass: if nothing generated, relax threshold to capture candidate mistakes.
+    if not generated and body.min_cp_loss > 80:
+        relaxed_threshold = 80
+        for game in selected_games:
+            candidates = extract_mistake_puzzles(
+                pgn_text=game.pgn,
+                username=body.username,
+                stockfish_path=stockfish_path,
+                depth=12,
+                min_cp_loss=relaxed_threshold,
+                max_puzzles=max_per_game,
+            )
+            for c in candidates:
+                key = f"{c['fen']}|{c['best_move_uci']}"
+                if key in dedupe:
+                    continue
+                dedupe.add(key)
+                puzzle = ProPuzzle(
+                    user_id=current_user.id,
+                    source_username=body.username,
+                    game_url=game.url,
+                    fen=c["fen"],
+                    move_number=c["move_number"],
+                    bad_move_san=c.get("bad_move_san"),
+                    bad_move_uci=c.get("bad_move_uci"),
+                    best_move_san=c["best_move_san"],
+                    best_move_uci=c["best_move_uci"],
+                    accepted_moves_json=json.dumps(c["accepted_moves"]),
+                    cp_loss=c["cp_loss"],
+                )
+                db.add(puzzle)
+                generated.append(puzzle)
+                if len(generated) >= body.max_puzzles:
+                    break
+            if len(generated) >= body.max_puzzles:
+                break
+
     if generated:
         await db.commit()
         for puzzle in generated:

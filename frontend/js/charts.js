@@ -1,7 +1,11 @@
 // Chart.js visualization functions - extracted from chess_analyzer_v2_with_study_plan.html
 
 function displayColorChart(stats) {
-    const ctx = document.getElementById('colorChart').getContext('2d');
+    const canvas = document.getElementById('colorChart');
+    if (!canvas) return;
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    const ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -47,7 +51,11 @@ function displayOpeningChart(stats) {
         .sort((a, b) => b.total - a.total)
         .slice(0, 8);
 
-    const ctx = document.getElementById('openingChart').getContext('2d');
+    const canvas = document.getElementById('openingChart');
+    if (!canvas) return;
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    const ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {

@@ -1049,6 +1049,7 @@ function displayDashboard(data) {
     const byColor = data.by_color;
     const byPhase = data.by_phase;
     const mq = data.move_quality;
+    const sf = data.stockfish_summary || null;
 
     let html = `
         <div class="dashboard-section">
@@ -1084,6 +1085,12 @@ function displayDashboard(data) {
                     ` : `<div class="dash-card-value">-</div>`}
                 </div>
             </div>
+
+            ${sf && sf.requested_games > 0 && sf.analyzed_games === 0 ? `
+                <div class="pro-puzzle-empty" style="margin: 8px 0 18px; color: #9b2c2c;">
+                    Stockfish phase analysis is currently unavailable, so phase accuracy and move-quality details may be missing.
+                </div>
+            ` : ''}
 
             <!-- Phase Accuracy -->
             <div class="dashboard-phase-section">

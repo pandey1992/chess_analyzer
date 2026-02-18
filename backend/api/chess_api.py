@@ -707,10 +707,13 @@ async def chesscom_dashboard(
         if ga.get("_pgn")
     ]
     batch_results = []
+    stockfish_error = None
+    fallback_used = False
+    stockfish_analyzed_count = 0
 
     if games_for_stockfish:
+        loop = asyncio.get_event_loop()
         try:
-            loop = asyncio.get_event_loop()
             logger.info(f"Running Stockfish batch analysis on {len(games_for_stockfish)} games (depth 15)...")
             batch_results = await loop.run_in_executor(
                 None,
@@ -719,7 +722,8 @@ async def chesscom_dashboard(
                 stockfish_path,
                 15,
             )
-            logger.info(f"Stockfish batch done: {sum(1 for r in batch_results if r)}/{len(batch_results)} games analyzed")
+            stockfish_analyzed_count = sum(1 for r in batch_results if r)
+            logger.info(f"Stockfish batch done: {stockfish_analyzed_count}/{len(batch_results)} games analyzed")
 
             # Replace Chess.com accuracy with Stockfish accuracy for consistency
             stockfish_accuracies = []
@@ -758,6 +762,63 @@ async def chesscom_dashboard(
 
         except Exception as e:
             logger.error(f"Batch Stockfish analysis failed: {e}", exc_info=True)
+            stockfish_error = str(e)
+
+        # Fallback path: if batch returns zero, try per-game analysis.
+        if stockfish_analyzed_count == 0 and games_for_stockfish:
+            fallback_used = True
+            logger.warning("Stockfish batch returned 0 analyses; trying per-game fallback analysis")
+            fallback_results = []
+            for ga in game_accuracies:
+                pgn = ga.get("_pgn")
+                if not pgn:
+                    fallback_results.append(None)
+                    continue
+                try:
+                    analysis = await loop.run_in_executor(
+                        None,
+                        analyze_game_pgn,
+                        pgn,
+                        username,
+                        stockfish_path,
+                        12,
+                    )
+                    fallback_results.append(analysis)
+                except Exception as e:
+                    logger.warning(f"Per-game Stockfish fallback failed: {e}")
+                    fallback_results.append(None)
+
+            if any(fallback_results):
+                stockfish_accuracies = []
+                stockfish_white_accs = []
+                stockfish_black_accs = []
+
+                for idx, ga in enumerate(game_accuracies):
+                    analysis = fallback_results[idx] if idx < len(fallback_results) else None
+                    if not analysis:
+                        continue
+                    sf_acc = analysis["overall_accuracy"]
+                    stockfish_accuracies.append(sf_acc)
+                    ga["accuracy"] = round(sf_acc, 1)
+
+                    if ga["color"] == "white":
+                        stockfish_white_accs.append(sf_acc)
+                    else:
+                        stockfish_black_accs.append(sf_acc)
+
+                    for phase in ("opening", "middlegame", "endgame"):
+                        pa = analysis["phase_accuracy"].get(phase, {})
+                        if pa.get("accuracy") is not None:
+                            phase_all[phase].append(pa["accuracy"])
+                    total_move_quality["inaccuracy"] += analysis["move_quality"]["inaccuracy"]
+                    total_move_quality["mistake"] += analysis["move_quality"]["mistake"]
+                    total_move_quality["blunder"] += analysis["move_quality"]["blunder"]
+
+                if stockfish_accuracies:
+                    all_accuracies = stockfish_accuracies
+                    white_accuracies = stockfish_white_accs
+                    black_accuracies = stockfish_black_accs
+                    stockfish_analyzed_count = len(stockfish_accuracies)
 
     # Clean up temporary PGN data from game_accuracies
     for ga in game_accuracies:
@@ -805,7 +866,9 @@ async def chesscom_dashboard(
         "phase_data_points": {phase: len(accs) for phase, accs in phase_all.items()},
         "stockfish_summary": {
             "requested_games": len(games_for_stockfish),
-            "analyzed_games": sum(1 for r in batch_results if r) if games_for_stockfish else 0,
+            "analyzed_games": stockfish_analyzed_count if games_for_stockfish else 0,
+            "fallback_used": fallback_used,
+            "error": stockfish_error,
         },
         "move_quality": total_move_quality,
         "game_accuracies": game_accuracies,
