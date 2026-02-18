@@ -10,7 +10,6 @@ let proPuzzleBoards = {};
 let proPuzzleCurrentIndex = 0;
 let proPuzzleProgress = {};
 let proPuzzleDragSource = null;
-let proPuzzleFeedbackState = null;
 
 function selectPlatform(platform) {
     currentPlatform = platform;
@@ -107,7 +106,6 @@ async function generateProPuzzles() {
         proPuzzleCurrentIndex = 0;
         proPuzzleProgress = {};
         proPuzzleBoards = {};
-        proPuzzleFeedbackState = null;
         renderProPuzzles();
     } catch (error) {
         resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
@@ -138,7 +136,6 @@ async function loadProPuzzles() {
         proPuzzleCurrentIndex = 0;
         proPuzzleProgress = {};
         proPuzzleBoards = {};
-        proPuzzleFeedbackState = null;
         renderProPuzzles();
     } catch (error) {
         resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
@@ -197,7 +194,7 @@ function renderProPuzzles() {
     renderCurrentProPuzzle();
 }
 
-function renderCurrentProPuzzle(preservedFeedback = null) {
+function renderCurrentProPuzzle() {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
 
@@ -214,15 +211,8 @@ function renderCurrentProPuzzle(preservedFeedback = null) {
     if (title) title.textContent = `Puzzle ${proPuzzleCurrentIndex + 1} / ${proPuzzles.length}`;
     if (sub) sub.textContent = `Move ${puzzle.move_number} | Eval Drop ${puzzle.cp_loss} | ${status.toUpperCase()}`;
     if (feedback) {
-        const effectiveFeedback = preservedFeedback
-            || (proPuzzleFeedbackState && proPuzzleFeedbackState.puzzleId === puzzle.id ? proPuzzleFeedbackState : null);
-        if (effectiveFeedback && effectiveFeedback.text) {
-            feedback.textContent = effectiveFeedback.text;
-            feedback.className = effectiveFeedback.className || 'pro-puzzle-feedback';
-        } else {
-            feedback.textContent = '';
-            feedback.className = 'pro-puzzle-feedback';
-        }
+        feedback.textContent = '';
+        feedback.className = 'pro-puzzle-feedback';
     }
 
     const remainingPill = document.getElementById('proRemainingPill');
@@ -398,16 +388,11 @@ function pieceToImageUrl(piece) {
     return `https://cdn.jsdelivr.net/gh/oakmac/chessboardjs/website/img/chesspieces/wikipedia/${code}.png`;
 }
 
-function resetCurrentProPuzzle(preservedFeedback = null) {
+function resetCurrentProPuzzle() {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
     proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
-    if (preservedFeedback && preservedFeedback.text) {
-        proPuzzleFeedbackState = { ...preservedFeedback, puzzleId: puzzle.id };
-    } else {
-        proPuzzleFeedbackState = null;
-    }
-    renderCurrentProPuzzle(preservedFeedback);
+    renderCurrentProPuzzle();
 }
 
 function resetProPuzzleBoard() {
@@ -425,21 +410,11 @@ async function submitCurrentProPuzzle(moveOverride = null) {
     if (!move) {
         feedback.textContent = 'Make a move on the board first.';
         feedback.className = 'pro-puzzle-feedback error';
-        proPuzzleFeedbackState = {
-            puzzleId: puzzle.id,
-            text: 'Make a move on the board first.',
-            className: 'pro-puzzle-feedback error'
-        };
         return;
     }
 
     feedback.textContent = 'Checking...';
     feedback.className = 'pro-puzzle-feedback';
-    proPuzzleFeedbackState = {
-        puzzleId: puzzle.id,
-        text: 'Checking...',
-        className: 'pro-puzzle-feedback'
-    };
 
     try {
         const result = await ChessAPI.attemptProPuzzle(puzzle.id, move);
@@ -447,37 +422,19 @@ async function submitCurrentProPuzzle(moveOverride = null) {
         if (result.correct) {
             feedback.textContent = result.message || 'Correct.';
             feedback.className = 'pro-puzzle-feedback success';
-            proPuzzleFeedbackState = {
-                puzzleId: puzzle.id,
-                text: result.message || 'Correct.',
-                className: 'pro-puzzle-feedback success'
-            };
             proPuzzleProgress[puzzle.id].status = 'solved';
             setTimeout(() => moveToNextUnsolvedOrStay(), 650);
         } else {
             const incorrectText = 'Incorrect, try again';
             feedback.textContent = incorrectText;
             feedback.className = 'pro-puzzle-feedback error';
-            proPuzzleFeedbackState = {
-                puzzleId: puzzle.id,
-                text: incorrectText,
-                className: 'pro-puzzle-feedback error'
-            };
             setTimeout(() => {
-                resetCurrentProPuzzle({
-                    text: incorrectText,
-                    className: 'pro-puzzle-feedback error'
-                });
-            }, 900);
+                resetCurrentProPuzzle();
+            }, 1100);
         }
     } catch (error) {
         feedback.textContent = error.message || 'Could not submit answer.';
         feedback.className = 'pro-puzzle-feedback error';
-        proPuzzleFeedbackState = {
-            puzzleId: puzzle.id,
-            text: error.message || 'Could not submit answer.',
-            className: 'pro-puzzle-feedback error'
-        };
     }
 }
 
@@ -491,7 +448,6 @@ async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
 }
 
 function moveToNextUnsolvedOrStay() {
-    proPuzzleFeedbackState = null;
     for (let i = proPuzzleCurrentIndex + 1; i < proPuzzles.length; i++) {
         const p = proPuzzles[i];
         if ((proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
@@ -518,14 +474,12 @@ function moveToNextUnsolvedOrStay() {
 
 function goPrevProPuzzle() {
     if (proPuzzleCurrentIndex <= 0) return;
-    proPuzzleFeedbackState = null;
     proPuzzleCurrentIndex -= 1;
     renderCurrentProPuzzle();
 }
 
 function goNextProPuzzle() {
     if (proPuzzleCurrentIndex >= proPuzzles.length - 1) return;
-    proPuzzleFeedbackState = null;
     proPuzzleCurrentIndex += 1;
     renderCurrentProPuzzle();
 }
@@ -533,7 +487,6 @@ function goNextProPuzzle() {
 function skipCurrentProPuzzle() {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
-    proPuzzleFeedbackState = null;
     proPuzzleProgress[puzzle.id].status = 'skipped';
     moveToNextUnsolvedOrStay();
 }
@@ -544,13 +497,15 @@ function clearProPuzzleSession(reason = 'logged_out') {
     proPuzzleCurrentIndex = 0;
     proPuzzleProgress = {};
     proPuzzleDragSource = null;
-    proPuzzleFeedbackState = null;
 
     const resultsEl = document.getElementById('proPuzzleResults');
     if (resultsEl) {
-        const msg = reason === 'guest'
-            ? 'Continue as guest is enabled. Log in to use Pro puzzle training.'
-            : 'Log in to generate and load Pro puzzles.';
+        let msg = 'Log in to generate and load Pro puzzles.';
+        if (reason === 'guest') {
+            msg = 'Continue as guest is enabled. Log in to use Pro puzzle training.';
+        } else if (reason === 'signed_in') {
+            msg = 'No puzzles loaded yet. Click "Generate Puzzles From My Mistakes" or "Load Saved Puzzles".';
+        }
         resultsEl.innerHTML = `<div class="pro-puzzle-empty">${msg}</div>`;
     }
 }

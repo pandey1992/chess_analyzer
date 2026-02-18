@@ -58,6 +58,9 @@ const Auth = {
             await ChessAPI.login(email, password);
             localStorage.removeItem('guest_mode');
             await this.checkAuth();
+            if (typeof window.clearProPuzzleSession === 'function') {
+                window.clearProPuzzleSession('signed_in');
+            }
             Router.navigate('app');
         } catch (err) {
             errorEl.textContent = err.message || 'Login failed. Please check your credentials.';
@@ -107,6 +110,9 @@ const Auth = {
             await ChessAPI.register(username, email, password);
             localStorage.removeItem('guest_mode');
             await this.checkAuth();
+            if (typeof window.clearProPuzzleSession === 'function') {
+                window.clearProPuzzleSession('signed_in');
+            }
             Router.navigate('app');
         } catch (err) {
             errorEl.textContent = err.message || 'Registration failed. Please try again.';
