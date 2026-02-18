@@ -3,6 +3,7 @@ import logging
 import mimetypes
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
@@ -14,8 +15,12 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from backend.config import settings
-from backend.database import engine, Base
+from sqlalchemy import delete
+
+from backend.database import engine, Base, AsyncSessionLocal
 from backend.api import chess_api, groq_api, auth, pro
+from backend.models.auth_event import AuthEvent
+from backend.models.pro_puzzle import ProPuzzleAttempt
 import chess.engine
 
 # Windows + python-chess: subprocess-based UCI engines require Proactor loop.
@@ -47,8 +52,33 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting Chess Analyzer ({settings.environment.value} mode)")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await _prune_old_records()
     yield
     logger.info("Shutting down Chess Analyzer")
+
+
+async def _prune_old_records() -> None:
+    """Best-effort cleanup to keep free-tier DB/storage pressure low."""
+    try:
+        auth_cutoff = datetime.utcnow() - timedelta(days=settings.auth_events_retention_days)
+        attempts_cutoff = datetime.utcnow() - timedelta(days=settings.puzzle_attempts_retention_days)
+
+        async with AsyncSessionLocal() as session:
+            auth_res = await session.execute(
+                delete(AuthEvent).where(AuthEvent.created_at < auth_cutoff)
+            )
+            attempts_res = await session.execute(
+                delete(ProPuzzleAttempt).where(ProPuzzleAttempt.created_at < attempts_cutoff)
+            )
+            await session.commit()
+
+        logger.info(
+            "Startup cleanup complete: deleted auth_events=%s, puzzle_attempts=%s",
+            getattr(auth_res, "rowcount", None),
+            getattr(attempts_res, "rowcount", None),
+        )
+    except Exception:
+        logger.exception("Startup cleanup failed")
 
 
 app = FastAPI(

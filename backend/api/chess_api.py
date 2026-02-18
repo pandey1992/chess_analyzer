@@ -618,8 +618,17 @@ async def chesscom_dashboard(
                 pass
         return _empty_dashboard(username, "chesscom")
 
-    # Sort by most recent first and limit to 20 games for Stockfish analysis
-    MAX_STOCKFISH_GAMES = 20
+    # Render free tier can timeout on deep analysis. Use safer defaults in production.
+    max_games_cfg = settings.dashboard_stockfish_max_games
+    depth_cfg = settings.dashboard_stockfish_depth
+    fallback_depth_cfg = settings.dashboard_stockfish_fallback_depth
+    if settings.is_production:
+        max_games_cfg = min(max_games_cfg, 8)
+        depth_cfg = min(depth_cfg, 12)
+        fallback_depth_cfg = min(fallback_depth_cfg, 10)
+
+    # Sort by most recent first and limit games for Stockfish analysis
+    MAX_STOCKFISH_GAMES = max_games_cfg
     all_games.sort(key=lambda g: g.get("end_time", 0), reverse=True)
     all_games = all_games[:MAX_STOCKFISH_GAMES]
 
@@ -714,13 +723,16 @@ async def chesscom_dashboard(
     if games_for_stockfish:
         loop = asyncio.get_event_loop()
         try:
-            logger.info(f"Running Stockfish batch analysis on {len(games_for_stockfish)} games (depth 15)...")
+            logger.info(
+                f"Running Stockfish batch analysis on {len(games_for_stockfish)} games "
+                f"(depth {depth_cfg}, max_games {MAX_STOCKFISH_GAMES})..."
+            )
             batch_results = await loop.run_in_executor(
                 None,
                 analyze_games_batch,
                 games_for_stockfish,
                 stockfish_path,
-                15,
+                depth_cfg,
             )
             stockfish_analyzed_count = sum(1 for r in batch_results if r)
             logger.info(f"Stockfish batch done: {stockfish_analyzed_count}/{len(batch_results)} games analyzed")
@@ -781,7 +793,7 @@ async def chesscom_dashboard(
                         pgn,
                         username,
                         stockfish_path,
-                        12,
+                        fallback_depth_cfg,
                     )
                     fallback_results.append(analysis)
                 except Exception as e:

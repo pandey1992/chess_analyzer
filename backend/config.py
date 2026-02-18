@@ -28,6 +28,13 @@ class Settings(BaseSettings):
 
     # Stockfish engine path
     stockfish_path: str = "stockfish.exe"
+    dashboard_stockfish_max_games: int = 20
+    dashboard_stockfish_depth: int = 15
+    dashboard_stockfish_fallback_depth: int = 12
+
+    # Data retention (days)
+    auth_events_retention_days: int = 30
+    puzzle_attempts_retention_days: int = 30
 
     # CORS
     cors_origins: str = "http://localhost:8000,http://localhost:3000"
