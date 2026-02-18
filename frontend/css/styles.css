@@ -1399,6 +1399,66 @@
             display: none;
         }
 
+        .error-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #9b2c2c;
+        }
+
+        .error-message {
+            line-height: 1.45;
+        }
+
+        .error-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .error-retry-btn {
+            background: #c53030;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .inline-error-card {
+            border: 1px solid #fecaca;
+            background: #fff5f5;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: left;
+        }
+
+        .inline-error-title {
+            font-weight: 700;
+            color: #9b2c2c;
+            margin-bottom: 6px;
+        }
+
+        .inline-error-message {
+            color: #7f1d1d;
+            line-height: 1.45;
+        }
+
+        .inline-error-actions {
+            margin-top: 10px;
+        }
+
+        .inline-error-retry {
+            background: #c53030;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         .hero-section {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
@@ -2866,6 +2926,16 @@
             .generate-plan-btn,
             .btn-pricing-primary,
             .btn-pricing-pro {
+                width: 100%;
+            }
+
+            .error-actions,
+            .inline-error-actions {
+                width: 100%;
+            }
+
+            .error-retry-btn,
+            .inline-error-retry {
                 width: 100%;
             }
 

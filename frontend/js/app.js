@@ -11,6 +11,22 @@ let proPuzzleCurrentIndex = 0;
 let proPuzzleProgress = {};
 let proPuzzleDragSource = null;
 
+function renderInlineErrorCard(container, title, message, retryLabel = '', onRetry = null) {
+    if (!container) return;
+    const retryBtnId = `retryBtn_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    container.innerHTML = `
+        <div class="inline-error-card">
+            <div class="inline-error-title">${title}</div>
+            <div class="inline-error-message">${message}</div>
+            ${retryLabel ? `<div class="inline-error-actions"><button id="${retryBtnId}" class="inline-error-retry">${retryLabel}</button></div>` : ''}
+        </div>
+    `;
+    if (retryLabel && typeof onRetry === 'function') {
+        const btn = document.getElementById(retryBtnId);
+        if (btn) btn.addEventListener('click', onRetry);
+    }
+}
+
 function selectPlatform(platform) {
     currentPlatform = platform;
 }
@@ -66,7 +82,12 @@ async function startAnalysis() {
         loadProPuzzles();
     } catch (error) {
         console.error('Error:', error);
-        showError(error.message || `Failed to fetch games from ${platformName}. Please check the username.`);
+        const errMsg = error.message || `Failed to fetch games from ${platformName}. Please check the username.`;
+        showError(errMsg, {
+            title: `Could not analyze ${platformName} games`,
+            retryLabel: 'Retry Analysis',
+            onRetry: () => startAnalysis()
+        });
         setLoadingStatus('Analysis failed', 'Please check username and try again', 100);
         hideLoading();
     }
@@ -115,7 +136,13 @@ async function generateProPuzzles() {
         proPuzzleBoards = {};
         renderProPuzzles();
     } catch (error) {
-        resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
+        renderInlineErrorCard(
+            resultsEl,
+            'Puzzle generation failed',
+            error.message || 'Could not generate puzzles right now.',
+            'Try Again',
+            () => generateProPuzzles()
+        );
     } finally {
         btn.disabled = false;
         btn.textContent = 'Generate Puzzles From My Mistakes';
@@ -145,7 +172,13 @@ async function loadProPuzzles() {
         proPuzzleBoards = {};
         renderProPuzzles();
     } catch (error) {
-        resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
+        renderInlineErrorCard(
+            resultsEl,
+            'Could not load saved puzzles',
+            error.message || 'Failed to fetch puzzle history.',
+            'Retry',
+            () => loadProPuzzles()
+        );
     }
 }
 
@@ -561,11 +594,16 @@ async function fetchWeeklyDashboard(username, gameTypes) {
     } catch (error) {
         console.error('Dashboard error:', error);
         dashboardSection.innerHTML = `
-            <div class="chart-container" style="text-align: center; padding: 30px;">
-                <h2>Weekly Accuracy Dashboard</h2>
-                <p style="color: #e53e3e; margin-top: 12px;">Could not load dashboard: ${error.message}</p>
-            </div>
+            <div id="dashboardErrorWrap" class="chart-container" style="text-align: center; padding: 30px;"></div>
         `;
+        const wrap = document.getElementById('dashboardErrorWrap');
+        renderInlineErrorCard(
+            wrap,
+            'Could not load weekly dashboard',
+            error.message || 'Dashboard data is temporarily unavailable.',
+            'Retry Dashboard',
+            () => fetchWeeklyDashboard(username, gameTypes)
+        );
     }
 }
 
