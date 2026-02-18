@@ -84,8 +84,8 @@ async def add_security_headers(request: Request, call_next):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://cdn.jsdelivr.net; "
             "connect-src 'self' https://accounts.google.com; "
             "font-src 'self'; "
             "frame-src 'self' https://accounts.google.com"

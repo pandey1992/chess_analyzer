@@ -6,6 +6,8 @@ let openingsVisible = 10;
 let stats = {};
 let currentPlatform = 'chesscom';
 let proPuzzles = [];
+let proPuzzleBoards = {};
+let proPuzzleGames = {};
 
 function selectPlatform(platform) {
     currentPlatform = platform;
@@ -152,23 +154,96 @@ function renderProPuzzles() {
                 <span class="pro-pill">Move ${p.move_number}</span>
                 <span class="pro-pill danger">Eval Drop ${p.cp_loss}</span>
             </div>
-            <div class="pro-puzzle-fen">${p.fen}</div>
             <div class="pro-puzzle-meta">Find the best move in this position.</div>
+            <div class="pro-puzzle-board-wrap">
+                <div id="puzzleBoard${p.id}" class="pro-puzzle-board"></div>
+            </div>
             <div class="pro-puzzle-answer-row">
                 <input id="puzzleMove${p.id}" class="pro-puzzle-input" type="text" placeholder="Enter your move (e.g. Nf3 or g1f3)">
                 <button class="pro-puzzle-btn" onclick="submitProPuzzleAttempt(${p.id})">Check</button>
+                <button class="pro-puzzle-btn secondary" onclick="resetProPuzzleBoard(${p.id})">Reset</button>
             </div>
             <div id="puzzleFeedback${p.id}" class="pro-puzzle-feedback"></div>
+            <div class="pro-puzzle-fen">${p.fen}</div>
         </div>
     `).join('');
+
+    requestAnimationFrame(initProPuzzleBoards);
 }
 
-async function submitProPuzzleAttempt(puzzleId) {
+function initProPuzzleBoards() {
+    proPuzzleBoards = {};
+    proPuzzleGames = {};
+
+    if (typeof window.Chess === 'undefined' || typeof window.Chessboard === 'undefined') {
+        return;
+    }
+
+    proPuzzles.forEach((p) => {
+        const elId = `puzzleBoard${p.id}`;
+        const el = document.getElementById(elId);
+        if (!el) return;
+
+        const sideToMove = (p.fen || '').split(' ')[1] || 'w';
+        proPuzzleGames[p.id] = new window.Chess(p.fen);
+
+        const board = window.Chessboard(elId, {
+            position: p.fen,
+            draggable: true,
+            orientation: sideToMove === 'b' ? 'black' : 'white',
+            pieceTheme: 'https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/www/img/chesspieces/wikipedia/{piece}.png',
+            onDrop: (source, target) => onProPuzzleDrop(p.id, source, target),
+            onSnapEnd: () => syncProPuzzleBoard(p.id)
+        });
+        proPuzzleBoards[p.id] = board;
+    });
+}
+
+function onProPuzzleDrop(puzzleId, source, target) {
+    const game = proPuzzleGames[puzzleId];
+    if (!game) return 'snapback';
+
+    const move = game.move({ from: source, to: target, promotion: 'q' });
+    if (!move) return 'snapback';
+
+    const input = document.getElementById(`puzzleMove${puzzleId}`);
+    if (input) input.value = move.san;
+
+    submitProPuzzleAttempt(puzzleId, move.san);
+    return undefined;
+}
+
+function syncProPuzzleBoard(puzzleId) {
+    const board = proPuzzleBoards[puzzleId];
+    const game = proPuzzleGames[puzzleId];
+    if (board && game) {
+        board.position(game.fen());
+    }
+}
+
+function resetProPuzzleBoard(puzzleId) {
+    const puzzle = proPuzzles.find(p => p.id === puzzleId);
+    if (!puzzle) return;
+
+    if (typeof window.Chess !== 'undefined') {
+        proPuzzleGames[puzzleId] = new window.Chess(puzzle.fen);
+    }
+    const board = proPuzzleBoards[puzzleId];
+    if (board) board.position(puzzle.fen, false);
+
+    const feedback = document.getElementById(`puzzleFeedback${puzzleId}`);
+    if (feedback) {
+        feedback.textContent = '';
+        feedback.className = 'pro-puzzle-feedback';
+    }
+}
+
+async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
     const input = document.getElementById(`puzzleMove${puzzleId}`);
     const feedback = document.getElementById(`puzzleFeedback${puzzleId}`);
-    if (!input || !feedback) return;
+    if (!feedback) return;
 
-    const move = input.value.trim();
+    const move = moveOverride || (input ? input.value.trim() : '');
     if (!move) {
         feedback.textContent = 'Enter a move first.';
         feedback.className = 'pro-puzzle-feedback error';
@@ -182,6 +257,9 @@ async function submitProPuzzleAttempt(puzzleId) {
         const result = await ChessAPI.attemptProPuzzle(puzzleId, move);
         feedback.textContent = result.message;
         feedback.className = result.correct ? 'pro-puzzle-feedback success' : 'pro-puzzle-feedback error';
+        if (!result.correct) {
+            setTimeout(() => resetProPuzzleBoard(puzzleId), 700);
+        }
     } catch (error) {
         feedback.textContent = error.message || 'Could not submit answer.';
         feedback.className = 'pro-puzzle-feedback error';
