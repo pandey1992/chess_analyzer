@@ -429,8 +429,20 @@ async function submitCurrentProPuzzle(moveOverride = null) {
             feedback.textContent = incorrectText;
             feedback.className = 'pro-puzzle-feedback error';
             setTimeout(() => {
-                resetCurrentProPuzzle();
-            }, 1100);
+                const latestPuzzle = proPuzzles[proPuzzleCurrentIndex];
+                if (!latestPuzzle || latestPuzzle.id !== puzzle.id) return;
+                proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
+                renderProPuzzleBoard(puzzle.id);
+            }, 900);
+            setTimeout(() => {
+                const latestPuzzle = proPuzzles[proPuzzleCurrentIndex];
+                if (!latestPuzzle || latestPuzzle.id !== puzzle.id) return;
+                const latestFeedback = document.getElementById('proPuzzleFeedback');
+                if (latestFeedback) {
+                    latestFeedback.textContent = '';
+                    latestFeedback.className = 'pro-puzzle-feedback';
+                }
+            }, 2000);
         }
     } catch (error) {
         feedback.textContent = error.message || 'Could not submit answer.';
