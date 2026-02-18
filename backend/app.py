@@ -1,6 +1,7 @@
 import os
 import logging
 import mimetypes
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -16,6 +17,14 @@ from backend.config import settings
 from backend.database import engine, Base
 from backend.api import chess_api, groq_api, auth, pro
 import chess.engine
+
+# Windows + python-chess: subprocess-based UCI engines require Proactor loop.
+# Selector policy on Windows raises NotImplementedError for subprocess pipes.
+if os.name == "nt":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
 
 # --- Logging ---
 logging.basicConfig(
