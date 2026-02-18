@@ -5,6 +5,7 @@ let username = '';
 let openingsVisible = 10;
 let stats = {};
 let currentPlatform = 'chesscom';
+let proPuzzles = [];
 
 function selectPlatform(platform) {
     currentPlatform = platform;
@@ -52,10 +53,138 @@ async function startAnalysis() {
 
         // Fetch weekly accuracy dashboard in background
         fetchWeeklyDashboard(username, gameTypes);
+        loadProPuzzles();
     } catch (error) {
         console.error('Error:', error);
         showError(error.message || `Failed to fetch games from ${platformName}. Please check the username.`);
         hideLoading();
+    }
+}
+
+async function generateProPuzzles() {
+    const section = document.getElementById('proPuzzleSection');
+    const resultsEl = document.getElementById('proPuzzleResults');
+    const btn = document.getElementById('generateProPuzzlesBtn');
+
+    section.style.display = 'block';
+
+    if (!Auth.isLoggedIn()) {
+        resultsEl.innerHTML = `
+            <div class="pro-puzzle-empty">
+                Pro puzzle training requires login. Please log in to generate and save puzzles.
+            </div>
+        `;
+        return;
+    }
+
+    if (!allGames || allGames.length === 0 || !username) {
+        resultsEl.innerHTML = `
+            <div class="pro-puzzle-empty">
+                Analyze games first, then generate puzzles from your mistakes.
+            </div>
+        `;
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Generating puzzles...';
+    resultsEl.innerHTML = '<div class="pro-puzzle-empty">Analyzing your bad moves and building puzzles...</div>';
+
+    try {
+        const selectedGames = [...allGames]
+            .sort((a, b) => (b.end_time || 0) - (a.end_time || 0))
+            .slice(0, 15)
+            .filter(g => g.pgn)
+            .map(g => ({ pgn: g.pgn, url: g.url || '' }));
+
+        const data = await ChessAPI.generateProPuzzles(username, selectedGames, 15, 20, 120);
+        proPuzzles = data.puzzles || [];
+        renderProPuzzles();
+    } catch (error) {
+        resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate Puzzles From My Mistakes';
+    }
+}
+
+async function loadProPuzzles() {
+    const section = document.getElementById('proPuzzleSection');
+    const resultsEl = document.getElementById('proPuzzleResults');
+    if (!section || !resultsEl) return;
+
+    section.style.display = 'block';
+    if (!Auth.isLoggedIn()) {
+        resultsEl.innerHTML = `
+            <div class="pro-puzzle-empty">
+                Continue as guest is enabled. Log in to use Pro puzzle training.
+            </div>
+        `;
+        return;
+    }
+
+    try {
+        const data = await ChessAPI.getProPuzzles(20);
+        proPuzzles = data.puzzles || [];
+        renderProPuzzles();
+    } catch (error) {
+        resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
+    }
+}
+
+function renderProPuzzles() {
+    const resultsEl = document.getElementById('proPuzzleResults');
+    if (!resultsEl) return;
+
+    if (!proPuzzles || proPuzzles.length === 0) {
+        resultsEl.innerHTML = `
+            <div class="pro-puzzle-empty">
+                No puzzles yet. Click "Generate Puzzles From My Mistakes" after analysis.
+            </div>
+        `;
+        return;
+    }
+
+    resultsEl.innerHTML = proPuzzles.map((p, index) => `
+        <div class="pro-puzzle-card">
+            <div class="pro-puzzle-head">
+                <strong>Puzzle ${index + 1}</strong>
+                <span class="pro-pill">Move ${p.move_number}</span>
+                <span class="pro-pill danger">Eval Drop ${p.cp_loss}</span>
+            </div>
+            <div class="pro-puzzle-fen">${p.fen}</div>
+            <div class="pro-puzzle-meta">Find the best move in this position.</div>
+            <div class="pro-puzzle-answer-row">
+                <input id="puzzleMove${p.id}" class="pro-puzzle-input" type="text" placeholder="Enter your move (e.g. Nf3 or g1f3)">
+                <button class="pro-puzzle-btn" onclick="submitProPuzzleAttempt(${p.id})">Check</button>
+            </div>
+            <div id="puzzleFeedback${p.id}" class="pro-puzzle-feedback"></div>
+        </div>
+    `).join('');
+}
+
+async function submitProPuzzleAttempt(puzzleId) {
+    const input = document.getElementById(`puzzleMove${puzzleId}`);
+    const feedback = document.getElementById(`puzzleFeedback${puzzleId}`);
+    if (!input || !feedback) return;
+
+    const move = input.value.trim();
+    if (!move) {
+        feedback.textContent = 'Enter a move first.';
+        feedback.className = 'pro-puzzle-feedback error';
+        return;
+    }
+
+    feedback.textContent = 'Checking...';
+    feedback.className = 'pro-puzzle-feedback';
+
+    try {
+        const result = await ChessAPI.attemptProPuzzle(puzzleId, move);
+        feedback.textContent = result.message;
+        feedback.className = result.correct ? 'pro-puzzle-feedback success' : 'pro-puzzle-feedback error';
+    } catch (error) {
+        feedback.textContent = error.message || 'Could not submit answer.';
+        feedback.className = 'pro-puzzle-feedback error';
     }
 }
 

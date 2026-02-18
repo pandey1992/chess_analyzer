@@ -54,6 +54,10 @@ const Router = {
         // Update navbar state
         this.updateNavbar(this.currentPage);
 
+        if (this.currentPage === 'app' && typeof loadProPuzzles === 'function') {
+            loadProPuzzles();
+        }
+
         // Scroll to top on page change (unless it's an anchor scroll)
         if (!window.location.hash.includes('/')) {
             window.scrollTo(0, 0);

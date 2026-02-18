@@ -6,7 +6,7 @@
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260217k">
+    <link rel="stylesheet" href="/css/styles.css?v=20260217l">
 </head>
 <body>
 
@@ -500,6 +500,21 @@
             <!-- Weekly Accuracy Dashboard -->
             <div id="dashboardSection" style="display: none;"></div>
 
+            <!-- Pro Puzzle Trainer -->
+            <div id="proPuzzleSection" class="chart-container" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">⭐ Pro: Puzzles From Your Mistakes</h2>
+                </div>
+                <p style="color: #4a5568; margin-bottom: 14px;">
+                    We find your bad moves, ask Stockfish for the best move, and turn them into solveable puzzles.
+                </p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                    <button id="generateProPuzzlesBtn" onclick="generateProPuzzles()">Generate Puzzles From My Mistakes</button>
+                    <button onclick="loadProPuzzles()" style="background:#4a5568;">Load Saved Puzzles</button>
+                </div>
+                <div id="proPuzzleResults"></div>
+            </div>
+
             <div class="results" id="results">
                 <div id="heroSection"></div>
                 <div class="section-header">
@@ -561,14 +576,14 @@
     </div>
 
     <!-- Scripts: load order matters -->
-    <script src="/js/config.js?v=20260217k"></script>
-    <script src="/js/utils.js?v=20260217k"></script>
-    <script src="/js/api.js?v=20260217k"></script>
-    <script src="/js/auth.js?v=20260217k"></script>
-    <script src="/js/router.js?v=20260217k"></script>
-    <script src="/js/analysis.js?v=20260217k"></script>
-    <script src="/js/charts.js?v=20260217k"></script>
-    <script src="/js/display.js?v=20260217k"></script>
-    <script src="/js/app.js?v=20260217k"></script>
+    <script src="/js/config.js?v=20260217l"></script>
+    <script src="/js/utils.js?v=20260217l"></script>
+    <script src="/js/api.js?v=20260217l"></script>
+    <script src="/js/auth.js?v=20260217l"></script>
+    <script src="/js/router.js?v=20260217l"></script>
+    <script src="/js/analysis.js?v=20260217l"></script>
+    <script src="/js/charts.js?v=20260217l"></script>
+    <script src="/js/display.js?v=20260217l"></script>
+    <script src="/js/app.js?v=20260217l"></script>
 </body>
 </html>

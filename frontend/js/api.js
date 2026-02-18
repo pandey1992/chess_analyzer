@@ -104,6 +104,57 @@ const ChessAPI = {
         return data;
     },
 
+    async generateProPuzzles(username, games, maxGames = 15, maxPuzzles = 20, minCpLoss = 120) {
+        const response = await fetch(`${CONFIG.API_BASE}/pro/puzzles/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders()
+            },
+            body: JSON.stringify({
+                username,
+                games,
+                max_games: maxGames,
+                max_puzzles: maxPuzzles,
+                min_cp_loss: minCpLoss
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to generate puzzles');
+        }
+
+        return await response.json();
+    },
+
+    async getProPuzzles(limit = 20) {
+        const response = await fetch(`${CONFIG.API_BASE}/pro/puzzles?limit=${limit}`, {
+            headers: this.getAuthHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to fetch puzzles');
+        }
+        return await response.json();
+    },
+
+    async attemptProPuzzle(puzzleId, move) {
+        const response = await fetch(`${CONFIG.API_BASE}/pro/puzzles/${puzzleId}/attempt`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders()
+            },
+            body: JSON.stringify({ move })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to submit answer');
+        }
+        return await response.json();
+    },
+
     // Token management
     getToken() {
         return localStorage.getItem('auth_token');

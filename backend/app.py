@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 
 from backend.config import settings
 from backend.database import engine, Base
-from backend.api import chess_api, groq_api, auth
+from backend.api import chess_api, groq_api, auth, pro
 
 # --- Logging ---
 logging.basicConfig(
@@ -132,6 +132,7 @@ async def readiness_check():
 app.include_router(chess_api.router, prefix="/api")
 app.include_router(groq_api.router, prefix="/api")
 app.include_router(auth.router, prefix="/api/auth")
+app.include_router(pro.router, prefix="/api/pro")
 
 # --- Static Files ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

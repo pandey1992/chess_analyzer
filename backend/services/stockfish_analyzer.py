@@ -405,6 +405,160 @@ def _analyze_single_game(
     }
 
 
+def extract_mistake_puzzles(
+    pgn_text: str,
+    username: str,
+    stockfish_path: str,
+    depth: int = 14,
+    min_cp_loss: int = 120,
+    max_puzzles: int = 5,
+) -> List[Dict]:
+    """
+    Build puzzle candidates from user's bad moves.
+    Each puzzle asks for the best move in the position before the bad move.
+    """
+    if max_puzzles <= 0:
+        return []
+
+    # Resolve stockfish path
+    if not os.path.isabs(stockfish_path):
+        project_root = Path(__file__).parent.parent.parent
+        resolved_path = project_root / stockfish_path
+        if resolved_path.exists():
+            stockfish_path = str(resolved_path)
+
+    game = chess.pgn.read_game(io.StringIO(pgn_text))
+    if game is None:
+        return []
+
+    board = game.board()
+    moves = list(game.mainline_moves())
+    if len(moves) < 4:
+        return []
+
+    white_name = game.headers.get("White", "").lower()
+    black_name = game.headers.get("Black", "").lower()
+    username_lower = username.lower()
+    if username_lower in white_name or white_name in username_lower:
+        user_color = chess.WHITE
+    elif username_lower in black_name or black_name in username_lower:
+        user_color = chess.BLACK
+    else:
+        user_color = chess.WHITE
+
+    puzzles = []
+    engine = None
+
+    try:
+        engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
+        analysis_limit = chess.engine.Limit(depth=depth, time=1.5)
+
+        # Eval before any moves
+        info = engine.analyse(board, analysis_limit)
+        prev_cp = score_to_cp(info["score"], chess.WHITE)
+        if prev_cp is None:
+            prev_cp = 0
+
+        for ply_index, move in enumerate(moves):
+            is_white_move = (ply_index % 2 == 0)
+            is_user_move = (is_white_move and user_color == chess.WHITE) or \
+                           (not is_white_move and user_color == chess.BLACK)
+            full_move_number = (ply_index // 2) + 1
+
+            if is_user_move:
+                # Position before user's move
+                fen_before = board.fen()
+                bad_move_san = board.san(move)
+                bad_move_uci = move.uci()
+
+                # Best line before user's move
+                best_info = engine.analyse(board, analysis_limit, multipv=3)
+                if isinstance(best_info, dict):
+                    best_info = [best_info]
+
+                best_pv = best_info[0].get("pv", []) if best_info else []
+                if not best_pv:
+                    board.push(move)
+                    after_info = engine.analyse(board, analysis_limit)
+                    current_cp = score_to_cp(after_info["score"], chess.WHITE)
+                    if current_cp is None:
+                        current_cp = prev_cp
+                    prev_cp = current_cp
+                    continue
+
+                best_move = best_pv[0]
+                best_move_uci = best_move.uci()
+                best_move_san = board.san(best_move)
+
+                # Eval after actual bad move
+                board.push(move)
+                after_info = engine.analyse(board, analysis_limit)
+                current_cp = score_to_cp(after_info["score"], chess.WHITE)
+                if current_cp is None:
+                    current_cp = prev_cp
+
+                if user_color == chess.WHITE:
+                    cp_loss = max(0, prev_cp - current_cp)
+                else:
+                    cp_loss = max(0, current_cp - prev_cp)
+
+                if cp_loss >= min_cp_loss:
+                    accepted = {best_move_uci.lower(), _normalize_san(best_move_san)}
+                    # Add secondary acceptable best lines
+                    for line in best_info[1:]:
+                        pv = line.get("pv", [])
+                        if not pv:
+                            continue
+                        mv = pv[0]
+                        accepted.add(mv.uci().lower())
+                        try:
+                            san = chess.Board(fen_before).san(mv)
+                            accepted.add(_normalize_san(san))
+                        except Exception:
+                            pass
+
+                    puzzles.append({
+                        "fen": fen_before,
+                        "move_number": full_move_number,
+                        "bad_move_san": bad_move_san,
+                        "bad_move_uci": bad_move_uci,
+                        "best_move_san": best_move_san,
+                        "best_move_uci": best_move_uci,
+                        "accepted_moves": sorted([m for m in accepted if m]),
+                        "cp_loss": round(float(cp_loss), 1),
+                    })
+                    if len(puzzles) >= max_puzzles:
+                        break
+            else:
+                board.push(move)
+                after_info = engine.analyse(board, analysis_limit)
+                current_cp = score_to_cp(after_info["score"], chess.WHITE)
+                if current_cp is None:
+                    current_cp = prev_cp
+
+            prev_cp = current_cp
+
+    except Exception as e:
+        logger.error("Failed to extract mistake puzzles: %s", e)
+    finally:
+        if engine:
+            try:
+                engine.quit()
+            except Exception:
+                pass
+
+    return puzzles
+
+
+def _normalize_san(move_text: str) -> str:
+    if not move_text:
+        return ""
+    normalized = move_text.strip().lower()
+    for ch in ["+", "#", "!", "?", " "]:
+        normalized = normalized.replace(ch, "")
+    return normalized
+
+
 def compute_lichess_phase_accuracy(
     analysis_evals: List[Dict],
     is_white: bool,
