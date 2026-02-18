@@ -2706,3 +2706,174 @@
                 padding: 12px;
             }
         }
+
+        /* ============================
+           MOBILE RESPONSIVE OVERRIDES
+           ============================ */
+        html, body {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        img, canvas {
+            max-width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                padding: 28px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            [data-page="app"] {
+                padding: calc(76px + env(safe-area-inset-top)) 12px 16px;
+            }
+
+            .container {
+                border-radius: 12px;
+                padding: 14px;
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+            }
+
+            .input-section,
+            .hero-section,
+            .insights-section,
+            .study-recommendations,
+            .chart-container,
+            .study-plan-section,
+            .study-plan-container,
+            .dashboard-section,
+            .dashboard-loading {
+                padding: 16px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .section-title {
+                font-size: 1.35em;
+            }
+
+            .hero-title {
+                font-size: 1.35em;
+            }
+
+            .hero-subtitle {
+                font-size: 1em;
+            }
+
+            .hero-stat {
+                font-size: 2.1em;
+            }
+
+            .leaks-grid,
+            .stats-grid,
+            .analysis-summary {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .coaching-layout,
+            .pricing-grid,
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .game-details {
+                gap: 8px;
+                flex-direction: column;
+            }
+
+            .modal-content {
+                width: calc(100% - 20px);
+                margin: 16px auto;
+                padding: 18px 14px;
+                border-radius: 12px;
+            }
+
+            .chart-container {
+                overflow-x: auto;
+            }
+
+            table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.88em;
+            }
+
+            .checkbox-group {
+                gap: 10px;
+            }
+
+            .checkbox-item {
+                flex: 1 1 46%;
+                min-width: 120px;
+            }
+
+            button,
+            .generate-plan-btn,
+            .btn-pricing-primary,
+            .btn-pricing-pro {
+                width: 100%;
+            }
+
+            .pro-player {
+                padding: 12px;
+            }
+
+            .pro-player-nav {
+                flex-direction: column;
+            }
+
+            .pro-player-nav .pro-puzzle-btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar-inner {
+                padding: 12px;
+            }
+
+            .logo-text {
+                font-size: 0.92em;
+            }
+
+            .hero-headline {
+                font-size: 2em;
+            }
+
+            .hero-sub {
+                font-size: 0.95em;
+            }
+
+            .landing-section-title {
+                font-size: 1.7em;
+            }
+
+            .auth-card {
+                padding: 28px 18px;
+            }
+
+            .auth-logo {
+                width: 52px;
+                height: 52px;
+                font-size: 1.8em;
+            }
+        }
