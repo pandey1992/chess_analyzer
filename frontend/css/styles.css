@@ -2544,7 +2544,7 @@
 
         .pro-puzzle-board {
             width: 100%;
-            max-width: 360px;
+            max-width: 440px;
             margin: 0 auto;
         }
 
@@ -2552,19 +2552,19 @@
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             width: 100%;
-            max-width: 360px;
+            max-width: 440px;
             aspect-ratio: 1 / 1;
-            border: 1px solid #2d3748;
-            border-radius: 6px;
+            border: 2px solid #2d3748;
+            border-radius: 10px;
             overflow: hidden;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
         }
 
         .pro-board-square {
+            position: relative;
             border: none;
             margin: 0;
             padding: 0;
-            font-size: clamp(18px, 2.5vw, 30px);
-            line-height: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2585,18 +2585,44 @@
             outline-offset: -3px;
         }
 
+        .pro-board-file,
+        .pro-board-rank {
+            position: absolute;
+            font-size: 11px;
+            font-weight: 700;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .pro-board-file {
+            right: 4px;
+            bottom: 2px;
+        }
+
+        .pro-board-rank {
+            left: 4px;
+            top: 2px;
+        }
+
+        .pro-board-square.light .pro-board-file,
+        .pro-board-square.light .pro-board-rank {
+            color: #7a5a3a;
+        }
+
+        .pro-board-square.dark .pro-board-file,
+        .pro-board-square.dark .pro-board-rank {
+            color: #f5e8d6;
+        }
+
         .pro-piece {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            font-size: clamp(24px, 4vw, 36px);
-            opacity: 1;
-            text-shadow: none;
+            width: 92%;
+            height: 92%;
+            object-fit: contain;
             cursor: grab;
             touch-action: none;
             -webkit-user-drag: element;
+            user-select: none;
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
         }
 
         .pro-piece:active {
@@ -2605,16 +2631,6 @@
 
         .pro-piece[draggable="false"] {
             cursor: default;
-        }
-
-        .pro-piece.white-piece {
-            color: #ffffff;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
-        }
-
-        .pro-piece.black-piece {
-            color: #111111;
-            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.25);
         }
 
         .pro-board-error {
@@ -2687,9 +2703,5 @@
         @media (max-width: 640px) {
             .pro-player {
                 padding: 12px;
-            }
-
-            .pro-puzzle-input {
-                min-width: 100%;
             }
         }
