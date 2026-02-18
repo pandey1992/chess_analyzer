@@ -122,6 +122,9 @@ const Auth = {
         ChessAPI.clearToken();
         localStorage.removeItem('guest_mode');
         this._user = null;
+        if (typeof window.clearProPuzzleSession === 'function') {
+            window.clearProPuzzleSession('logged_out');
+        }
         Router.navigate('landing');
     },
     
@@ -129,6 +132,9 @@ const Auth = {
         ChessAPI.clearToken();
         localStorage.setItem('guest_mode', '1');
         this._user = { username: 'Guest', email: null };
+        if (typeof window.clearProPuzzleSession === 'function') {
+            window.clearProPuzzleSession('guest');
+        }
         Router.navigate('app');
     }
 };

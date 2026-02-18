@@ -10,6 +10,7 @@ let proPuzzleBoards = {};
 let proPuzzleCurrentIndex = 0;
 let proPuzzleProgress = {};
 let proPuzzleDragSource = null;
+let proPuzzleFeedbackState = null;
 
 function selectPlatform(platform) {
     currentPlatform = platform;
@@ -106,6 +107,7 @@ async function generateProPuzzles() {
         proPuzzleCurrentIndex = 0;
         proPuzzleProgress = {};
         proPuzzleBoards = {};
+        proPuzzleFeedbackState = null;
         renderProPuzzles();
     } catch (error) {
         resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
@@ -136,6 +138,7 @@ async function loadProPuzzles() {
         proPuzzleCurrentIndex = 0;
         proPuzzleProgress = {};
         proPuzzleBoards = {};
+        proPuzzleFeedbackState = null;
         renderProPuzzles();
     } catch (error) {
         resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
@@ -211,9 +214,11 @@ function renderCurrentProPuzzle(preservedFeedback = null) {
     if (title) title.textContent = `Puzzle ${proPuzzleCurrentIndex + 1} / ${proPuzzles.length}`;
     if (sub) sub.textContent = `Move ${puzzle.move_number} | Eval Drop ${puzzle.cp_loss} | ${status.toUpperCase()}`;
     if (feedback) {
-        if (preservedFeedback && preservedFeedback.text) {
-            feedback.textContent = preservedFeedback.text;
-            feedback.className = preservedFeedback.className || 'pro-puzzle-feedback';
+        const effectiveFeedback = preservedFeedback
+            || (proPuzzleFeedbackState && proPuzzleFeedbackState.puzzleId === puzzle.id ? proPuzzleFeedbackState : null);
+        if (effectiveFeedback && effectiveFeedback.text) {
+            feedback.textContent = effectiveFeedback.text;
+            feedback.className = effectiveFeedback.className || 'pro-puzzle-feedback';
         } else {
             feedback.textContent = '';
             feedback.className = 'pro-puzzle-feedback';
@@ -397,6 +402,11 @@ function resetCurrentProPuzzle(preservedFeedback = null) {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
     proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
+    if (preservedFeedback && preservedFeedback.text) {
+        proPuzzleFeedbackState = { ...preservedFeedback, puzzleId: puzzle.id };
+    } else {
+        proPuzzleFeedbackState = null;
+    }
     renderCurrentProPuzzle(preservedFeedback);
 }
 
@@ -415,11 +425,21 @@ async function submitCurrentProPuzzle(moveOverride = null) {
     if (!move) {
         feedback.textContent = 'Make a move on the board first.';
         feedback.className = 'pro-puzzle-feedback error';
+        proPuzzleFeedbackState = {
+            puzzleId: puzzle.id,
+            text: 'Make a move on the board first.',
+            className: 'pro-puzzle-feedback error'
+        };
         return;
     }
 
     feedback.textContent = 'Checking...';
     feedback.className = 'pro-puzzle-feedback';
+    proPuzzleFeedbackState = {
+        puzzleId: puzzle.id,
+        text: 'Checking...',
+        className: 'pro-puzzle-feedback'
+    };
 
     try {
         const result = await ChessAPI.attemptProPuzzle(puzzle.id, move);
@@ -427,22 +447,37 @@ async function submitCurrentProPuzzle(moveOverride = null) {
         if (result.correct) {
             feedback.textContent = result.message || 'Correct.';
             feedback.className = 'pro-puzzle-feedback success';
+            proPuzzleFeedbackState = {
+                puzzleId: puzzle.id,
+                text: result.message || 'Correct.',
+                className: 'pro-puzzle-feedback success'
+            };
             proPuzzleProgress[puzzle.id].status = 'solved';
             setTimeout(() => moveToNextUnsolvedOrStay(), 650);
         } else {
-            const incorrectText = 'Incorrect. Try again.';
+            const incorrectText = 'Incorrect, try again';
             feedback.textContent = incorrectText;
             feedback.className = 'pro-puzzle-feedback error';
+            proPuzzleFeedbackState = {
+                puzzleId: puzzle.id,
+                text: incorrectText,
+                className: 'pro-puzzle-feedback error'
+            };
             setTimeout(() => {
                 resetCurrentProPuzzle({
                     text: incorrectText,
                     className: 'pro-puzzle-feedback error'
                 });
-            }, 1200);
+            }, 900);
         }
     } catch (error) {
         feedback.textContent = error.message || 'Could not submit answer.';
         feedback.className = 'pro-puzzle-feedback error';
+        proPuzzleFeedbackState = {
+            puzzleId: puzzle.id,
+            text: error.message || 'Could not submit answer.',
+            className: 'pro-puzzle-feedback error'
+        };
     }
 }
 
@@ -456,6 +491,7 @@ async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
 }
 
 function moveToNextUnsolvedOrStay() {
+    proPuzzleFeedbackState = null;
     for (let i = proPuzzleCurrentIndex + 1; i < proPuzzles.length; i++) {
         const p = proPuzzles[i];
         if ((proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
@@ -482,12 +518,14 @@ function moveToNextUnsolvedOrStay() {
 
 function goPrevProPuzzle() {
     if (proPuzzleCurrentIndex <= 0) return;
+    proPuzzleFeedbackState = null;
     proPuzzleCurrentIndex -= 1;
     renderCurrentProPuzzle();
 }
 
 function goNextProPuzzle() {
     if (proPuzzleCurrentIndex >= proPuzzles.length - 1) return;
+    proPuzzleFeedbackState = null;
     proPuzzleCurrentIndex += 1;
     renderCurrentProPuzzle();
 }
@@ -495,9 +533,29 @@ function goNextProPuzzle() {
 function skipCurrentProPuzzle() {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
+    proPuzzleFeedbackState = null;
     proPuzzleProgress[puzzle.id].status = 'skipped';
     moveToNextUnsolvedOrStay();
 }
+
+function clearProPuzzleSession(reason = 'logged_out') {
+    proPuzzles = [];
+    proPuzzleBoards = {};
+    proPuzzleCurrentIndex = 0;
+    proPuzzleProgress = {};
+    proPuzzleDragSource = null;
+    proPuzzleFeedbackState = null;
+
+    const resultsEl = document.getElementById('proPuzzleResults');
+    if (resultsEl) {
+        const msg = reason === 'guest'
+            ? 'Continue as guest is enabled. Log in to use Pro puzzle training.'
+            : 'Log in to generate and load Pro puzzles.';
+        resultsEl.innerHTML = `<div class="pro-puzzle-empty">${msg}</div>`;
+    }
+}
+
+window.clearProPuzzleSession = clearProPuzzleSession;
 
 async function fetchWeeklyDashboard(username, gameTypes) {
     const dashboardSection = document.getElementById('dashboardSection');
