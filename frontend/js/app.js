@@ -1,4 +1,4 @@
-// Main app orchestrator - Chess Analyzer
+﻿// Main app orchestrator - Chess Analyzer
 // Global state
 let allGames = [];
 let username = '';
@@ -7,6 +7,9 @@ let stats = {};
 let currentPlatform = 'chesscom';
 let proPuzzles = [];
 let proPuzzleBoards = {};
+let proPuzzleCurrentIndex = 0;
+let proPuzzleProgress = {};
+let proPuzzleDragSource = null;
 
 function selectPlatform(platform) {
     currentPlatform = platform;
@@ -100,6 +103,9 @@ async function generateProPuzzles() {
 
         const data = await ChessAPI.generateProPuzzles(username, selectedGames, 15, 20, 120);
         proPuzzles = data.puzzles || [];
+        proPuzzleCurrentIndex = 0;
+        proPuzzleProgress = {};
+        proPuzzleBoards = {};
         renderProPuzzles();
     } catch (error) {
         resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
@@ -127,12 +133,16 @@ async function loadProPuzzles() {
     try {
         const data = await ChessAPI.getProPuzzles(20);
         proPuzzles = data.puzzles || [];
+        proPuzzleCurrentIndex = 0;
+        proPuzzleProgress = {};
+        proPuzzleBoards = {};
         renderProPuzzles();
     } catch (error) {
         resultsEl.innerHTML = `<div class="pro-puzzle-empty" style="color:#c53030;">${error.message}</div>`;
     }
 }
 
+// ==================== Pro Puzzle Player (single-window flow) ====================
 function renderProPuzzles() {
     const resultsEl = document.getElementById('proPuzzleResults');
     if (!resultsEl) return;
@@ -146,50 +156,96 @@ function renderProPuzzles() {
         return;
     }
 
-    resultsEl.innerHTML = proPuzzles.map((p, index) => `
-        <div class="pro-puzzle-card">
-            <div class="pro-puzzle-head">
-                <strong>Puzzle ${index + 1}</strong>
-                <span class="pro-pill">Move ${p.move_number}</span>
-                <span class="pro-pill danger">Eval Drop ${p.cp_loss}</span>
-            </div>
-            <div class="pro-puzzle-meta">Find the best move in this position.</div>
-            <div class="pro-puzzle-board-wrap">
-                <div id="puzzleBoard${p.id}" class="pro-puzzle-board"></div>
-            </div>
-            <div class="pro-puzzle-answer-row">
-                <input id="puzzleMove${p.id}" class="pro-puzzle-input" type="text" placeholder="Enter your move (e.g. Nf3 or g1f3)">
-                <button class="pro-puzzle-btn" onclick="submitProPuzzleAttempt(${p.id})">Check</button>
-                <button class="pro-puzzle-btn secondary" onclick="resetProPuzzleBoard(${p.id})">Reset</button>
-            </div>
-            <div id="puzzleFeedback${p.id}" class="pro-puzzle-feedback"></div>
-            <div class="pro-puzzle-fen">${p.fen}</div>
-        </div>
-    `).join('');
+    if (proPuzzleCurrentIndex < 0 || proPuzzleCurrentIndex >= proPuzzles.length) {
+        proPuzzleCurrentIndex = 0;
+    }
 
-    requestAnimationFrame(initProPuzzleBoards);
+    proPuzzles.forEach((p) => {
+        if (!proPuzzleProgress[p.id]) {
+            proPuzzleProgress[p.id] = { status: 'unsolved', attempts: 0 };
+        }
+    });
+
+    resultsEl.innerHTML = `
+        <div class="pro-player">
+            <div class="pro-player-header">
+                <div>
+                    <div id="proPuzzleTitle" class="pro-player-title"></div>
+                    <div id="proPuzzleSub" class="pro-player-sub"></div>
+                </div>
+                <div class="pro-player-stats">
+                    <span id="proRemainingPill" class="pro-pill"></span>
+                    <span id="proSolvedPill" class="pro-pill"></span>
+                    <span id="proSkippedPill" class="pro-pill"></span>
+                </div>
+            </div>
+            <div id="proToMove" class="pro-to-move"></div>
+            <div id="proPuzzleBoard" class="pro-puzzle-board"></div>
+            <div class="pro-puzzle-answer-row">
+                <input id="proPuzzleMoveInput" class="pro-puzzle-input" type="text" placeholder="Enter move (UCI e2e4 or SAN Nf3)">
+                <button class="pro-puzzle-btn" onclick="submitCurrentProPuzzle()">Submit</button>
+                <button class="pro-puzzle-btn secondary" onclick="resetCurrentProPuzzle()">Reset</button>
+            </div>
+            <div id="proPuzzleFeedback" class="pro-puzzle-feedback"></div>
+            <div class="pro-player-nav">
+                <button class="pro-puzzle-btn secondary" onclick="goPrevProPuzzle()">Previous</button>
+                <button class="pro-puzzle-btn secondary" onclick="skipCurrentProPuzzle()">Skip</button>
+                <button class="pro-puzzle-btn secondary" onclick="goNextProPuzzle()">Next</button>
+            </div>
+            <div id="proPuzzleFen" class="pro-puzzle-fen"></div>
+        </div>
+    `;
+
+    renderCurrentProPuzzle();
+}
+
+function renderCurrentProPuzzle() {
+    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    if (!puzzle) return;
+
+    const status = proPuzzleProgress[puzzle.id]?.status || 'unsolved';
+    const solved = Object.values(proPuzzleProgress).filter(p => p.status === 'solved').length;
+    const skipped = Object.values(proPuzzleProgress).filter(p => p.status === 'skipped').length;
+    const remaining = proPuzzles.length - solved - skipped;
+
+    const title = document.getElementById('proPuzzleTitle');
+    const sub = document.getElementById('proPuzzleSub');
+    const toMoveEl = document.getElementById('proToMove');
+    const fenEl = document.getElementById('proPuzzleFen');
+    const feedback = document.getElementById('proPuzzleFeedback');
+    const input = document.getElementById('proPuzzleMoveInput');
+
+    if (title) title.textContent = `Puzzle ${proPuzzleCurrentIndex + 1} / ${proPuzzles.length}`;
+    if (sub) sub.textContent = `Move ${puzzle.move_number} â€¢ Eval Drop ${puzzle.cp_loss} â€¢ ${status.toUpperCase()}`;
+    if (fenEl) fenEl.textContent = puzzle.fen;
+    if (feedback) {
+        feedback.textContent = '';
+        feedback.className = 'pro-puzzle-feedback';
+    }
+    if (input) input.value = '';
+
+    const remainingPill = document.getElementById('proRemainingPill');
+    const solvedPill = document.getElementById('proSolvedPill');
+    const skippedPill = document.getElementById('proSkippedPill');
+    if (remainingPill) remainingPill.textContent = `Remaining ${remaining}`;
+    if (solvedPill) solvedPill.textContent = `Solved ${solved}`;
+    if (skippedPill) skippedPill.textContent = `Skipped ${skipped}`;
+
+    if (!proPuzzleBoards[puzzle.id]) {
+        proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
+    }
+    const state = proPuzzleBoards[puzzle.id];
+    if (toMoveEl) toMoveEl.textContent = state.sideToMove === 'w' ? 'White to move' : 'Black to move';
+
+    renderProPuzzleBoard(puzzle.id);
 }
 
 function initProPuzzleBoards() {
-    proPuzzleBoards = {};
-
-    proPuzzles.forEach((p) => {
-        const elId = `puzzleBoard${p.id}`;
-        const el = document.getElementById(elId);
-        if (!el) return;
-
-        try {
-            const boardState = buildBoardStateFromFen(p.fen);
-            proPuzzleBoards[p.id] = boardState;
-            renderProPuzzleBoard(p.id);
-        } catch (error) {
-            console.error('Puzzle board init failed:', error);
-            el.innerHTML = '<div class="pro-board-error">Board failed to initialize. Try reloading page.</div>';
-        }
-    });
+    // Kept for compatibility with previous calls.
+    renderCurrentProPuzzle();
 }
 
-function buildBoardStateFromFen(fen) {
+function buildBoardStateFromFen(fen, puzzleId = null) {
     const [boardPart, sideToMove] = fen.split(' ');
     const rows = boardPart.split('/');
     const pieces = {};
@@ -208,6 +264,7 @@ function buildBoardStateFromFen(fen) {
     }
 
     return {
+        puzzleId,
         fen,
         sideToMove: sideToMove || 'w',
         selectedSquare: null,
@@ -216,7 +273,7 @@ function buildBoardStateFromFen(fen) {
 }
 
 function renderProPuzzleBoard(puzzleId) {
-    const container = document.getElementById(`puzzleBoard${puzzleId}`);
+    const container = document.getElementById('proPuzzleBoard');
     const state = proPuzzleBoards[puzzleId];
     if (!container || !state) return;
 
@@ -231,12 +288,20 @@ function renderProPuzzleBoard(puzzleId) {
             const piece = state.pieces[square] || '';
             const isLight = (r + f) % 2 === 0;
             const selected = state.selectedSquare === square ? ' selected' : '';
+            const pieceSideClass = piece ? (piece === piece.toUpperCase() ? 'white-piece' : 'black-piece') : '';
+
             html += `
-                <button type="button"
-                        class="pro-board-square ${isLight ? 'light' : 'dark'}${selected}"
-                        onclick="onProPuzzleSquareClick(${puzzleId}, '${square}')">
-                    ${pieceToUnicode(piece)}
-                </button>
+                <div class="pro-board-square ${isLight ? 'light' : 'dark'}${selected}"
+                     onclick="onProPuzzleSquareClick(${puzzleId}, '${square}')"
+                     ondragover="event.preventDefault()"
+                     ondrop="onProPuzzleDrop(event, ${puzzleId}, '${square}')">
+                    ${piece ? `
+                        <span class="pro-piece ${pieceSideClass}"
+                              draggable="${isDraggablePiece(piece, state.sideToMove)}"
+                              ondragstart="onProPuzzleDragStart(event, ${puzzleId}, '${square}')">
+                            ${pieceToUnicode(piece)}
+                        </span>` : ''}
+                </div>
             `;
         }
     }
@@ -244,67 +309,101 @@ function renderProPuzzleBoard(puzzleId) {
     container.innerHTML = html;
 }
 
+function isDraggablePiece(piece, sideToMove) {
+    const isWhite = piece === piece.toUpperCase();
+    return (sideToMove === 'w' && isWhite) || (sideToMove === 'b' && !isWhite);
+}
+
+function onProPuzzleDragStart(event, puzzleId, square) {
+    proPuzzleDragSource = square;
+    if (event.dataTransfer) {
+        event.dataTransfer.setData('text/plain', square);
+        event.dataTransfer.effectAllowed = 'move';
+    }
+}
+
+function onProPuzzleDrop(event, puzzleId, targetSquare) {
+    event.preventDefault();
+    const fromSquare = (event.dataTransfer && event.dataTransfer.getData('text/plain')) || proPuzzleDragSource;
+    proPuzzleDragSource = null;
+    if (!fromSquare) return;
+    handleProPuzzleMove(puzzleId, fromSquare, targetSquare);
+}
+
 function onProPuzzleSquareClick(puzzleId, square) {
     const state = proPuzzleBoards[puzzleId];
     if (!state) return;
-
     const clickedPiece = state.pieces[square];
 
     if (!state.selectedSquare) {
         if (!clickedPiece) return;
         const isWhitePiece = clickedPiece === clickedPiece.toUpperCase();
-        if ((state.sideToMove === 'w' && !isWhitePiece) || (state.sideToMove === 'b' && isWhitePiece)) {
-            return;
-        }
+        if ((state.sideToMove === 'w' && !isWhitePiece) || (state.sideToMove === 'b' && isWhitePiece)) return;
         state.selectedSquare = square;
         renderProPuzzleBoard(puzzleId);
         return;
     }
 
     const from = state.selectedSquare;
-    const to = square;
     state.selectedSquare = null;
-    renderProPuzzleBoard(puzzleId);
+    if (from === square) {
+        renderProPuzzleBoard(puzzleId);
+        return;
+    }
+    handleProPuzzleMove(puzzleId, from, square);
+}
 
-    if (from === to) return;
+function handleProPuzzleMove(puzzleId, from, to) {
+    const state = proPuzzleBoards[puzzleId];
+    if (!state) return;
+    const movingPiece = state.pieces[from];
+    if (!movingPiece) return;
 
-    const input = document.getElementById(`puzzleMove${puzzleId}`);
-    if (!input) return;
+    const isWhitePiece = movingPiece === movingPiece.toUpperCase();
+    if ((state.sideToMove === 'w' && !isWhitePiece) || (state.sideToMove === 'b' && isWhitePiece)) return;
 
+    let pieceToPlace = movingPiece;
     let uci = `${from}${to}`;
-    const movingPiece = state.pieces[from] || '';
     if ((movingPiece === 'P' && to.endsWith('8')) || (movingPiece === 'p' && to.endsWith('1'))) {
         uci += 'q';
+        pieceToPlace = movingPiece === 'P' ? 'Q' : 'q';
     }
-    input.value = uci;
-    submitProPuzzleAttempt(puzzleId, uci);
+
+    delete state.pieces[from];
+    state.pieces[to] = pieceToPlace;
+    state.selectedSquare = null;
+
+    renderProPuzzleBoard(puzzleId);
+    const input = document.getElementById('proPuzzleMoveInput');
+    if (input) input.value = uci;
+    submitCurrentProPuzzle(uci);
 }
 
 function pieceToUnicode(piece) {
     const map = {
-        K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
-        k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟'
+        K: '\u2654', Q: '\u2655', R: '\u2656', B: '\u2657', N: '\u2658', P: '\u2659',
+        k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F'
     };
     return map[piece] || '';
 }
 
-function resetProPuzzleBoard(puzzleId) {
-    const puzzle = proPuzzles.find(p => p.id === puzzleId);
+function resetCurrentProPuzzle() {
+    const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
-
-    proPuzzleBoards[puzzleId] = buildBoardStateFromFen(puzzle.fen);
-    renderProPuzzleBoard(puzzleId);
-
-    const feedback = document.getElementById(`puzzleFeedback${puzzleId}`);
-    if (feedback) {
-        feedback.textContent = '';
-        feedback.className = 'pro-puzzle-feedback';
-    }
+    proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
+    renderCurrentProPuzzle();
 }
 
-async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
-    const input = document.getElementById(`puzzleMove${puzzleId}`);
-    const feedback = document.getElementById(`puzzleFeedback${puzzleId}`);
+function resetProPuzzleBoard() {
+    // Backward compatibility if old inline handlers exist.
+    resetCurrentProPuzzle();
+}
+
+async function submitCurrentProPuzzle(moveOverride = null) {
+    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    if (!puzzle) return;
+    const input = document.getElementById('proPuzzleMoveInput');
+    const feedback = document.getElementById('proPuzzleFeedback');
     if (!feedback) return;
 
     const move = moveOverride || (input ? input.value.trim() : '');
@@ -318,16 +417,73 @@ async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
     feedback.className = 'pro-puzzle-feedback';
 
     try {
-        const result = await ChessAPI.attemptProPuzzle(puzzleId, move);
+        const result = await ChessAPI.attemptProPuzzle(puzzle.id, move);
+        proPuzzleProgress[puzzle.id].attempts += 1;
         feedback.textContent = result.message;
         feedback.className = result.correct ? 'pro-puzzle-feedback success' : 'pro-puzzle-feedback error';
-        if (!result.correct) {
-            setTimeout(() => resetProPuzzleBoard(puzzleId), 700);
+        if (result.correct) {
+            proPuzzleProgress[puzzle.id].status = 'solved';
+            setTimeout(() => moveToNextUnsolvedOrStay(), 650);
+        } else {
+            setTimeout(() => resetCurrentProPuzzle(), 700);
         }
     } catch (error) {
         feedback.textContent = error.message || 'Could not submit answer.';
         feedback.className = 'pro-puzzle-feedback error';
     }
+}
+
+async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
+    // Backward compatibility for older button handlers.
+    if (typeof puzzleId === 'number') {
+        const idx = proPuzzles.findIndex(p => p.id === puzzleId);
+        if (idx >= 0) proPuzzleCurrentIndex = idx;
+    }
+    await submitCurrentProPuzzle(moveOverride);
+}
+
+function moveToNextUnsolvedOrStay() {
+    for (let i = proPuzzleCurrentIndex + 1; i < proPuzzles.length; i++) {
+        const p = proPuzzles[i];
+        if ((proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
+            proPuzzleCurrentIndex = i;
+            renderCurrentProPuzzle();
+            return;
+        }
+    }
+    for (let i = 0; i < proPuzzles.length; i++) {
+        const p = proPuzzles[i];
+        if ((proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
+            proPuzzleCurrentIndex = i;
+            renderCurrentProPuzzle();
+            return;
+        }
+    }
+    renderCurrentProPuzzle();
+    const feedback = document.getElementById('proPuzzleFeedback');
+    if (feedback) {
+        feedback.textContent = 'All puzzles are solved/skipped. Use Previous to review.';
+        feedback.className = 'pro-puzzle-feedback success';
+    }
+}
+
+function goPrevProPuzzle() {
+    if (proPuzzleCurrentIndex <= 0) return;
+    proPuzzleCurrentIndex -= 1;
+    renderCurrentProPuzzle();
+}
+
+function goNextProPuzzle() {
+    if (proPuzzleCurrentIndex >= proPuzzles.length - 1) return;
+    proPuzzleCurrentIndex += 1;
+    renderCurrentProPuzzle();
+}
+
+function skipCurrentProPuzzle() {
+    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    if (!puzzle) return;
+    proPuzzleProgress[puzzle.id].status = 'skipped';
+    moveToNextUnsolvedOrStay();
 }
 
 async function fetchWeeklyDashboard(username, gameTypes) {
@@ -338,7 +494,7 @@ async function fetchWeeklyDashboard(username, gameTypes) {
     dashboardSection.innerHTML = `
         <div class="dashboard-loading">
             <div class="spinner"></div>
-            <p>Loading weekly accuracy dashboard${currentPlatform === 'chesscom' ? ' (deep-analyzing up to 20 games with Stockfish at depth 15 — this may take a few minutes...)' : ''}...</p>
+            <p>Loading weekly accuracy dashboard${currentPlatform === 'chesscom' ? ' (deep-analyzing up to 20 games with Stockfish at depth 15 â€” this may take a few minutes...)' : ''}...</p>
         </div>
     `;
 
@@ -348,7 +504,7 @@ async function fetchWeeklyDashboard(username, gameTypes) {
         if (dashboardData.total_analyzed_games === 0) {
             dashboardSection.innerHTML = `
                 <div class="chart-container" style="text-align: center; padding: 30px;">
-                    <h2>📊 Weekly Accuracy Dashboard</h2>
+                    <h2>ðŸ“Š Weekly Accuracy Dashboard</h2>
                     <p style="color: #718096; margin-top: 12px;">No analyzed games found for the past week.
                     ${currentPlatform === 'lichess' ? 'Request computer analysis on your Lichess games to see accuracy data.' : ''}</p>
                 </div>
@@ -361,7 +517,7 @@ async function fetchWeeklyDashboard(username, gameTypes) {
         console.error('Dashboard error:', error);
         dashboardSection.innerHTML = `
             <div class="chart-container" style="text-align: center; padding: 30px;">
-                <h2>📊 Weekly Accuracy Dashboard</h2>
+                <h2>ðŸ“Š Weekly Accuracy Dashboard</h2>
                 <p style="color: #e53e3e; margin-top: 12px;">Could not load dashboard: ${error.message}</p>
             </div>
         `;
@@ -376,7 +532,7 @@ async function generateStudyPlan() {
     if (!stats || !stats.totalGames) {
         studyPlanSection.innerHTML = `
             <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
-                <h3>⚠️ No Analysis Data Found</h3>
+                <h3>âš ï¸ No Analysis Data Found</h3>
                 <p>Please analyze your games first before generating a study plan.</p>
                 <p style="margin-top: 12px;">Click "Analyze Games" at the top to get started!</p>
             </div>
@@ -386,7 +542,7 @@ async function generateStudyPlan() {
     }
 
     studyPlanBtn.disabled = true;
-    studyPlanBtn.textContent = '🤖 Generating Your Personalized Study Plan...';
+    studyPlanBtn.textContent = 'ðŸ¤– Generating Your Personalized Study Plan...';
     studyPlanSection.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div><p style="text-align: center; color: white;">Analyzing your games and creating custom recommendations...</p>';
     studyPlanSection.style.display = 'block';
 
@@ -419,14 +575,14 @@ async function generateStudyPlan() {
 
         studyPlanSection.innerHTML = `
             <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
-                <h3>⚠️ Error Generating Study Plan</h3>
+                <h3>âš ï¸ Error Generating Study Plan</h3>
                 <p>${errorMessage}</p>
                 ${helpText}
             </div>
         `;
     } finally {
         studyPlanBtn.disabled = false;
-        studyPlanBtn.textContent = '🤖 Generate My Study Plan';
+        studyPlanBtn.textContent = 'ðŸ¤– Generate My Study Plan';
     }
 }
 
@@ -618,7 +774,7 @@ function copyStudyPlan() {
     navigator.clipboard.writeText(window.currentStudyPlan).then(() => {
         const btn = event.target;
         const originalText = btn.textContent;
-        btn.textContent = '✅ Copied!';
+        btn.textContent = 'âœ… Copied!';
         setTimeout(() => {
             btn.textContent = originalText;
         }, 2000);
@@ -676,3 +832,4 @@ if (document.readyState === 'loading') {
 } else {
     initApp();
 }
+
