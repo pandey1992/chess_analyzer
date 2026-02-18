@@ -155,10 +155,16 @@ async def register(request_body: RegisterRequest, request: Request, db: AsyncSes
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Create user
+    try:
+        hashed_password = get_password_hash(request_body.password)
+    except Exception:
+        logger.exception("Password hashing failed during registration")
+        raise HTTPException(status_code=503, detail="Authentication service temporarily unavailable")
+
     user = User(
         username=request_body.username,
         email=request_body.email,
-        hashed_password=get_password_hash(request_body.password),
+        hashed_password=hashed_password,
     )
     db.add(user)
     try:
@@ -231,7 +237,15 @@ async def login(request_body: LoginRequest, request: Request, db: AsyncSession =
     result = await db.execute(select(User).where(User.email == request_body.email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(request_body.password, user.hashed_password):
+    password_ok = False
+    if user:
+        try:
+            password_ok = verify_password(request_body.password, user.hashed_password)
+        except Exception:
+            logger.exception("Password verification failed during login for email=%s", request_body.email)
+            raise HTTPException(status_code=503, detail="Authentication service temporarily unavailable")
+
+    if not user or not password_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
