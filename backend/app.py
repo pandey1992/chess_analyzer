@@ -2,6 +2,7 @@ import os
 import logging
 import mimetypes
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,7 @@ from slowapi.errors import RateLimitExceeded
 from backend.config import settings
 from backend.database import engine, Base
 from backend.api import chess_api, groq_api, auth, pro
+import chess.engine
 
 # --- Logging ---
 logging.basicConfig(
@@ -108,6 +110,45 @@ async def auth_health_check():
     return {
         "status": "ok",
         "google_auth_enabled": bool(settings.google_client_id),
+    }
+
+
+@app.get("/health/stockfish")
+async def stockfish_health_check():
+    stockfish_path = settings.stockfish_path
+    resolved = Path(stockfish_path)
+    if not resolved.is_absolute():
+        base_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        candidate = base_dir / stockfish_path
+        if candidate.exists():
+            resolved = candidate
+
+    exists = resolved.exists()
+    can_start = False
+    error = None
+
+    if exists:
+        engine = None
+        try:
+            engine = chess.engine.SimpleEngine.popen_uci(str(resolved))
+            can_start = True
+        except Exception as e:
+            error = repr(e)
+        finally:
+            if engine:
+                try:
+                    engine.quit()
+                except Exception:
+                    pass
+    else:
+        error = "stockfish binary not found"
+
+    return {
+        "path_config": stockfish_path,
+        "path_resolved": str(resolved),
+        "exists": exists,
+        "can_start": can_start,
+        "error": error,
     }
 
 

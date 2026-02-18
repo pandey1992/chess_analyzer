@@ -229,7 +229,7 @@ def analyze_game_pgn(
             engine.quit()
 
     except Exception as e:
-        logger.error(f"Stockfish analysis failed: {e}")
+        logger.error("Stockfish analysis failed: %r", e, exc_info=True)
         return None
 
 
@@ -274,7 +274,7 @@ def analyze_games_batch(
                 results.append(None)
 
     except Exception as e:
-        logger.error(f"Failed to start Stockfish engine: {e}")
+        logger.error("Failed to start Stockfish engine (%s): %r", stockfish_path, e, exc_info=True)
         # Fill remaining with None
         while len(results) < len(games_pgn_data):
             results.append(None)
@@ -539,7 +539,7 @@ def extract_mistake_puzzles(
             prev_cp = current_cp
 
     except Exception as e:
-        logger.error("Failed to extract mistake puzzles: %s", e)
+        logger.error("Failed to extract mistake puzzles (%s): %r", stockfish_path, e, exc_info=True)
     finally:
         if engine:
             try:

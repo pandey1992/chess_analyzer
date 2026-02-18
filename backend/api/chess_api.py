@@ -762,7 +762,7 @@ async def chesscom_dashboard(
 
         except Exception as e:
             logger.error(f"Batch Stockfish analysis failed: {e}", exc_info=True)
-            stockfish_error = str(e)
+            stockfish_error = repr(e)
 
         # Fallback path: if batch returns zero, try per-game analysis.
         if stockfish_analyzed_count == 0 and games_for_stockfish:
