@@ -7,7 +7,6 @@ let stats = {};
 let currentPlatform = 'chesscom';
 let proPuzzles = [];
 let proPuzzleBoards = {};
-let proPuzzleGames = {};
 
 function selectPlatform(platform) {
     currentPlatform = platform;
@@ -173,17 +172,6 @@ function renderProPuzzles() {
 
 function initProPuzzleBoards() {
     proPuzzleBoards = {};
-    proPuzzleGames = {};
-
-    if (typeof window.Chess === 'undefined' || typeof window.Chessboard === 'undefined') {
-        proPuzzles.forEach((p) => {
-            const el = document.getElementById(`puzzleBoard${p.id}`);
-            if (el) {
-                el.innerHTML = '<div class="pro-board-error">Board failed to load (missing chess libraries). Refresh page.</div>';
-            }
-        });
-        return;
-    }
 
     proPuzzles.forEach((p) => {
         const elId = `puzzleBoard${p.id}`;
@@ -191,28 +179,9 @@ function initProPuzzleBoards() {
         if (!el) return;
 
         try {
-            const sideToMove = (p.fen || '').split(' ')[1] || 'w';
-            proPuzzleGames[p.id] = new window.Chess(p.fen);
-
-            const board = window.Chessboard(elId, {
-                position: p.fen,
-                draggable: true,
-                orientation: sideToMove === 'b' ? 'black' : 'white',
-                pieceTheme: 'https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/www/img/chesspieces/wikipedia/{piece}.png',
-                onDrop: (source, target) => onProPuzzleDrop(p.id, source, target),
-                onSnapEnd: () => syncProPuzzleBoard(p.id)
-            });
-            proPuzzleBoards[p.id] = board;
-
-            // Ensure board computes size correctly after layout settles.
-            setTimeout(() => {
-                try {
-                    board.resize();
-                    board.position(p.fen, false);
-                } catch (e) {
-                    // no-op
-                }
-            }, 60);
+            const boardState = buildBoardStateFromFen(p.fen);
+            proPuzzleBoards[p.id] = boardState;
+            renderProPuzzleBoard(p.id);
         } catch (error) {
             console.error('Puzzle board init failed:', error);
             el.innerHTML = '<div class="pro-board-error">Board failed to initialize. Try reloading page.</div>';
@@ -220,37 +189,111 @@ function initProPuzzleBoards() {
     });
 }
 
-function onProPuzzleDrop(puzzleId, source, target) {
-    const game = proPuzzleGames[puzzleId];
-    if (!game) return 'snapback';
+function buildBoardStateFromFen(fen) {
+    const [boardPart, sideToMove] = fen.split(' ');
+    const rows = boardPart.split('/');
+    const pieces = {};
 
-    const move = game.move({ from: source, to: target, promotion: 'q' });
-    if (!move) return 'snapback';
+    for (let rankIdx = 0; rankIdx < 8; rankIdx++) {
+        let fileIdx = 0;
+        for (const ch of rows[rankIdx]) {
+            if (/\d/.test(ch)) {
+                fileIdx += parseInt(ch, 10);
+            } else {
+                const sq = `${'abcdefgh'[fileIdx]}${8 - rankIdx}`;
+                pieces[sq] = ch;
+                fileIdx += 1;
+            }
+        }
+    }
 
-    const input = document.getElementById(`puzzleMove${puzzleId}`);
-    if (input) input.value = move.san;
-
-    submitProPuzzleAttempt(puzzleId, move.san);
-    return undefined;
+    return {
+        fen,
+        sideToMove: sideToMove || 'w',
+        selectedSquare: null,
+        pieces
+    };
 }
 
-function syncProPuzzleBoard(puzzleId) {
-    const board = proPuzzleBoards[puzzleId];
-    const game = proPuzzleGames[puzzleId];
-    if (board && game) {
-        board.position(game.fen());
+function renderProPuzzleBoard(puzzleId) {
+    const container = document.getElementById(`puzzleBoard${puzzleId}`);
+    const state = proPuzzleBoards[puzzleId];
+    if (!container || !state) return;
+
+    const orientationWhite = state.sideToMove === 'w';
+    const ranks = orientationWhite ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8];
+    const files = orientationWhite ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
+
+    let html = '<div class="pro-board-grid">';
+    for (let r = 0; r < 8; r++) {
+        for (let f = 0; f < 8; f++) {
+            const square = `${files[f]}${ranks[r]}`;
+            const piece = state.pieces[square] || '';
+            const isLight = (r + f) % 2 === 0;
+            const selected = state.selectedSquare === square ? ' selected' : '';
+            html += `
+                <button type="button"
+                        class="pro-board-square ${isLight ? 'light' : 'dark'}${selected}"
+                        onclick="onProPuzzleSquareClick(${puzzleId}, '${square}')">
+                    ${pieceToUnicode(piece)}
+                </button>
+            `;
+        }
     }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function onProPuzzleSquareClick(puzzleId, square) {
+    const state = proPuzzleBoards[puzzleId];
+    if (!state) return;
+
+    const clickedPiece = state.pieces[square];
+
+    if (!state.selectedSquare) {
+        if (!clickedPiece) return;
+        const isWhitePiece = clickedPiece === clickedPiece.toUpperCase();
+        if ((state.sideToMove === 'w' && !isWhitePiece) || (state.sideToMove === 'b' && isWhitePiece)) {
+            return;
+        }
+        state.selectedSquare = square;
+        renderProPuzzleBoard(puzzleId);
+        return;
+    }
+
+    const from = state.selectedSquare;
+    const to = square;
+    state.selectedSquare = null;
+    renderProPuzzleBoard(puzzleId);
+
+    if (from === to) return;
+
+    const input = document.getElementById(`puzzleMove${puzzleId}`);
+    if (!input) return;
+
+    let uci = `${from}${to}`;
+    const movingPiece = state.pieces[from] || '';
+    if ((movingPiece === 'P' && to.endsWith('8')) || (movingPiece === 'p' && to.endsWith('1'))) {
+        uci += 'q';
+    }
+    input.value = uci;
+    submitProPuzzleAttempt(puzzleId, uci);
+}
+
+function pieceToUnicode(piece) {
+    const map = {
+        K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
+        k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟'
+    };
+    return map[piece] || '';
 }
 
 function resetProPuzzleBoard(puzzleId) {
     const puzzle = proPuzzles.find(p => p.id === puzzleId);
     if (!puzzle) return;
 
-    if (typeof window.Chess !== 'undefined') {
-        proPuzzleGames[puzzleId] = new window.Chess(puzzle.fen);
-    }
-    const board = proPuzzleBoards[puzzleId];
-    if (board) board.position(puzzle.fen, false);
+    proPuzzleBoards[puzzleId] = buildBoardStateFromFen(puzzle.fen);
+    renderProPuzzleBoard(puzzleId);
 
     const feedback = document.getElementById(`puzzleFeedback${puzzleId}`);
     if (feedback) {
