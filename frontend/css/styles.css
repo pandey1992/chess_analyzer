@@ -2505,6 +2505,16 @@
             max-width: 360px;
         }
 
+        .pro-board-error {
+            background: #fff5f5;
+            border: 1px solid #feb2b2;
+            color: #9b2c2c;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.85em;
+            text-align: center;
+        }
+
         .pro-puzzle-answer-row {
             display: flex;
             gap: 8px;

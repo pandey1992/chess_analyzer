@@ -176,6 +176,12 @@ function initProPuzzleBoards() {
     proPuzzleGames = {};
 
     if (typeof window.Chess === 'undefined' || typeof window.Chessboard === 'undefined') {
+        proPuzzles.forEach((p) => {
+            const el = document.getElementById(`puzzleBoard${p.id}`);
+            if (el) {
+                el.innerHTML = '<div class="pro-board-error">Board failed to load (missing chess libraries). Refresh page.</div>';
+            }
+        });
         return;
     }
 
@@ -184,18 +190,33 @@ function initProPuzzleBoards() {
         const el = document.getElementById(elId);
         if (!el) return;
 
-        const sideToMove = (p.fen || '').split(' ')[1] || 'w';
-        proPuzzleGames[p.id] = new window.Chess(p.fen);
+        try {
+            const sideToMove = (p.fen || '').split(' ')[1] || 'w';
+            proPuzzleGames[p.id] = new window.Chess(p.fen);
 
-        const board = window.Chessboard(elId, {
-            position: p.fen,
-            draggable: true,
-            orientation: sideToMove === 'b' ? 'black' : 'white',
-            pieceTheme: 'https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/www/img/chesspieces/wikipedia/{piece}.png',
-            onDrop: (source, target) => onProPuzzleDrop(p.id, source, target),
-            onSnapEnd: () => syncProPuzzleBoard(p.id)
-        });
-        proPuzzleBoards[p.id] = board;
+            const board = window.Chessboard(elId, {
+                position: p.fen,
+                draggable: true,
+                orientation: sideToMove === 'b' ? 'black' : 'white',
+                pieceTheme: 'https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/www/img/chesspieces/wikipedia/{piece}.png',
+                onDrop: (source, target) => onProPuzzleDrop(p.id, source, target),
+                onSnapEnd: () => syncProPuzzleBoard(p.id)
+            });
+            proPuzzleBoards[p.id] = board;
+
+            // Ensure board computes size correctly after layout settles.
+            setTimeout(() => {
+                try {
+                    board.resize();
+                    board.position(p.fen, false);
+                } catch (e) {
+                    // no-op
+                }
+            }, 60);
+        } catch (error) {
+            console.error('Puzzle board init failed:', error);
+            el.innerHTML = '<div class="pro-board-error">Board failed to initialize. Try reloading page.</div>';
+        }
     });
 }
 
