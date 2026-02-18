@@ -6,7 +6,7 @@
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260218i">
+    <link rel="stylesheet" href="/css/styles.css?v=20260218j">
 </head>
 <body>
 
@@ -494,7 +494,11 @@
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p>Fetching and analyzing your games...</p>
+                <p id="loadingStage">Fetching games...</p>
+                <p id="loadingDetail" class="loading-detail">Connecting to platform API</p>
+                <div class="loading-progress">
+                    <div id="loadingProgressFill" class="loading-progress-fill"></div>
+                </div>
             </div>
 
             <!-- Weekly Accuracy Dashboard -->
@@ -576,17 +580,18 @@
     </div>
 
     <!-- Scripts: load order matters -->
-    <script src="/js/config.js?v=20260218i"></script>
-    <script src="/js/utils.js?v=20260218i"></script>
-    <script src="/js/api.js?v=20260218i"></script>
-    <script src="/js/auth.js?v=20260218i"></script>
-    <script src="/js/router.js?v=20260218i"></script>
-    <script src="/js/analysis.js?v=20260218i"></script>
-    <script src="/js/charts.js?v=20260218i"></script>
-    <script src="/js/display.js?v=20260218i"></script>
-    <script src="/js/app.js?v=20260218i"></script>
+    <script src="/js/config.js?v=20260218j"></script>
+    <script src="/js/utils.js?v=20260218j"></script>
+    <script src="/js/api.js?v=20260218j"></script>
+    <script src="/js/auth.js?v=20260218j"></script>
+    <script src="/js/router.js?v=20260218j"></script>
+    <script src="/js/analysis.js?v=20260218j"></script>
+    <script src="/js/charts.js?v=20260218j"></script>
+    <script src="/js/display.js?v=20260218j"></script>
+    <script src="/js/app.js?v=20260218j"></script>
 </body>
 </html>
+
 
 
 

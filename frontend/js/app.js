@@ -41,6 +41,8 @@ async function startAnalysis() {
     const platformName = currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com';
 
     try {
+        setLoadingStatus('Fetching games...', `Reading your recent ${platformName} games`, 20);
+
         // Call backend API with platform selection
         allGames = await ChessAPI.fetchGames(username, gameTypes, currentPlatform);
 
@@ -50,8 +52,12 @@ async function startAnalysis() {
             return;
         }
 
+        setLoadingStatus('Analyzing patterns...', `Processing ${allGames.length} games`, 62);
+
         // Analysis stays client-side
         analyzeAndDisplay(allGames);
+
+        setLoadingStatus('Building dashboard...', 'Rendering insights and charts', 90);
         hideLoading();
         showResults();
 
@@ -61,6 +67,7 @@ async function startAnalysis() {
     } catch (error) {
         console.error('Error:', error);
         showError(error.message || `Failed to fetch games from ${platformName}. Please check the username.`);
+        setLoadingStatus('Analysis failed', 'Please check username and try again', 100);
         hideLoading();
     }
 }

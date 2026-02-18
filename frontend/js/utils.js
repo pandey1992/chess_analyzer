@@ -3,6 +3,7 @@
 function showLoading() {
     document.getElementById('loading').style.display = 'block';
     document.getElementById('results').style.display = 'none';
+    setLoadingStatus('Fetching games...', 'Connecting to platform API', 12);
 }
 
 function hideLoading() {
@@ -21,4 +22,17 @@ function showError(message) {
 
 function hideError() {
     document.getElementById('error').style.display = 'none';
+}
+
+function setLoadingStatus(stageText, detailText = '', progressPercent = null) {
+    const stageEl = document.getElementById('loadingStage');
+    const detailEl = document.getElementById('loadingDetail');
+    const fillEl = document.getElementById('loadingProgressFill');
+
+    if (stageEl && stageText) stageEl.textContent = stageText;
+    if (detailEl) detailEl.textContent = detailText || '';
+    if (fillEl && typeof progressPercent === 'number') {
+        const clamped = Math.max(0, Math.min(100, progressPercent));
+        fillEl.style.width = `${clamped}%`;
+    }
 }
