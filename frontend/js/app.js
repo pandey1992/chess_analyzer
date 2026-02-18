@@ -194,7 +194,7 @@ function renderProPuzzles() {
     renderCurrentProPuzzle();
 }
 
-function renderCurrentProPuzzle() {
+function renderCurrentProPuzzle(preservedFeedback = null) {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
 
@@ -211,8 +211,13 @@ function renderCurrentProPuzzle() {
     if (title) title.textContent = `Puzzle ${proPuzzleCurrentIndex + 1} / ${proPuzzles.length}`;
     if (sub) sub.textContent = `Move ${puzzle.move_number} | Eval Drop ${puzzle.cp_loss} | ${status.toUpperCase()}`;
     if (feedback) {
-        feedback.textContent = '';
-        feedback.className = 'pro-puzzle-feedback';
+        if (preservedFeedback && preservedFeedback.text) {
+            feedback.textContent = preservedFeedback.text;
+            feedback.className = preservedFeedback.className || 'pro-puzzle-feedback';
+        } else {
+            feedback.textContent = '';
+            feedback.className = 'pro-puzzle-feedback';
+        }
     }
 
     const remainingPill = document.getElementById('proRemainingPill');
@@ -388,11 +393,11 @@ function pieceToImageUrl(piece) {
     return `https://cdn.jsdelivr.net/gh/oakmac/chessboardjs/website/img/chesspieces/wikipedia/${code}.png`;
 }
 
-function resetCurrentProPuzzle() {
+function resetCurrentProPuzzle(preservedFeedback = null) {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
     proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
-    renderCurrentProPuzzle();
+    renderCurrentProPuzzle(preservedFeedback);
 }
 
 function resetProPuzzleBoard() {
@@ -425,9 +430,15 @@ async function submitCurrentProPuzzle(moveOverride = null) {
             proPuzzleProgress[puzzle.id].status = 'solved';
             setTimeout(() => moveToNextUnsolvedOrStay(), 650);
         } else {
-            feedback.textContent = 'Incorrect. Try again.';
+            const incorrectText = 'Incorrect. Try again.';
+            feedback.textContent = incorrectText;
             feedback.className = 'pro-puzzle-feedback error';
-            setTimeout(() => resetCurrentProPuzzle(), 1200);
+            setTimeout(() => {
+                resetCurrentProPuzzle({
+                    text: incorrectText,
+                    className: 'pro-puzzle-feedback error'
+                });
+            }, 1200);
         }
     } catch (error) {
         feedback.textContent = error.message || 'Could not submit answer.';

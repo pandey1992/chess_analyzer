@@ -2551,6 +2551,7 @@
         .pro-board-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
             width: 100%;
             max-width: 440px;
             aspect-ratio: 1 / 1;
