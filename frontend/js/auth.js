@@ -115,7 +115,12 @@ const Auth = {
             }
             Router.navigate('app');
         } catch (err) {
-            errorEl.textContent = err.message || 'Registration failed. Please try again.';
+            const msg = err.message || 'Registration failed. Please try again.';
+            if (msg.includes('429') || msg.toLowerCase().includes('rate')) {
+                errorEl.textContent = 'Too many signup attempts. Please wait a minute and try again.';
+            } else {
+                errorEl.textContent = msg;
+            }
             errorEl.style.display = 'block';
         } finally {
             btn.disabled = false;

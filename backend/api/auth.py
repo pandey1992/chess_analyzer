@@ -8,6 +8,7 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -141,7 +142,7 @@ def _verify_google_id_token(token: str) -> dict:
 
 
 @router.post("/register", response_model=TokenResponse)
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def register(request_body: RegisterRequest, request: Request, db: AsyncSession = Depends(get_db)):
     # Check if username already exists
     result = await db.execute(select(User).where(User.username == request_body.username))
@@ -160,7 +161,16 @@ async def register(request_body: RegisterRequest, request: Request, db: AsyncSes
         hashed_password=get_password_hash(request_body.password),
     )
     db.add(user)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        # Handles race-condition duplicates gracefully.
+        raise HTTPException(status_code=400, detail="Username or email already registered")
+    except Exception:
+        await db.rollback()
+        logger.exception("Registration failed")
+        raise HTTPException(status_code=500, detail="Registration failed. Please try again.")
     await db.refresh(user)
     await _persist_auth_event(db, request, "signup", user)
 
