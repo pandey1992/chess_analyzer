@@ -2,11 +2,17 @@
 
 const Auth = {
     _user: null,
-    _googleInitialized: false,
-    _googleClientId: null,
 
     isLoggedIn() {
         return !!ChessAPI.getToken();
+    },
+
+    isGuest() {
+        return localStorage.getItem('guest_mode') === '1';
+    },
+
+    canAccessApp() {
+        return this.isLoggedIn() || this.isGuest();
     },
 
     getUser() {
@@ -16,7 +22,7 @@ const Auth = {
     async checkAuth() {
         const token = ChessAPI.getToken();
         if (!token) {
-            this._user = null;
+            this._user = this.isGuest() ? { username: 'Guest', email: null } : null;
             return null;
         }
         try {
@@ -50,6 +56,7 @@ const Auth = {
 
         try {
             await ChessAPI.login(email, password);
+            localStorage.removeItem('guest_mode');
             await this.checkAuth();
             Router.navigate('app');
         } catch (err) {
@@ -98,6 +105,7 @@ const Auth = {
 
         try {
             await ChessAPI.register(username, email, password);
+            localStorage.removeItem('guest_mode');
             await this.checkAuth();
             Router.navigate('app');
         } catch (err) {
@@ -112,118 +120,16 @@ const Auth = {
 
     handleLogout() {
         ChessAPI.clearToken();
+        localStorage.removeItem('guest_mode');
         this._user = null;
         Router.navigate('landing');
     },
-
-    async initGoogleForPage(page) {
-        if (page !== 'login' && page !== 'signup') return;
-
-        const containerId = page === 'login' ? 'googleLoginButton' : 'googleSignupButton';
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        try {
-            if (!this._googleClientId) {
-                this._googleClientId = await this.fetchGoogleClientId();
-            }
-
-            if (!this._googleClientId) {
-                const action = page === 'login' ? 'Log in' : 'Sign up';
-                this.showGoogleFallback(container, `${action} with Google is unavailable. Configure GOOGLE_CLIENT_ID to enable it.`);
-                return;
-            }
-
-            if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-                const action = page === 'login' ? 'Log in' : 'Sign up';
-                this.showGoogleFallback(container, `${action} with Google is temporarily unavailable. Please refresh and try again.`);
-                return;
-            }
-
-            if (!this._googleInitialized) {
-                window.google.accounts.id.initialize({
-                    client_id: this._googleClientId,
-                    callback: (response) => this.handleGoogleCredential(response),
-                    auto_select: false,
-                    cancel_on_tap_outside: true
-                });
-                this._googleInitialized = true;
-            }
-
-            container.style.display = 'block';
-            container.innerHTML = '';
-            window.google.accounts.id.renderButton(container, {
-                theme: 'outline',
-                size: 'large',
-                shape: 'pill',
-                width: 360,
-                text: page === 'login' ? 'signin_with' : 'signup_with'
-            });
-        } catch (error) {
-            const action = page === 'login' ? 'Log in' : 'Sign up';
-            this.showGoogleFallback(container, `${action} with Google is temporarily unavailable. Please use email/password.`);
-            console.error('Google auth initialization failed:', error);
-        }
-    },
-
-    showGoogleFallback(container, message) {
-        container.style.display = 'block';
-        container.innerHTML = `<div class="google-auth-fallback">${message}</div>`;
-    },
-
-    async fetchGoogleClientId() {
-        try {
-            const response = await fetch(`${CONFIG.API_BASE}/auth/google-config`);
-            if (!response.ok) return CONFIG.GOOGLE_CLIENT_ID || '';
-            const data = await response.json();
-            return data.client_id || CONFIG.GOOGLE_CLIENT_ID || '';
-        } catch (error) {
-            return CONFIG.GOOGLE_CLIENT_ID || '';
-        }
-    },
-
-    async handleGoogleCredential(response) {
-        const idToken = response && response.credential;
-        const loginError = document.getElementById('loginError');
-        const signupError = document.getElementById('signupError');
-
-        if (loginError) {
-            loginError.style.display = 'none';
-            loginError.textContent = '';
-        }
-        if (signupError) {
-            signupError.style.display = 'none';
-            signupError.textContent = '';
-        }
-
-        if (!idToken) {
-            const msg = 'Google login failed. Missing credential.';
-            if (loginError && Router.currentPage === 'login') {
-                loginError.textContent = msg;
-                loginError.style.display = 'block';
-            }
-            if (signupError && Router.currentPage === 'signup') {
-                signupError.textContent = msg;
-                signupError.style.display = 'block';
-            }
-            return;
-        }
-
-        try {
-            await ChessAPI.googleAuth(idToken);
-            await this.checkAuth();
-            Router.navigate('app');
-        } catch (error) {
-            const msg = error.message || 'Google authentication failed.';
-            if (loginError && Router.currentPage === 'login') {
-                loginError.textContent = msg;
-                loginError.style.display = 'block';
-            }
-            if (signupError && Router.currentPage === 'signup') {
-                signupError.textContent = msg;
-                signupError.style.display = 'block';
-            }
-        }
+    
+    continueAsGuest() {
+        ChessAPI.clearToken();
+        localStorage.setItem('guest_mode', '1');
+        this._user = { username: 'Guest', email: null };
+        Router.navigate('app');
     }
 };
 
@@ -270,16 +176,3 @@ window.addEventListener('scroll', () => {
         }
     }
 });
-
-function initGoogleForCurrentHash() {
-    const page = (window.location.hash || '#landing').slice(1).split('?')[0];
-    Auth.initGoogleForPage(page || 'landing');
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGoogleForCurrentHash, { once: true });
-} else {
-    initGoogleForCurrentHash();
-}
-
-window.addEventListener('hashchange', initGoogleForCurrentHash);

@@ -19,7 +19,7 @@ const Router = {
         const page = hash.split('?')[0]; // strip query params
 
         // Auth guard: redirect to login if page requires auth
-        if (this.authRequiredPages.includes(page) && !Auth.isLoggedIn()) {
+        if (this.authRequiredPages.includes(page) && !Auth.canAccessApp()) {
             window.location.hash = '#login';
             return;
         }
@@ -53,11 +53,6 @@ const Router = {
 
         // Update navbar state
         this.updateNavbar(this.currentPage);
-
-        // Initialize Google auth button when auth pages are visible
-        if ((this.currentPage === 'login' || this.currentPage === 'signup') && window.Auth) {
-            Auth.initGoogleForPage(this.currentPage);
-        }
 
         // Scroll to top on page change (unless it's an anchor scroll)
         if (!window.location.hash.includes('/')) {

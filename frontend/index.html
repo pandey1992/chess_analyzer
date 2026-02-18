@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260217i">
+    <link rel="stylesheet" href="/css/styles.css?v=20260217k">
 </head>
 <body>
 
@@ -393,11 +392,7 @@
                     <button type="submit" class="btn btn-auth-submit" id="loginBtn">Log In</button>
                 </form>
                 <div class="auth-divider"><span>or</span></div>
-                <div class="google-auth-wrap">
-                    <div id="googleLoginButton">
-                        <button type="button" class="google-placeholder-btn" disabled>Log in with Google</button>
-                    </div>
-                </div>
+                <button type="button" class="btn btn-auth-guest" onclick="Auth.continueAsGuest()">Continue as Guest</button>
                 <div class="auth-switch">
                     Don't have an account? <a href="#signup">Sign up free</a>
                 </div>
@@ -443,11 +438,7 @@
                     <button type="submit" class="btn btn-auth-submit" id="signupBtn">Create Account</button>
                 </form>
                 <div class="auth-divider"><span>or</span></div>
-                <div class="google-auth-wrap">
-                    <div id="googleSignupButton">
-                        <button type="button" class="google-placeholder-btn" disabled>Sign up with Google</button>
-                    </div>
-                </div>
+                <button type="button" class="btn btn-auth-guest" onclick="Auth.continueAsGuest()">Continue as Guest</button>
                 <div class="auth-switch">
                     Already have an account? <a href="#login">Log in</a>
                 </div>
@@ -570,14 +561,14 @@
     </div>
 
     <!-- Scripts: load order matters -->
-    <script src="/js/config.js?v=20260217i"></script>
-    <script src="/js/utils.js?v=20260217i"></script>
-    <script src="/js/api.js?v=20260217i"></script>
-    <script src="/js/auth.js?v=20260217i"></script>
-    <script src="/js/router.js?v=20260217i"></script>
-    <script src="/js/analysis.js?v=20260217i"></script>
-    <script src="/js/charts.js?v=20260217i"></script>
-    <script src="/js/display.js?v=20260217i"></script>
-    <script src="/js/app.js?v=20260217i"></script>
+    <script src="/js/config.js?v=20260217k"></script>
+    <script src="/js/utils.js?v=20260217k"></script>
+    <script src="/js/api.js?v=20260217k"></script>
+    <script src="/js/auth.js?v=20260217k"></script>
+    <script src="/js/router.js?v=20260217k"></script>
+    <script src="/js/analysis.js?v=20260217k"></script>
+    <script src="/js/charts.js?v=20260217k"></script>
+    <script src="/js/display.js?v=20260217k"></script>
+    <script src="/js/app.js?v=20260217k"></script>
 </body>
 </html>

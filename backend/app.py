@@ -70,8 +70,10 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    if request.url.path.startswith("/js/") or request.url.path.startswith("/css/"):
-        # Avoid stale browser cache metadata (e.g., old MIME types) for static assets.
+    content_type = response.headers.get("content-type", "")
+    is_html = content_type.startswith("text/html")
+    if request.url.path.startswith("/js/") or request.url.path.startswith("/css/") or is_html:
+        # Avoid stale browser cache metadata for static assets and HTML shells.
         response.headers["Cache-Control"] = "no-store, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
