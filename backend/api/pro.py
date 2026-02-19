@@ -40,6 +40,8 @@ class ProPuzzleResponse(BaseModel):
     move_number: int
     bad_move_san: Optional[str]
     best_move_hint: str
+    hint_piece: Optional[str]
+    hint_from_file: Optional[str]
     cp_loss: float
     game_url: Optional[str]
     created_at: str
@@ -80,12 +82,34 @@ def _normalize_move(move_text: str) -> str:
 
 
 def _to_puzzle_response(p: ProPuzzle) -> ProPuzzleResponse:
+    san = (p.best_move_san or "").strip()
+    if not san:
+        hint_piece = None
+    elif san[0] in {"K", "Q", "R", "B", "N"}:
+        hint_piece = {
+            "K": "King",
+            "Q": "Queen",
+            "R": "Rook",
+            "B": "Bishop",
+            "N": "Knight",
+        }.get(san[0], None)
+    else:
+        hint_piece = "Pawn"
+
+    hint_from_file = None
+    if p.best_move_uci and len(p.best_move_uci) >= 2:
+        f = p.best_move_uci[0].lower()
+        if f in {"a", "b", "c", "d", "e", "f", "g", "h"}:
+            hint_from_file = f
+
     return ProPuzzleResponse(
         id=p.id,
         fen=p.fen,
         move_number=p.move_number,
         bad_move_san=p.bad_move_san,
         best_move_hint="Find the best move for this position",
+        hint_piece=hint_piece,
+        hint_from_file=hint_from_file,
         cp_loss=round(float(p.cp_loss), 1),
         game_url=p.game_url,
         created_at=p.created_at.isoformat(),

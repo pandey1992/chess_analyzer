@@ -2582,6 +2582,24 @@
             align-items: center;
         }
 
+        .pro-progress-wrap {
+            margin-bottom: 10px;
+        }
+
+        .pro-progress-bar {
+            height: 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .pro-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.25s ease;
+        }
+
         .pro-to-move {
             font-weight: 700;
             color: #2d3748;

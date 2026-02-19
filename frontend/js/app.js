@@ -10,6 +10,9 @@ let proPuzzleBoards = {};
 let proPuzzleCurrentIndex = 0;
 let proPuzzleProgress = {};
 let proPuzzleDragSource = null;
+let proPuzzleStreak = 0;
+let proPuzzleBestStreak = 0;
+let proPuzzleHintUsage = {};
 
 function renderInlineErrorCard(container, title, message, retryLabel = '', onRetry = null) {
     if (!container) return;
@@ -134,6 +137,9 @@ async function generateProPuzzles() {
         proPuzzleCurrentIndex = 0;
         proPuzzleProgress = {};
         proPuzzleBoards = {};
+        proPuzzleStreak = 0;
+        proPuzzleBestStreak = 0;
+        proPuzzleHintUsage = {};
         if (proPuzzles.length === 0) {
             const limits = data.limits || {};
             resultsEl.innerHTML = `
@@ -181,6 +187,9 @@ async function loadProPuzzles() {
         proPuzzleCurrentIndex = 0;
         proPuzzleProgress = {};
         proPuzzleBoards = {};
+        proPuzzleStreak = 0;
+        proPuzzleBestStreak = 0;
+        proPuzzleHintUsage = {};
         renderProPuzzles();
     } catch (error) {
         renderInlineErrorCard(
@@ -228,6 +237,13 @@ function renderProPuzzles() {
                     <span id="proRemainingPill" class="pro-pill"></span>
                     <span id="proSolvedPill" class="pro-pill"></span>
                     <span id="proSkippedPill" class="pro-pill"></span>
+                    <span id="proStreakPill" class="pro-pill"></span>
+                    <span id="proBestStreakPill" class="pro-pill"></span>
+                </div>
+            </div>
+            <div class="pro-progress-wrap">
+                <div class="pro-progress-bar">
+                    <div id="proProgressFill" class="pro-progress-fill"></div>
                 </div>
             </div>
             <div id="proToMove" class="pro-to-move"></div>
@@ -235,6 +251,7 @@ function renderProPuzzles() {
             <div id="proPuzzleFeedback" class="pro-puzzle-feedback"></div>
             <div class="pro-player-nav">
                 <button class="pro-puzzle-btn secondary" onclick="resetCurrentProPuzzle()">Reset</button>
+                <button class="pro-puzzle-btn secondary" onclick="showProPuzzleHint()">Hint</button>
                 <button class="pro-puzzle-btn secondary" onclick="goPrevProPuzzle()">Previous</button>
                 <button class="pro-puzzle-btn secondary" onclick="skipCurrentProPuzzle()">Skip</button>
                 <button class="pro-puzzle-btn secondary" onclick="goNextProPuzzle()">Next</button>
@@ -269,9 +286,18 @@ function renderCurrentProPuzzle() {
     const remainingPill = document.getElementById('proRemainingPill');
     const solvedPill = document.getElementById('proSolvedPill');
     const skippedPill = document.getElementById('proSkippedPill');
+    const streakPill = document.getElementById('proStreakPill');
+    const bestStreakPill = document.getElementById('proBestStreakPill');
+    const progressFill = document.getElementById('proProgressFill');
     if (remainingPill) remainingPill.textContent = `Remaining ${remaining}`;
     if (solvedPill) solvedPill.textContent = `Solved ${solved}`;
     if (skippedPill) skippedPill.textContent = `Skipped ${skipped}`;
+    if (streakPill) streakPill.textContent = `Streak ${proPuzzleStreak}`;
+    if (bestStreakPill) bestStreakPill.textContent = `Best ${proPuzzleBestStreak}`;
+    if (progressFill) {
+        const pct = Math.round((solved / Math.max(1, proPuzzles.length)) * 100);
+        progressFill.style.width = `${pct}%`;
+    }
 
     if (!proPuzzleBoards[puzzle.id]) {
         proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
@@ -473,12 +499,17 @@ async function submitCurrentProPuzzle(moveOverride = null) {
         if (result.correct) {
             feedback.textContent = result.message || 'Correct.';
             feedback.className = 'pro-puzzle-feedback success';
+            proPuzzleStreak += 1;
+            proPuzzleBestStreak = Math.max(proPuzzleBestStreak, proPuzzleStreak);
             proPuzzleProgress[puzzle.id].status = 'solved';
             setTimeout(() => moveToNextUnsolvedOrStay(), 650);
         } else {
             const incorrectText = 'Incorrect, try again';
             feedback.textContent = incorrectText;
             feedback.className = 'pro-puzzle-feedback error';
+            proPuzzleStreak = 0;
+            const streakPill = document.getElementById('proStreakPill');
+            if (streakPill) streakPill.textContent = `Streak ${proPuzzleStreak}`;
             setTimeout(() => {
                 const latestPuzzle = proPuzzles[proPuzzleCurrentIndex];
                 if (!latestPuzzle || latestPuzzle.id !== puzzle.id) return;
@@ -550,6 +581,7 @@ function goNextProPuzzle() {
 function skipCurrentProPuzzle() {
     const puzzle = proPuzzles[proPuzzleCurrentIndex];
     if (!puzzle) return;
+    proPuzzleStreak = 0;
     proPuzzleProgress[puzzle.id].status = 'skipped';
     moveToNextUnsolvedOrStay();
 }
@@ -560,6 +592,9 @@ function clearProPuzzleSession(reason = 'logged_out') {
     proPuzzleCurrentIndex = 0;
     proPuzzleProgress = {};
     proPuzzleDragSource = null;
+    proPuzzleStreak = 0;
+    proPuzzleBestStreak = 0;
+    proPuzzleHintUsage = {};
 
     const resultsEl = document.getElementById('proPuzzleResults');
     if (resultsEl) {
@@ -574,6 +609,33 @@ function clearProPuzzleSession(reason = 'logged_out') {
 }
 
 window.clearProPuzzleSession = clearProPuzzleSession;
+
+function showProPuzzleHint() {
+    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    const feedback = document.getElementById('proPuzzleFeedback');
+    if (!puzzle || !feedback) return;
+
+    const used = proPuzzleHintUsage[puzzle.id] || 0;
+    const hintPiece = puzzle.hint_piece || 'piece';
+    const hintFile = puzzle.hint_from_file || null;
+
+    if (used === 0) {
+        feedback.textContent = `Hint 1/2: Consider moving your ${hintPiece}.`;
+        feedback.className = 'pro-puzzle-feedback';
+        proPuzzleHintUsage[puzzle.id] = 1;
+        return;
+    }
+
+    if (used === 1 && hintFile) {
+        feedback.textContent = `Hint 2/2: The move starts from the ${hintFile}-file.`;
+        feedback.className = 'pro-puzzle-feedback';
+        proPuzzleHintUsage[puzzle.id] = 2;
+        return;
+    }
+
+    feedback.textContent = 'No more hints for this puzzle.';
+    feedback.className = 'pro-puzzle-feedback';
+}
 
 async function fetchWeeklyDashboard(username, gameTypes) {
     const dashboardSection = document.getElementById('dashboardSection');
