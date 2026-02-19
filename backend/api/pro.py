@@ -107,18 +107,34 @@ async def generate_puzzles(
     generated = []
     dedupe = set()
 
-    selected_games = body.games[:body.max_games]
-    max_per_game = max(1, body.max_puzzles // max(1, len(selected_games)))
+    max_games_cfg = min(body.max_games, settings.pro_puzzle_max_games)
+    max_puzzles_cfg = min(body.max_puzzles, settings.pro_puzzle_max_puzzles)
+    depth_cfg = settings.pro_puzzle_depth
+    fallback_depth_cfg = settings.pro_puzzle_fallback_depth
+
+    # Render free tier protection: reduce CPU-heavy puzzle generation in production.
+    if settings.is_production:
+        max_games_cfg = min(max_games_cfg, 6)
+        max_puzzles_cfg = min(max_puzzles_cfg, 10)
+        depth_cfg = min(depth_cfg, 11)
+        fallback_depth_cfg = min(fallback_depth_cfg, 9)
+
+    selected_games = body.games[:max_games_cfg]
+    max_per_game = max(1, max_puzzles_cfg // max(1, len(selected_games)))
 
     for game in selected_games:
-        candidates = extract_mistake_puzzles(
-            pgn_text=game.pgn,
-            username=body.username,
-            stockfish_path=stockfish_path,
-            depth=14,
-            min_cp_loss=body.min_cp_loss,
-            max_puzzles=max_per_game,
-        )
+        try:
+            candidates = extract_mistake_puzzles(
+                pgn_text=game.pgn,
+                username=body.username,
+                stockfish_path=stockfish_path,
+                depth=depth_cfg,
+                min_cp_loss=body.min_cp_loss,
+                max_puzzles=max_per_game,
+            )
+        except Exception:
+            logger.exception("Puzzle extraction failed for one game; continuing")
+            continue
         for c in candidates:
             key = f"{c['fen']}|{c['best_move_uci']}"
             if key in dedupe:
@@ -139,23 +155,27 @@ async def generate_puzzles(
             )
             db.add(puzzle)
             generated.append(puzzle)
-            if len(generated) >= body.max_puzzles:
+            if len(generated) >= max_puzzles_cfg:
                 break
-        if len(generated) >= body.max_puzzles:
+        if len(generated) >= max_puzzles_cfg:
             break
 
     # Fallback pass: if nothing generated, relax threshold to capture candidate mistakes.
     if not generated and body.min_cp_loss > 80:
         relaxed_threshold = 80
         for game in selected_games:
-            candidates = extract_mistake_puzzles(
-                pgn_text=game.pgn,
-                username=body.username,
-                stockfish_path=stockfish_path,
-                depth=12,
-                min_cp_loss=relaxed_threshold,
-                max_puzzles=max_per_game,
-            )
+            try:
+                candidates = extract_mistake_puzzles(
+                    pgn_text=game.pgn,
+                    username=body.username,
+                    stockfish_path=stockfish_path,
+                    depth=fallback_depth_cfg,
+                    min_cp_loss=relaxed_threshold,
+                    max_puzzles=max_per_game,
+                )
+            except Exception:
+                logger.exception("Fallback puzzle extraction failed for one game; continuing")
+                continue
             for c in candidates:
                 key = f"{c['fen']}|{c['best_move_uci']}"
                 if key in dedupe:
@@ -176,9 +196,9 @@ async def generate_puzzles(
                 )
                 db.add(puzzle)
                 generated.append(puzzle)
-                if len(generated) >= body.max_puzzles:
+                if len(generated) >= max_puzzles_cfg:
                     break
-            if len(generated) >= body.max_puzzles:
+            if len(generated) >= max_puzzles_cfg:
                 break
 
     if generated:
@@ -188,6 +208,12 @@ async def generate_puzzles(
 
     return {
         "generated": len(generated),
+        "limits": {
+            "max_games_used": max_games_cfg,
+            "max_puzzles_used": max_puzzles_cfg,
+            "depth_used": depth_cfg,
+            "fallback_depth_used": fallback_depth_cfg,
+        },
         "puzzles": [_to_puzzle_response(p).model_dump() for p in generated],
     }
 

@@ -134,6 +134,17 @@ async function generateProPuzzles() {
         proPuzzleCurrentIndex = 0;
         proPuzzleProgress = {};
         proPuzzleBoards = {};
+        if (proPuzzles.length === 0) {
+            const limits = data.limits || {};
+            resultsEl.innerHTML = `
+                <div class="pro-puzzle-empty">
+                    No puzzle candidates found from recent games yet.
+                    ${limits.max_games_used ? `<br>Analyzed up to ${limits.max_games_used} games on current server limits.` : ''}
+                    <br>Try again later, or analyze more recent games first.
+                </div>
+            `;
+            return;
+        }
         renderProPuzzles();
     } catch (error) {
         renderInlineErrorCard(

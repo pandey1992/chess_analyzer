@@ -37,6 +37,14 @@ services:
         value: 12
       - key: DASHBOARD_STOCKFISH_FALLBACK_DEPTH
         value: 10
+      - key: PRO_PUZZLE_MAX_GAMES
+        value: 6
+      - key: PRO_PUZZLE_MAX_PUZZLES
+        value: 10
+      - key: PRO_PUZZLE_DEPTH
+        value: 11
+      - key: PRO_PUZZLE_FALLBACK_DEPTH
+        value: 9
       - key: AUTH_EVENTS_RETENTION_DAYS
         value: 30
       - key: PUZZLE_ATTEMPTS_RETENTION_DAYS

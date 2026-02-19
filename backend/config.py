@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     dashboard_stockfish_max_games: int = 20
     dashboard_stockfish_depth: int = 15
     dashboard_stockfish_fallback_depth: int = 12
+    pro_puzzle_max_games: int = 15
+    pro_puzzle_max_puzzles: int = 20
+    pro_puzzle_depth: int = 14
+    pro_puzzle_fallback_depth: int = 12
 
     # Data retention (days)
     auth_events_retention_days: int = 30
