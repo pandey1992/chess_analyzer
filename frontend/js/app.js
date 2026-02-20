@@ -652,6 +652,11 @@ async function fetchWeeklyDashboard(username, gameTypes) {
     try {
         const dashboardData = await ChessAPI.fetchDashboard(username, gameTypes, currentPlatform);
 
+        if (dashboardData && dashboardData.pro_locked) {
+            displayDashboard(dashboardData);
+            return;
+        }
+
         if (dashboardData.total_analyzed_games === 0) {
             dashboardSection.innerHTML = `
                 <div class="chart-container" style="text-align: center; padding: 30px;">

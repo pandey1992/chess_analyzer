@@ -34,6 +34,56 @@ GAME_TYPE_TO_LICHESS = {
     "daily": "correspondence",
 }
 
+PRO_HEADER_VALUES = {"1", "true", "yes", "pro"}
+
+
+def _has_pro_dashboard_access(request: Request) -> bool:
+    """Temporary pro access check via request header until billing is wired."""
+    value = request.headers.get("x-pro-access", "").strip().lower()
+    return value in PRO_HEADER_VALUES
+
+
+def _locked_dashboard_preview(
+    username: str,
+    platform: str,
+    period_start: datetime,
+    period_end: datetime,
+    recent_games: int,
+) -> dict:
+    return {
+        "username": username,
+        "platform": platform,
+        "period": f"{period_start.strftime('%Y-%m-%d')} to {period_end.strftime('%Y-%m-%d')}",
+        "pro_locked": True,
+        "total_recent_games": recent_games,
+        "total_analyzed_games": 0,
+        "games_as_white": 0,
+        "games_as_black": 0,
+        "overall": {"accuracy": None, "wins": 0, "losses": 0, "draws": 0},
+        "by_color": {
+            "white": {"accuracy": None, "games": 0},
+            "black": {"accuracy": None, "games": 0},
+        },
+        "by_phase": {
+            "opening": {"accuracy": None, "moves_analyzed": 0},
+            "middlegame": {"accuracy": None, "moves_analyzed": 0},
+            "endgame": {"accuracy": None, "moves_analyzed": 0},
+        },
+        "move_quality": {"inaccuracy": 0, "mistake": 0, "blunder": 0},
+        "game_accuracies": [],
+        "locked_preview": {
+            "title": "Weekly Accuracy Dashboard (Pro)",
+            "subtitle": "Deep Stockfish analytics with phase-level trends and move quality tracking.",
+            "cta_label": "Unlock with Pro",
+            "sample_cards": [
+                {"label": "Overall Accuracy", "value": "88.4%"},
+                {"label": "Opening", "value": "90.1%"},
+                {"label": "Middlegame", "value": "84.7%"},
+                {"label": "Endgame", "value": "87.6%"},
+            ],
+        },
+    }
+
 
 @router.get("/games/{username}")
 @limiter.limit("20/minute")
@@ -416,9 +466,6 @@ async def lichess_dashboard(
     username_lower = username.lower()
     games_as_white = 0
     games_as_black = 0
-    white_accuracies = []
-    black_accuracies = []
-    all_accuracies = []
     total_move_quality = {"inaccuracy": 0, "mistake": 0, "blunder": 0}
     phase_all = {"opening": [], "middlegame": [], "endgame": []}
     wins = 0
@@ -448,12 +495,8 @@ async def lichess_dashboard(
         # Count by color
         if is_white:
             games_as_white += 1
-            white_accuracies.append(game_accuracy)
         else:
             games_as_black += 1
-            black_accuracies.append(game_accuracy)
-
-        all_accuracies.append(game_accuracy)
 
         # Move quality from Lichess analysis
         total_move_quality["inaccuracy"] += user_analysis.get("inaccuracy", 0)
@@ -618,14 +661,34 @@ async def chesscom_dashboard(
                 pass
         return _empty_dashboard(username, "chesscom")
 
+    has_pro_access = _has_pro_dashboard_access(request)
+    if settings.dashboard_pro_lock_enabled and not has_pro_access:
+        return _locked_dashboard_preview(
+            username=username,
+            platform="chesscom",
+            period_start=seven_days_ago,
+            period_end=current_date,
+            recent_games=len(all_games),
+        )
+
     # Render free tier can timeout on deep analysis. Use safer defaults in production.
-    max_games_cfg = settings.dashboard_stockfish_max_games
-    depth_cfg = settings.dashboard_stockfish_depth
-    fallback_depth_cfg = settings.dashboard_stockfish_fallback_depth
+    if has_pro_access:
+        max_games_cfg = settings.dashboard_pro_stockfish_max_games
+        depth_cfg = settings.dashboard_pro_stockfish_depth
+        fallback_depth_cfg = settings.dashboard_pro_stockfish_fallback_depth
+    else:
+        max_games_cfg = settings.dashboard_stockfish_max_games
+        depth_cfg = settings.dashboard_stockfish_depth
+        fallback_depth_cfg = settings.dashboard_stockfish_fallback_depth
     if settings.is_production:
-        max_games_cfg = min(max_games_cfg, 8)
-        depth_cfg = min(depth_cfg, 12)
-        fallback_depth_cfg = min(fallback_depth_cfg, 10)
+        if has_pro_access:
+            max_games_cfg = min(max_games_cfg, 15)
+            depth_cfg = min(depth_cfg, 16)
+            fallback_depth_cfg = min(fallback_depth_cfg, 14)
+        else:
+            max_games_cfg = min(max_games_cfg, 8)
+            depth_cfg = min(depth_cfg, 12)
+            fallback_depth_cfg = min(fallback_depth_cfg, 10)
 
     # Sort by most recent first and limit games for Stockfish analysis
     MAX_STOCKFISH_GAMES = max_games_cfg
@@ -739,8 +802,6 @@ async def chesscom_dashboard(
 
             # Replace Chess.com accuracy with Stockfish accuracy for consistency
             stockfish_accuracies = []
-            stockfish_white_accs = []
-            stockfish_black_accs = []
 
             stockfish_idx = 0
             for ga in game_accuracies:
@@ -752,11 +813,6 @@ async def chesscom_dashboard(
                         stockfish_accuracies.append(sf_acc)
                         ga["accuracy"] = round(sf_acc, 1)  # Override with Stockfish accuracy
 
-                        if ga["color"] == "white":
-                            stockfish_white_accs.append(sf_acc)
-                        else:
-                            stockfish_black_accs.append(sf_acc)
-
                         for phase in ("opening", "middlegame", "endgame"):
                             pa = analysis["phase_accuracy"].get(phase, {})
                             if pa.get("accuracy") is not None:
@@ -764,13 +820,6 @@ async def chesscom_dashboard(
                         total_move_quality["inaccuracy"] += analysis["move_quality"]["inaccuracy"]
                         total_move_quality["mistake"] += analysis["move_quality"]["mistake"]
                         total_move_quality["blunder"] += analysis["move_quality"]["blunder"]
-
-            # Use Stockfish-computed accuracies for overall/by-color so they're
-            # consistent with phase accuracy (same formula, same engine)
-            if stockfish_accuracies:
-                all_accuracies = stockfish_accuracies
-                white_accuracies = stockfish_white_accs
-                black_accuracies = stockfish_black_accs
 
         except Exception as e:
             logger.error(f"Batch Stockfish analysis failed: {e}", exc_info=True)
@@ -802,8 +851,6 @@ async def chesscom_dashboard(
 
             if any(fallback_results):
                 stockfish_accuracies = []
-                stockfish_white_accs = []
-                stockfish_black_accs = []
 
                 for idx, ga in enumerate(game_accuracies):
                     analysis = fallback_results[idx] if idx < len(fallback_results) else None
@@ -812,11 +859,6 @@ async def chesscom_dashboard(
                     sf_acc = analysis["overall_accuracy"]
                     stockfish_accuracies.append(sf_acc)
                     ga["accuracy"] = round(sf_acc, 1)
-
-                    if ga["color"] == "white":
-                        stockfish_white_accs.append(sf_acc)
-                    else:
-                        stockfish_black_accs.append(sf_acc)
 
                     for phase in ("opening", "middlegame", "endgame"):
                         pa = analysis["phase_accuracy"].get(phase, {})
@@ -827,16 +869,26 @@ async def chesscom_dashboard(
                     total_move_quality["blunder"] += analysis["move_quality"]["blunder"]
 
                 if stockfish_accuracies:
-                    all_accuracies = stockfish_accuracies
-                    white_accuracies = stockfish_white_accs
-                    black_accuracies = stockfish_black_accs
                     stockfish_analyzed_count = len(stockfish_accuracies)
 
     # Clean up temporary PGN data from game_accuracies
     for ga in game_accuracies:
         ga.pop("_pgn", None)
 
-    # Build response
+    # Build response from final per-game accuracies. This prevents skew when
+    # Stockfish partially succeeds and only some games get overridden.
+    all_accuracies = [
+        ga.get("accuracy") for ga in game_accuracies
+        if ga.get("accuracy") is not None
+    ]
+    white_accuracies = [
+        ga.get("accuracy") for ga in game_accuracies
+        if ga.get("color") == "white" and ga.get("accuracy") is not None
+    ]
+    black_accuracies = [
+        ga.get("accuracy") for ga in game_accuracies
+        if ga.get("color") == "black" and ga.get("accuracy") is not None
+    ]
     total_games = len(all_accuracies)
     overall_acc = sum(all_accuracies) / total_games if total_games else 0
 
@@ -846,6 +898,7 @@ async def chesscom_dashboard(
     return {
         "username": username,
         "platform": "chesscom",
+        "pro_locked": False,
         "period": f"{period_start} to {period_end}",
         "total_analyzed_games": total_games,
         "games_as_white": games_as_white,
@@ -894,6 +947,7 @@ def _empty_dashboard(username: str, platform: str) -> dict:
     return {
         "username": username,
         "platform": platform,
+        "pro_locked": False,
         "period": f"{week_ago.strftime('%Y-%m-%d')} to {now.strftime('%Y-%m-%d')}",
         "total_analyzed_games": 0,
         "games_as_white": 0,

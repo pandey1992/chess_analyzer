@@ -2502,6 +2502,89 @@
             max-height: 300px;
         }
 
+        .dashboard-locked-shell {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #d6deeb;
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+            min-height: 240px;
+        }
+
+        .dashboard-locked-preview {
+            filter: blur(6px);
+            transform: scale(1.02);
+            opacity: 0.9;
+            padding: 24px;
+        }
+
+        .dashboard-locked-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .dashboard-locked-card {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 10px;
+            padding: 18px 14px;
+            box-shadow: inset 0 0 0 1px #e2e8f0;
+        }
+
+        .dashboard-locked-label {
+            font-size: 0.78em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-locked-value {
+            font-size: 1.7em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .dashboard-locked-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.78);
+            padding: 24px;
+        }
+
+        .dashboard-locked-overlay h3 {
+            margin: 0;
+            color: #1a202c;
+            font-size: 1.25em;
+        }
+
+        .dashboard-locked-overlay p {
+            margin: 0;
+            color: #4a5568;
+            max-width: 560px;
+        }
+
+        .btn-unlock-pro {
+            border: none;
+            border-radius: 999px;
+            padding: 12px 22px;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #2b6cb0, #2c5282);
+            cursor: pointer;
+            box-shadow: 0 10px 22px rgba(44, 82, 130, 0.25);
+        }
+
+        .btn-unlock-pro:hover {
+            transform: translateY(-1px);
+        }
+
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -2517,6 +2600,10 @@
 
             .quality-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .dashboard-locked-grid {
+                grid-template-columns: repeat(2, minmax(120px, 1fr));
             }
         }
 

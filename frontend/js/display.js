@@ -1038,6 +1038,11 @@ function displayStudyPlan(plan, weaknesses, strengths) {
 
 function displayDashboard(data) {
     const section = document.getElementById('dashboardSection');
+    if (data && data.pro_locked) {
+        displayLockedDashboard(data);
+        return;
+    }
+
     const accColor = (acc) => acc >= 80 ? '#38a169' : acc >= 60 ? '#d69e2e' : '#e53e3e';
     const accLabel = (acc) => acc !== null ? `${acc}%` : 'N/A';
 
@@ -1157,6 +1162,41 @@ function displayDashboard(data) {
     if (data.game_accuracies.length > 1) {
         renderAccuracyTrendChart(data.game_accuracies);
     }
+}
+
+function displayLockedDashboard(data) {
+    const section = document.getElementById('dashboardSection');
+    const preview = data.locked_preview || {};
+    const cards = Array.isArray(preview.sample_cards) ? preview.sample_cards : [];
+    const ctaLabel = preview.cta_label || 'Unlock with Pro';
+    const recentGames = typeof data.total_recent_games === 'number' ? data.total_recent_games : 0;
+
+    section.innerHTML = `
+        <div class="dashboard-section">
+            <div class="dashboard-header">
+                <h2>Weekly Accuracy Dashboard</h2>
+                <p class="dashboard-period">${data.period} &bull; ${recentGames} recent games found</p>
+            </div>
+            <div class="dashboard-locked-shell">
+                <div class="dashboard-locked-preview" aria-hidden="true">
+                    <div class="dashboard-locked-grid">
+                        ${cards.map(card => `
+                            <div class="dashboard-locked-card">
+                                <div class="dashboard-locked-label">${card.label || ''}</div>
+                                <div class="dashboard-locked-value">${card.value || '--'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="dashboard-locked-overlay">
+                    <h3>${preview.title || 'Pro analytics are locked'}</h3>
+                    <p>${preview.subtitle || 'Enable Pro to access deep Stockfish analysis and phase-level accuracy trends.'}</p>
+                    <button type="button" class="btn-unlock-pro">${ctaLabel}</button>
+                </div>
+            </div>
+        </div>
+    `;
+    section.style.display = 'block';
 }
 
 function _phaseCard(name, movesDesc, icon, phaseData) {
