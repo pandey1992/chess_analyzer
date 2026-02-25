@@ -18,7 +18,7 @@ from backend.config import settings
 from sqlalchemy import delete
 
 from backend.database import engine, Base, AsyncSessionLocal
-from backend.api import chess_api, groq_api, auth, pro
+from backend.api import chess_api, groq_api, auth, pro, payments
 from backend.models.auth_event import AuthEvent
 from backend.models.pro_puzzle import ProPuzzleAttempt
 import chess.engine
@@ -124,12 +124,12 @@ async def add_security_headers(request: Request, call_next):
         )
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com https://checkout.razorpay.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "img-src 'self' data: https://cdn.jsdelivr.net; "
-            "connect-src 'self' https://accounts.google.com; "
+            "connect-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com; "
             "font-src 'self'; "
-            "frame-src 'self' https://accounts.google.com"
+            "frame-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com"
         )
     return response
 
@@ -213,6 +213,7 @@ app.include_router(chess_api.router, prefix="/api")
 app.include_router(groq_api.router, prefix="/api")
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(pro.router, prefix="/api/pro")
+app.include_router(payments.router, prefix="/api/payments")
 
 # --- Static Files ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

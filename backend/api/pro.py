@@ -13,6 +13,7 @@ from backend.config import settings
 from backend.database import get_db
 from backend.models.pro_puzzle import ProPuzzle, ProPuzzleAttempt
 from backend.models.user import User
+from backend.services.pro_access import has_active_pro_access
 from backend.services.stockfish_analyzer import extract_mistake_puzzles
 from backend.utils.helpers import oauth2_scheme, verify_token
 
@@ -74,6 +75,15 @@ async def get_current_user(
     return user
 
 
+async def _ensure_pro_access(db: AsyncSession, user_id: int) -> None:
+    if await has_active_pro_access(db, user_id):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_402_PAYMENT_REQUIRED,
+        detail="Pro subscription required. Unlock Pro to use puzzle training.",
+    )
+
+
 def _normalize_move(move_text: str) -> str:
     normalized = move_text.strip().lower()
     for ch in ["+", "#", "!", "?", " "]:
@@ -124,6 +134,7 @@ async def generate_puzzles(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _ensure_pro_access(db, current_user.id)
     if not body.games:
         return {"generated": 0, "puzzles": []}
 
@@ -250,6 +261,7 @@ async def list_puzzles(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _ensure_pro_access(db, current_user.id)
     limit = max(1, min(limit, 100))
     result = await db.execute(
         select(ProPuzzle)
@@ -270,6 +282,7 @@ async def attempt_puzzle(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _ensure_pro_access(db, current_user.id)
     result = await db.execute(
         select(ProPuzzle).where(
             ProPuzzle.id == puzzle_id,

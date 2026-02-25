@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Auth
     access_token_expire_minutes: int = 1440  # 24h dev, override to 60 in production
     google_client_id: str = ""
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
 
     # External APIs
     chess_com_api_base: str = "https://api.chess.com/pub"
@@ -43,6 +46,8 @@ class Settings(BaseSettings):
     # Data retention (days)
     auth_events_retention_days: int = 30
     puzzle_attempts_retention_days: int = 30
+    pro_monthly_price_inr: int = 50
+    coaching_price_inr: int = 500
 
     # CORS
     cors_origins: str = "http://localhost:8000,http://localhost:3000"

@@ -24,7 +24,9 @@ const ChessAPI = {
             ? `${CONFIG.API_BASE}/lichess/dashboard/${encodeURIComponent(username)}?game_types=${gameTypes.join(',')}`
             : `${CONFIG.API_BASE}/dashboard/${encodeURIComponent(username)}?game_types=${gameTypes.join(',')}`;
 
-        const response = await fetch(endpoint);
+        const response = await fetch(endpoint, {
+            headers: this.getAuthHeaders()
+        });
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
@@ -160,6 +162,58 @@ const ChessAPI = {
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.detail || 'Failed to submit answer');
+        }
+        return await response.json();
+    },
+
+    async getPaymentConfig() {
+        const response = await fetch(`${CONFIG.API_BASE}/payments/config`);
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to load payment configuration');
+        }
+        return await response.json();
+    },
+
+    async getProStatus() {
+        const response = await fetch(`${CONFIG.API_BASE}/payments/pro/status`, {
+            headers: this.getAuthHeaders()
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to fetch Pro status');
+        }
+        return await response.json();
+    },
+
+    async createPaymentOrder(purpose, customer = null) {
+        const response = await fetch(`${CONFIG.API_BASE}/payments/order`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders()
+            },
+            body: JSON.stringify({ purpose, customer })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to create payment order');
+        }
+        return await response.json();
+    },
+
+    async verifyPayment(payload) {
+        const response = await fetch(`${CONFIG.API_BASE}/payments/verify`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...this.getAuthHeaders()
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Payment verification failed');
         }
         return await response.json();
     },

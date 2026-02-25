@@ -10,14 +10,19 @@ import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy import select
 
 from backend.config import settings
+from backend.database import AsyncSessionLocal
+from backend.models.user import User
+from backend.services.pro_access import has_active_pro_access
 from backend.services.stockfish_analyzer import (
     analyze_game_pgn,
     analyze_games_batch,
     compute_lichess_phase_accuracy,
     win_probability,
 )
+from backend.utils.helpers import verify_token
 
 logger = logging.getLogger("chess_analyzer.chess_api")
 router = APIRouter()
@@ -65,8 +70,24 @@ def _pgn_moves_to_fen(pgn_moves: str, target_ply: int) -> tuple[str, str]:
     return board.fen(), side
 
 
-def _has_pro_dashboard_access(request: Request) -> bool:
-    """Temporary pro access check via request header until billing is wired."""
+async def _has_pro_dashboard_access(request: Request) -> bool:
+    """Pro access check via auth token entitlement; header retained as fallback override."""
+    auth_header = request.headers.get("authorization", "").strip()
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        if token:
+            try:
+                payload = verify_token(token)
+                user_id = payload.get("sub")
+                if user_id:
+                    async with AsyncSessionLocal() as session:
+                        res = await session.execute(select(User).where(User.id == int(user_id)))
+                        user = res.scalar_one_or_none()
+                        if user and await has_active_pro_access(session, user.id):
+                            return True
+            except Exception:
+                pass
+
     value = request.headers.get("x-pro-access", "").strip().lower()
     return value in PRO_HEADER_VALUES
 
@@ -751,7 +772,7 @@ async def chesscom_dashboard(
                 pass
         return _empty_dashboard(username, "chesscom")
 
-    has_pro_access = _has_pro_dashboard_access(request)
+    has_pro_access = await _has_pro_dashboard_access(request)
     if settings.dashboard_pro_lock_enabled and not has_pro_access:
         return _locked_dashboard_preview(
             username=username,

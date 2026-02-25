@@ -61,6 +61,9 @@ const Auth = {
             if (typeof window.clearProPuzzleSession === 'function') {
                 window.clearProPuzzleSession('signed_in');
             }
+            if (typeof window.Payments !== 'undefined') {
+                await Payments.refreshProStatus();
+            }
             Router.navigate('app');
         } catch (err) {
             errorEl.textContent = err.message || 'Login failed. Please check your credentials.';
@@ -113,6 +116,9 @@ const Auth = {
             if (typeof window.clearProPuzzleSession === 'function') {
                 window.clearProPuzzleSession('signed_in');
             }
+            if (typeof window.Payments !== 'undefined') {
+                await Payments.refreshProStatus();
+            }
             Router.navigate('app');
         } catch (err) {
             const msg = err.message || 'Registration failed. Please try again.';
@@ -136,6 +142,9 @@ const Auth = {
         if (typeof window.clearProPuzzleSession === 'function') {
             window.clearProPuzzleSession('logged_out');
         }
+        if (typeof window.Payments !== 'undefined') {
+            Payments.refreshProStatus();
+        }
         Router.navigate('landing');
     },
     
@@ -145,6 +154,9 @@ const Auth = {
         this._user = { username: 'Guest', email: null };
         if (typeof window.clearProPuzzleSession === 'function') {
             window.clearProPuzzleSession('guest');
+        }
+        if (typeof window.Payments !== 'undefined') {
+            Payments.refreshProStatus();
         }
         Router.navigate('app');
     }

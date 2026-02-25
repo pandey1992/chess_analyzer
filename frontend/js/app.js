@@ -111,6 +111,17 @@ async function generateProPuzzles() {
         `;
         return;
     }
+    if (typeof Payments !== 'undefined') {
+        const pro = await Payments.refreshProStatus();
+        if (!pro.active) {
+            resultsEl.innerHTML = `
+                <div class="pro-puzzle-empty">
+                    Pro subscription required. Click <strong>Unlock Pro</strong> to continue.
+                </div>
+            `;
+            return;
+        }
+    }
 
     if (!allGames || allGames.length === 0 || !username) {
         resultsEl.innerHTML = `
@@ -179,6 +190,17 @@ async function loadProPuzzles() {
             </div>
         `;
         return;
+    }
+    if (typeof Payments !== 'undefined') {
+        const pro = await Payments.refreshProStatus();
+        if (!pro.active) {
+            resultsEl.innerHTML = `
+                <div class="pro-puzzle-empty">
+                    Pro subscription required. Unlock Pro to load your saved Pro puzzles.
+                </div>
+            `;
+            return;
+        }
     }
 
     try {

@@ -264,7 +264,8 @@
                             <li><span class="star">&#9733;</span> Game review with coach</li>
                             <li><span class="star">&#9733;</span> Personalized improvement path</li>
                         </ul>
-                        <a href="https://wa.me/9573905408?text=Hi%20I%20want%20chess%20coaching" target="_blank" rel="noopener noreferrer" class="btn btn-pricing-pro">Book on WhatsApp</a>
+                        <button type="button" id="bookCoachingBtn" onclick="Payments.startCoachingCheckout()" class="btn btn-pricing-pro">Book Coaching (Pay Online)</button>
+                        <div id="coachingPaymentStatus" style="margin-top:10px; font-size:0.92rem; color:#e2e8f0;"></div>
                     </div>
                 </div>
             </div>
@@ -533,9 +534,19 @@
                 <p style="color: #4a5568; margin-bottom: 14px;">
                     We find your bad moves, ask Stockfish for the best move, and turn them into solveable puzzles.
                 </p>
+                <div id="proUpsell" class="pro-puzzle-empty" style="display:none; margin-bottom:14px;">
+                    Pro is required for this section. <button type="button" class="btn-unlock-pro">Unlock Pro - &#8377;50/month</button>
+                    <div id="proStatusLine" style="margin-top:8px;"></div>
+                </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
                     <button id="generateProPuzzlesBtn" onclick="generateProPuzzles()">Generate Puzzles From My Mistakes</button>
                     <button onclick="loadProPuzzles()" style="background:#4a5568;">Load Saved Puzzles</button>
+                </div>
+                <div class="chart-container" style="margin: 0 0 14px; background:#f8fafc;">
+                    <h3 class="chart-title" style="margin-bottom:8px;">Chess AI Coach (Soon)</h3>
+                    <p style="margin:0; color:#4a5568;">
+                        Inside Pro, we're adding an interactive AI Coach for guided game review, training plans, and Q&amp;A.
+                    </p>
                 </div>
                 <div id="proPuzzleResults"></div>
             </div>
@@ -609,14 +620,16 @@
     <!-- Scripts: load order matters -->
     <script src="/js/config.js?v=20260225a"></script>
     <script src="/js/utils.js?v=20260225a"></script>
-    <script src="/js/api.js?v=20260225a"></script>
-    <script src="/js/auth.js?v=20260225a"></script>
+    <script src="/js/api.js?v=20260225b"></script>
+    <script src="/js/auth.js?v=20260225b"></script>
     <script src="/js/router.js?v=20260225a"></script>
     <script src="/js/analysis.js?v=20260225a"></script>
     <script src="/js/charts.js?v=20260225a"></script>
     <script src="/js/display.js?v=20260225a"></script>
-    <script src="/js/app.js?v=20260225a"></script>
+    <script src="/js/app.js?v=20260225b"></script>
     <script src="/js/daily_puzzle.js?v=20260225b"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="/js/payments.js?v=20260225b"></script>
 </body>
 </html>
 
