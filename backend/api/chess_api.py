@@ -43,14 +43,14 @@ _daily_puzzle_cache: dict = {}
 
 def _pgn_moves_to_fen(pgn_moves: str, target_ply: int) -> tuple[str, str]:
     """
-    Parse a space-separated SAN move string and replay up to target_ply half-moves.
+    Parse a space-separated SAN move string and replay through target_ply (inclusive).
     Returns (fen, side_to_move) where side_to_move is 'white' or 'black'.
     """
     board = chess.Board()
     tokens = pgn_moves.split()
     ply_count = 0
     for token in tokens:
-        if ply_count >= target_ply:
+        if ply_count > target_ply:
             break
         # Skip move numbers like "1." or "12."
         if re.match(r"^\d+\.", token):
