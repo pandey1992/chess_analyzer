@@ -5,6 +5,7 @@ import math
 import re
 from datetime import datetime, timedelta
 
+import chess
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 from slowapi import Limiter
@@ -35,6 +36,33 @@ GAME_TYPE_TO_LICHESS = {
 }
 
 PRO_HEADER_VALUES = {"1", "true", "yes", "pro"}
+
+# ---- Daily puzzle cache (keyed by UTC date string) ----
+_daily_puzzle_cache: dict = {}
+
+
+def _pgn_moves_to_fen(pgn_moves: str, target_ply: int) -> tuple[str, str]:
+    """
+    Parse a space-separated SAN move string and replay up to target_ply half-moves.
+    Returns (fen, side_to_move) where side_to_move is 'white' or 'black'.
+    """
+    board = chess.Board()
+    tokens = pgn_moves.split()
+    ply_count = 0
+    for token in tokens:
+        if ply_count >= target_ply:
+            break
+        # Skip move numbers like "1." or "12."
+        if re.match(r"^\d+\.", token):
+            continue
+        try:
+            move = board.parse_san(token)
+            board.push(move)
+            ply_count += 1
+        except Exception:
+            break
+    side = "white" if board.turn == chess.WHITE else "black"
+    return board.fen(), side
 
 
 def _has_pro_dashboard_access(request: Request) -> bool:
@@ -83,6 +111,65 @@ def _locked_dashboard_preview(
             ],
         },
     }
+
+
+@router.get("/puzzles/daily")
+@limiter.limit("30/minute")
+async def get_daily_puzzle(request: Request):
+    """
+    Fetch today's Lichess daily puzzle, parse the position FEN,
+    and return a normalized response. Results are cached for the UTC day.
+    """
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+    # Serve from cache if still fresh
+    if _daily_puzzle_cache.get("date") == today and _daily_puzzle_cache.get("data"):
+        return _daily_puzzle_cache["data"]
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                "https://lichess.org/api/puzzle/daily",
+                headers={"Accept": "application/json"},
+            )
+    except httpx.RequestError as exc:
+        logger.error("Failed to reach Lichess daily puzzle API: %s", exc)
+        raise HTTPException(status_code=502, detail="Could not reach Lichess. Try again later.")
+
+    if resp.status_code != 200:
+        logger.warning("Lichess daily puzzle returned %s", resp.status_code)
+        raise HTTPException(status_code=502, detail="Lichess puzzle unavailable.")
+
+    data = resp.json()
+    puzzle = data.get("puzzle", {})
+    game = data.get("game", {})
+    pgn_moves = game.get("pgn", "")
+    initial_ply = puzzle.get("initialPly", 0)
+    solution_uci = puzzle.get("solution", [])
+    game_id = game.get("id", "")
+
+    try:
+        fen, side_to_move = _pgn_moves_to_fen(pgn_moves, initial_ply)
+    except Exception as exc:
+        logger.error("Failed to parse Lichess puzzle PGN: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to compute puzzle position.")
+
+    result = {
+        "puzzle_id": puzzle.get("id", ""),
+        "fen": fen,
+        "solution_uci": solution_uci,
+        "themes": puzzle.get("themes", []),
+        "rating": puzzle.get("rating", 0),
+        "plays": puzzle.get("plays", 0),
+        "date": today,
+        "side_to_move": side_to_move,
+        "game_url": f"https://lichess.org/{game_id}#{initial_ply}" if game_id else None,
+        "puzzle_url": f"https://lichess.org/training/{puzzle.get('id', '')}" if puzzle.get("id") else None,
+    }
+
+    _daily_puzzle_cache["date"] = today
+    _daily_puzzle_cache["data"] = result
+    return result
 
 
 @router.get("/games/{username}")

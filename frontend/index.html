@@ -6,7 +6,7 @@
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260218n">
+    <link rel="stylesheet" href="/css/styles.css?v=20260225a">
 </head>
 <body>
 
@@ -23,6 +23,7 @@
                 <a href="javascript:void(0)" onclick="Router.scrollToSection('coaching')">Coaching</a>
                 <a href="javascript:void(0)" onclick="Router.scrollToSection('pricing')">Pricing</a>
                 <a href="javascript:void(0)" onclick="Router.scrollToSection('faq')">FAQ</a>
+                <a href="#puzzle" class="nav-daily-puzzle-link">&#9822; Daily Puzzle</a>
             </div>
 
             <!-- Guest navigation -->
@@ -49,6 +50,7 @@
             <a href="javascript:void(0)" onclick="Router.scrollToSection('coaching'); closeMobileMenu()">Coaching</a>
             <a href="javascript:void(0)" onclick="Router.scrollToSection('pricing'); closeMobileMenu()">Pricing</a>
             <a href="javascript:void(0)" onclick="Router.scrollToSection('faq'); closeMobileMenu()">FAQ</a>
+            <a href="#puzzle" onclick="closeMobileMenu()">&#9822; Daily Puzzle</a>
             <div class="mobile-menu-actions" id="mobileGuestActions">
                 <a href="#login" onclick="closeMobileMenu()">Log In</a>
                 <a href="#signup" onclick="closeMobileMenu()">Sign Up Free</a>
@@ -370,6 +372,24 @@
         </footer>
     </div>
 
+    <!-- ==================== PAGE: DAILY PUZZLE ==================== -->
+    <div data-page="puzzle" style="display: none;">
+        <div class="dp-page">
+            <div class="dp-page-inner">
+                <div class="dp-page-header">
+                    <a href="#landing" class="dp-back-link">&#8592; Back</a>
+                    <h1 class="dp-page-title">&#9822; Daily Puzzle</h1>
+                    <p class="dp-page-sub">Today's Lichess puzzle &mdash; can you find the best move?</p>
+                </div>
+                <div id="dailyPuzzleContainer" class="dp-container"></div>
+                <div class="dp-cta">
+                    <p>Want puzzles from <em>your own mistakes</em>?</p>
+                    <a href="#app" class="dp-btn primary">Analyze My Games &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== PAGE: LOGIN ==================== -->
     <div data-page="login" style="display: none;">
         <div class="auth-page">
@@ -587,15 +607,16 @@
     </div>
 
     <!-- Scripts: load order matters -->
-    <script src="/js/config.js?v=20260218n"></script>
-    <script src="/js/utils.js?v=20260218n"></script>
-    <script src="/js/api.js?v=20260218n"></script>
-    <script src="/js/auth.js?v=20260218n"></script>
-    <script src="/js/router.js?v=20260218n"></script>
-    <script src="/js/analysis.js?v=20260218n"></script>
-    <script src="/js/charts.js?v=20260218n"></script>
-    <script src="/js/display.js?v=20260218n"></script>
-    <script src="/js/app.js?v=20260218n"></script>
+    <script src="/js/config.js?v=20260225a"></script>
+    <script src="/js/utils.js?v=20260225a"></script>
+    <script src="/js/api.js?v=20260225a"></script>
+    <script src="/js/auth.js?v=20260225a"></script>
+    <script src="/js/router.js?v=20260225a"></script>
+    <script src="/js/analysis.js?v=20260225a"></script>
+    <script src="/js/charts.js?v=20260225a"></script>
+    <script src="/js/display.js?v=20260225a"></script>
+    <script src="/js/app.js?v=20260225a"></script>
+    <script src="/js/daily_puzzle.js?v=20260225a"></script>
 </body>
 </html>
 

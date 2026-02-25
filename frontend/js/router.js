@@ -58,6 +58,11 @@ const Router = {
         if (!window.location.hash.includes('/')) {
             window.scrollTo(0, 0);
         }
+
+        // Page-specific init hooks
+        if (page === 'puzzle' && typeof DailyPuzzle !== 'undefined') {
+            DailyPuzzle.init();
+        }
     },
 
     updateNavbar(page) {

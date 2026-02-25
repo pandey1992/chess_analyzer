@@ -139,6 +139,15 @@ const ChessAPI = {
         return await response.json();
     },
 
+    async fetchDailyPuzzle() {
+        const response = await fetch(`${CONFIG.API_BASE}/puzzles/daily`);
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to fetch daily puzzle');
+        }
+        return await response.json();
+    },
+
     async attemptProPuzzle(puzzleId, move) {
         const response = await fetch(`${CONFIG.API_BASE}/pro/puzzles/${puzzleId}/attempt`, {
             method: 'POST',
