@@ -158,6 +158,9 @@ async def get_daily_puzzle(request: Request):
         "puzzle_id": puzzle.get("id", ""),
         "fen": fen,
         "solution_uci": solution_uci,
+        # Lichess provides one full principal-variation line; split it by turn.
+        "player_solution_uci": solution_uci[0::2],
+        "system_solution_uci": solution_uci[1::2],
         "themes": puzzle.get("themes", []),
         "rating": puzzle.get("rating", 0),
         "plays": puzzle.get("plays", 0),

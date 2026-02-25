@@ -136,7 +136,8 @@ const DailyPuzzle = {
     _isDraggable(piece) {
         const isWhite = piece === piece.toUpperCase();
         const s = this.boardState;
-        return (s.sideToMove === 'w' && isWhite) || (s.sideToMove === 'b' && !isWhite);
+        if (s.sideToMove !== this.playerSide) return false;
+        return this.playerSide === 'w' ? isWhite : !isWhite;
     },
 
     // ------------------------------------------------------------------ drag & click
@@ -183,17 +184,15 @@ const DailyPuzzle = {
         if (!movingPiece || !this._isDraggable(movingPiece)) return;
 
         let uci = `${from}${to}`;
-        let pieceToPlace = movingPiece;
         // Auto-promote to queen
         if ((movingPiece === 'P' && to[1] === '8') || (movingPiece === 'p' && to[1] === '1')) {
             uci += 'q';
-            pieceToPlace = movingPiece === 'P' ? 'Q' : 'q';
         }
 
         // Optimistic visual: apply move immediately
         const savedPieces = { ...state.pieces };
-        delete state.pieces[from];
-        state.pieces[to] = pieceToPlace;
+        const savedSideToMove = state.sideToMove;
+        this._applyUciToState(state, uci);
         state.selectedSquare = null;
         this._renderBoard();
 
@@ -203,6 +202,7 @@ const DailyPuzzle = {
             // Wrong move — revert after brief delay
             setTimeout(() => {
                 this.boardState.pieces = savedPieces;
+                this.boardState.sideToMove = savedSideToMove;
                 this.boardState.selectedSquare = null;
                 this._renderBoard();
                 this._setFeedback('Not the best move. Try again!', 'error');
