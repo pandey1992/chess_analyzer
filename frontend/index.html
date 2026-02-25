@@ -255,6 +255,7 @@
                             <span class="price-amount">500</span>
                             <span class="price-period">/ hour</span>
                         </div>
+                        <p style="margin-top: 4px; color: rgba(255,255,255,0.9); font-weight: 600;">Or &#8377;5000 / month (10 sessions)</p>
                         <ul class="pricing-features">
                             <li><span class="check">&#10003;</span> Everything in Free</li>
                             <li><span class="star">&#9733;</span> 1-on-1 coaching sessions</li>
@@ -264,7 +265,9 @@
                             <li><span class="star">&#9733;</span> Game review with coach</li>
                             <li><span class="star">&#9733;</span> Personalized improvement path</li>
                         </ul>
-                        <button type="button" id="bookCoachingBtn" onclick="Payments.startCoachingCheckout()" class="btn btn-pricing-pro">Book Coaching (Pay Online)</button>
+                        <button type="button" id="bookCoachingHourlyBtn" onclick="Payments.startCoachingHourlyCheckout()" class="btn btn-pricing-pro">Pay &#8377;500 (1 Hour)</button>
+                        <button type="button" id="bookCoachingMonthlyBtn" onclick="Payments.startCoachingMonthlyCheckout()" class="btn btn-pricing-pro" style="margin-top:10px; background:#2b6cb0;">Pay &#8377;5000 (10 Sessions)</button>
+                        <a href="https://wa.me/9573905408?text=Hi%20I%20want%20to%20book%20a%20demo%20chess%20coaching%20session" target="_blank" rel="noopener noreferrer" class="btn btn-pricing-pro" style="display:inline-block; margin-top:10px; background:#1f8f49;">Book Demo Session on WhatsApp</a>
                         <div id="coachingPaymentStatus" style="margin-top:10px; font-size:0.92rem; color:#e2e8f0;"></div>
                     </div>
                 </div>
@@ -318,7 +321,7 @@
                             <span class="faq-chevron">&#9660;</span>
                         </button>
                         <div class="faq-answer">
-                            <p>Click the "Book on WhatsApp" button in the pricing section to message us directly. We'll discuss your goals, current rating, and schedule to find the best coaching plan for you.</p>
+                            <p>Use the "Book Demo Session on WhatsApp" button in the pricing section for a demo call, or pay online for hourly/monthly coaching plans.</p>
                         </div>
                     </div>
                     <div class="faq-item">
@@ -620,16 +623,16 @@
     <!-- Scripts: load order matters -->
     <script src="/js/config.js?v=20260225a"></script>
     <script src="/js/utils.js?v=20260225a"></script>
-    <script src="/js/api.js?v=20260225b"></script>
-    <script src="/js/auth.js?v=20260225b"></script>
+    <script src="/js/api.js?v=20260225c"></script>
+    <script src="/js/auth.js?v=20260225c"></script>
     <script src="/js/router.js?v=20260225a"></script>
     <script src="/js/analysis.js?v=20260225a"></script>
     <script src="/js/charts.js?v=20260225a"></script>
     <script src="/js/display.js?v=20260225a"></script>
-    <script src="/js/app.js?v=20260225b"></script>
+    <script src="/js/app.js?v=20260225c"></script>
     <script src="/js/daily_puzzle.js?v=20260225b"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="/js/payments.js?v=20260225b"></script>
+    <script src="/js/payments.js?v=20260225c"></script>
 </body>
 </html>
 

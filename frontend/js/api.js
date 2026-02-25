@@ -186,14 +186,14 @@ const ChessAPI = {
         return await response.json();
     },
 
-    async createPaymentOrder(purpose, customer = null) {
+    async createPaymentOrder(purpose, customer = null, coachingPlan = null) {
         const response = await fetch(`${CONFIG.API_BASE}/payments/order`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...this.getAuthHeaders()
             },
-            body: JSON.stringify({ purpose, customer })
+            body: JSON.stringify({ purpose, customer, coaching_plan: coachingPlan })
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));

@@ -27,6 +27,8 @@ limiter = Limiter(key_func=get_remote_address)
 
 PURPOSE_PRO = "pro_monthly"
 PURPOSE_COACHING = "coaching_booking"
+COACHING_PLAN_HOURLY = "hourly_1"
+COACHING_PLAN_MONTHLY = "monthly_10"
 
 
 class PaymentConfigResponse(BaseModel):
@@ -34,7 +36,8 @@ class PaymentConfigResponse(BaseModel):
     key_id: str
     currency: str = "INR"
     pro_monthly_amount_inr: int
-    coaching_amount_inr: int
+    coaching_hourly_amount_inr: int
+    coaching_monthly_amount_inr: int
 
 
 class CustomerInfo(BaseModel):
@@ -46,6 +49,7 @@ class CustomerInfo(BaseModel):
 
 class CreateOrderRequest(BaseModel):
     purpose: str = Field(..., pattern=r"^(pro_monthly|coaching_booking)$")
+    coaching_plan: Optional[str] = Field(default=None, pattern=r"^(hourly_1|monthly_10)$")
     customer: Optional[CustomerInfo] = None
 
 
@@ -110,11 +114,15 @@ def _verify_signature(order_id: str, payment_id: str, signature: str) -> bool:
     return hmac.compare_digest(digest, signature)
 
 
-def _price_for_purpose_in_paise(purpose: str) -> int:
+def _price_for_purpose_in_paise(purpose: str, coaching_plan: Optional[str] = None) -> int:
     if purpose == PURPOSE_PRO:
         return int(settings.pro_monthly_price_inr) * 100
     if purpose == PURPOSE_COACHING:
-        return int(settings.coaching_price_inr) * 100
+        if coaching_plan == COACHING_PLAN_HOURLY:
+            return int(settings.coaching_hourly_price_inr) * 100
+        if coaching_plan == COACHING_PLAN_MONTHLY:
+            return int(settings.coaching_monthly_10_price_inr) * 100
+        raise HTTPException(status_code=400, detail="Invalid coaching plan")
     raise HTTPException(status_code=400, detail="Unsupported payment purpose")
 
 
@@ -124,7 +132,8 @@ async def get_payment_config():
         enabled=_razorpay_enabled(),
         key_id=settings.razorpay_key_id or "",
         pro_monthly_amount_inr=settings.pro_monthly_price_inr,
-        coaching_amount_inr=settings.coaching_price_inr,
+        coaching_hourly_amount_inr=settings.coaching_hourly_price_inr,
+        coaching_monthly_amount_inr=settings.coaching_monthly_10_price_inr,
     )
 
 
@@ -161,13 +170,17 @@ async def create_order(
         raise HTTPException(status_code=401, detail="Login required to unlock Pro")
     if body.purpose == PURPOSE_COACHING and not body.customer:
         raise HTTPException(status_code=400, detail="Customer details are required for coaching booking")
+    if body.purpose == PURPOSE_COACHING and not body.coaching_plan:
+        raise HTTPException(status_code=400, detail="coaching_plan is required for coaching booking")
 
-    amount_paise = _price_for_purpose_in_paise(body.purpose)
+    amount_paise = _price_for_purpose_in_paise(body.purpose, body.coaching_plan)
     receipt = f"{body.purpose[:4]}_{int(datetime.utcnow().timestamp())}_{secrets.token_hex(4)}"
     notes = {
         "purpose": body.purpose,
         "user_id": str(user.id) if user else "",
     }
+    if body.coaching_plan:
+        notes["coaching_plan"] = body.coaching_plan
     if body.customer:
         notes["name"] = body.customer.name
         notes["email"] = body.customer.email
@@ -201,6 +214,7 @@ async def create_order(
 
     metadata = {
         "purpose": body.purpose,
+        "coaching_plan": body.coaching_plan,
         "customer": body.customer.model_dump() if body.customer else None,
     }
     db.add(
@@ -303,6 +317,13 @@ async def verify_payment(
             except Exception:
                 pass
             customer = metadata.get("customer") or {}
+            coaching_plan = (metadata.get("coaching_plan") or "").strip()
+            plan_label = "1 hour session" if coaching_plan == COACHING_PLAN_HOURLY else (
+                "1 month pack (10 sessions)" if coaching_plan == COACHING_PLAN_MONTHLY else "coaching"
+            )
+            note_text = (customer.get("notes") or "").strip()
+            if plan_label:
+                note_text = f"Plan: {plan_label}" + (f" | {note_text}" if note_text else "")
             db.add(
                 CoachingBooking(
                     payment_order_id=payment_order.id,
@@ -310,7 +331,7 @@ async def verify_payment(
                     name=(customer.get("name") or "Customer").strip()[:80],
                     email=(customer.get("email") or "unknown@example.com").strip()[:120],
                     phone=(customer.get("phone") or "").strip()[:20],
-                    notes=(customer.get("notes") or "").strip()[:500],
+                    notes=note_text[:500],
                 )
             )
 

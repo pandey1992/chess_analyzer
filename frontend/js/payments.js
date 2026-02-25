@@ -63,7 +63,15 @@ const Payments = {
         }
     },
 
-    async startCoachingCheckout() {
+    async startCoachingHourlyCheckout() {
+        return this._startCoachingCheckout('hourly_1', '1 hour session');
+    },
+
+    async startCoachingMonthlyCheckout() {
+        return this._startCoachingCheckout('monthly_10', '1 month pack (10 sessions)');
+    },
+
+    async _startCoachingCheckout(coachingPlan, planLabel) {
         if (!this._paymentsEnabled()) {
             this._setText('coachingPaymentStatus', 'Payments are not configured yet.');
             return;
@@ -79,19 +87,21 @@ const Payments = {
         if (!phone) return;
         const notes = (prompt('Optional: your rating/goals (or leave blank):', '') || '').trim();
 
-        this._setText('coachingPaymentStatus', 'Creating secure payment order...');
+        this._setText('coachingPaymentStatus', `Creating secure payment order for ${planLabel}...`);
         try {
             const order = await ChessAPI.createPaymentOrder('coaching_booking', {
                 name,
                 email,
                 phone,
                 notes
-            });
+            }, coachingPlan);
             await this._openCheckout(order, {
                 purpose: 'coaching_booking',
                 name,
                 email,
-                contact: phone
+                contact: phone,
+                coachingPlan,
+                planLabel
             });
         } catch (error) {
             this._setText('coachingPaymentStatus', error.message || 'Could not start coaching checkout.');
@@ -107,7 +117,9 @@ const Payments = {
             amount: order.amount_paise,
             currency: order.currency || 'INR',
             name: 'Chess AI Coach',
-            description: order.purpose === 'pro_monthly' ? 'Pro Monthly Subscription' : 'Personal Coaching Booking',
+            description: order.purpose === 'pro_monthly'
+                ? 'Pro Monthly Subscription'
+                : (prefill.planLabel || 'Personal Coaching Booking'),
             order_id: order.order_id,
             prefill: {
                 name: prefill.name || '',
@@ -115,7 +127,8 @@ const Payments = {
                 contact: prefill.contact || ''
             },
             notes: {
-                purpose: order.purpose
+                purpose: order.purpose,
+                coaching_plan: prefill.coachingPlan || ''
             },
             theme: {
                 color: '#2b6cb0'

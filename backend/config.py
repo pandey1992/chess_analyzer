@@ -47,7 +47,8 @@ class Settings(BaseSettings):
     auth_events_retention_days: int = 30
     puzzle_attempts_retention_days: int = 30
     pro_monthly_price_inr: int = 50
-    coaching_price_inr: int = 500
+    coaching_hourly_price_inr: int = 500
+    coaching_monthly_10_price_inr: int = 5000
 
     # CORS
     cors_origins: str = "http://localhost:8000,http://localhost:3000"
