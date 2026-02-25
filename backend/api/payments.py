@@ -72,6 +72,7 @@ class VerifyPaymentResponse(BaseModel):
     verified: bool
     message: str
     pro_expires_at: Optional[str] = None
+    payment_id: Optional[str] = None
 
 
 class ProStatusResponse(BaseModel):
@@ -112,6 +113,23 @@ def _verify_signature(order_id: str, payment_id: str, signature: str) -> bool:
         hashlib.sha256,
     ).hexdigest()
     return hmac.compare_digest(digest, signature)
+
+
+async def _fetch_razorpay_payment(payment_id: str) -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.get(
+                f"https://api.razorpay.com/v1/payments/{payment_id}",
+                auth=(settings.razorpay_key_id, settings.razorpay_key_secret),
+            )
+    except httpx.RequestError as exc:
+        logger.error("Razorpay payment fetch failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Could not verify payment with provider")
+
+    if resp.status_code >= 400:
+        logger.warning("Razorpay payment fetch failed (%s): %s", resp.status_code, resp.text[:300])
+        raise HTTPException(status_code=502, detail="Payment provider verification failed")
+    return resp.json()
 
 
 def _price_for_purpose_in_paise(purpose: str, coaching_plan: Optional[str] = None) -> int:
@@ -270,6 +288,7 @@ async def verify_payment(
             verified=True,
             message="Payment already verified",
             pro_expires_at=entitlement.pro_expires_at.isoformat() if entitlement and entitlement.pro_expires_at else None,
+            payment_id=payment_order.provider_payment_id,
         )
 
     if not _verify_signature(
@@ -280,6 +299,29 @@ async def verify_payment(
         payment_order.status = "failed"
         await db.commit()
         raise HTTPException(status_code=400, detail="Invalid payment signature")
+
+    provider_payment = await _fetch_razorpay_payment(body.razorpay_payment_id)
+    provider_order_id = (provider_payment.get("order_id") or "").strip()
+    provider_amount = int(provider_payment.get("amount") or 0)
+    provider_currency = (provider_payment.get("currency") or "").strip().upper()
+    provider_status = (provider_payment.get("status") or "").strip().lower()
+
+    if provider_order_id != body.razorpay_order_id:
+        payment_order.status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=400, detail="Provider order mismatch during verification")
+    if provider_amount != int(payment_order.amount_paise):
+        payment_order.status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=400, detail="Provider amount mismatch during verification")
+    if provider_currency != (payment_order.currency or "INR").upper():
+        payment_order.status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=400, detail="Provider currency mismatch during verification")
+    if provider_status not in {"authorized", "captured"}:
+        payment_order.status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=400, detail="Payment not completed at provider")
 
     payment_order.status = "paid"
     payment_order.provider_payment_id = body.razorpay_payment_id
@@ -341,4 +383,5 @@ async def verify_payment(
         verified=True,
         message="Payment verified successfully",
         pro_expires_at=pro_expires_at.isoformat() if pro_expires_at else None,
+        payment_id=body.razorpay_payment_id,
     )

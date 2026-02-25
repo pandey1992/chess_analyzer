@@ -265,6 +265,12 @@
                             <li><span class="star">&#9733;</span> Game review with coach</li>
                             <li><span class="star">&#9733;</span> Personalized improvement path</li>
                         </ul>
+                        <div style="display:grid; gap:8px; margin-bottom:10px;">
+                            <input id="coachingName" type="text" placeholder="Your full name" style="padding:10px 12px; border-radius:10px; border:none;">
+                            <input id="coachingEmail" type="email" placeholder="Your email" style="padding:10px 12px; border-radius:10px; border:none;">
+                            <input id="coachingPhone" type="tel" placeholder="Phone / WhatsApp number" style="padding:10px 12px; border-radius:10px; border:none;">
+                            <textarea id="coachingGoals" placeholder="Optional: rating, goals, preferred timings" rows="2" style="padding:10px 12px; border-radius:10px; border:none; resize:vertical;"></textarea>
+                        </div>
                         <button type="button" id="bookCoachingHourlyBtn" onclick="Payments.startCoachingHourlyCheckout()" class="btn btn-pricing-pro">Pay &#8377;500 (1 Hour)</button>
                         <button type="button" id="bookCoachingMonthlyBtn" onclick="Payments.startCoachingMonthlyCheckout()" class="btn btn-pricing-pro" style="margin-top:10px; background:#2b6cb0;">Pay &#8377;5000 (10 Sessions)</button>
                         <a href="https://wa.me/9573905408?text=Hi%20I%20want%20to%20book%20a%20demo%20chess%20coaching%20session" target="_blank" rel="noopener noreferrer" class="btn btn-pricing-pro" style="display:inline-block; margin-top:10px; background:#1f8f49;">Book Demo Session on WhatsApp</a>
@@ -632,7 +638,7 @@
     <script src="/js/app.js?v=20260225c"></script>
     <script src="/js/daily_puzzle.js?v=20260225b"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="/js/payments.js?v=20260225c"></script>
+    <script src="/js/payments.js?v=20260225d"></script>
 </body>
 </html>
 

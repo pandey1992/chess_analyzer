@@ -16,6 +16,7 @@ const Payments = {
 
         try {
             this.config = await ChessAPI.getPaymentConfig();
+            this._applyDynamicPricingLabels();
         } catch (error) {
             console.warn('Payment config unavailable:', error);
         }
@@ -77,29 +78,17 @@ const Payments = {
             return;
         }
 
-        const user = Auth.getUser() || {};
-        const name = (prompt('Enter your name for coaching booking:', user.username || '') || '').trim();
-        if (!name) return;
-        const emailDefault = user.email || '';
-        const email = (prompt('Enter your email:', emailDefault) || '').trim();
-        if (!email) return;
-        const phone = (prompt('Enter your phone/WhatsApp number:', '') || '').trim();
-        if (!phone) return;
-        const notes = (prompt('Optional: your rating/goals (or leave blank):', '') || '').trim();
+        const customer = this._readCoachingCustomerFromForm();
+        if (!customer) return;
 
         this._setText('coachingPaymentStatus', `Creating secure payment order for ${planLabel}...`);
         try {
-            const order = await ChessAPI.createPaymentOrder('coaching_booking', {
-                name,
-                email,
-                phone,
-                notes
-            }, coachingPlan);
+            const order = await ChessAPI.createPaymentOrder('coaching_booking', customer, coachingPlan);
             await this._openCheckout(order, {
                 purpose: 'coaching_booking',
-                name,
-                email,
-                contact: phone,
+                name: customer.name,
+                email: customer.email,
+                contact: customer.phone,
                 coachingPlan,
                 planLabel
             });
@@ -171,6 +160,45 @@ const Payments = {
 
     _paymentsEnabled() {
         return !!(this.config && this.config.enabled && this.config.key_id);
+    },
+
+    _readCoachingCustomerFromForm() {
+        const nameEl = document.getElementById('coachingName');
+        const emailEl = document.getElementById('coachingEmail');
+        const phoneEl = document.getElementById('coachingPhone');
+        const goalsEl = document.getElementById('coachingGoals');
+
+        const user = Auth.getUser() || {};
+        const name = ((nameEl && nameEl.value) || user.username || '').trim();
+        const email = ((emailEl && emailEl.value) || user.email || '').trim();
+        const phone = ((phoneEl && phoneEl.value) || '').trim();
+        const notes = ((goalsEl && goalsEl.value) || '').trim();
+
+        if (!name || name.length < 2) {
+            this._setText('coachingPaymentStatus', 'Please enter your full name.');
+            return null;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            this._setText('coachingPaymentStatus', 'Please enter a valid email.');
+            return null;
+        }
+        if (!/^[0-9+\-\s()]{8,20}$/.test(phone)) {
+            this._setText('coachingPaymentStatus', 'Please enter a valid phone/WhatsApp number.');
+            return null;
+        }
+        return { name, email, phone, notes };
+    },
+
+    _applyDynamicPricingLabels() {
+        const hourlyBtn = document.getElementById('bookCoachingHourlyBtn');
+        const monthlyBtn = document.getElementById('bookCoachingMonthlyBtn');
+        if (!this.config) return;
+        if (hourlyBtn && this.config.coaching_hourly_amount_inr) {
+            hourlyBtn.textContent = `Pay ₹${this.config.coaching_hourly_amount_inr} (1 Hour)`;
+        }
+        if (monthlyBtn && this.config.coaching_monthly_amount_inr) {
+            monthlyBtn.textContent = `Pay ₹${this.config.coaching_monthly_amount_inr} (10 Sessions)`;
+        }
     },
 
     _renderProAccess() {
