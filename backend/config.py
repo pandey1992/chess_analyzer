@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
     razorpay_webhook_secret: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 465
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "chessaicoach.contact@gmail.com"
+    payment_admin_email: str = "chessaicoach.contact@gmail.com"
 
     # External APIs
     chess_com_api_base: str = "https://api.chess.com/pub"

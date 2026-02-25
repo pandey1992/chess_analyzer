@@ -22,6 +22,7 @@ const Payments = {
         }
 
         await this.refreshProStatus();
+        this._prefillCoachingForm();
     },
 
     async refreshProStatus() {
@@ -36,6 +37,7 @@ const Payments = {
             this.proStatus = { active: false, pro_expires_at: null };
         }
         this._renderProAccess();
+        this._prefillCoachingForm();
         return this.proStatus;
     },
 
@@ -199,6 +201,14 @@ const Payments = {
         if (monthlyBtn && this.config.coaching_monthly_amount_inr) {
             monthlyBtn.textContent = `Pay ₹${this.config.coaching_monthly_amount_inr} (10 Sessions)`;
         }
+    },
+
+    _prefillCoachingForm() {
+        const user = Auth.getUser() || {};
+        const nameEl = document.getElementById('coachingName');
+        const emailEl = document.getElementById('coachingEmail');
+        if (nameEl && !nameEl.value && user.username) nameEl.value = user.username;
+        if (emailEl && !emailEl.value && user.email) emailEl.value = user.email;
     },
 
     _renderProAccess() {
