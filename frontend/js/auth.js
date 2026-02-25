@@ -193,15 +193,24 @@ function closeMobileMenu() {
     btn.classList.remove('open');
 }
 
-// Navbar scroll effect on landing page
+// Navbar scroll effect on landing page (throttled to avoid layout thrash)
+let _navbarScrollTicking = false;
 window.addEventListener('scroll', () => {
-    const navbar = document.getElementById('navbar');
-    if (!navbar) return;
-    if (Router.currentPage === 'landing') {
-        if (window.scrollY > 60) {
-            navbar.classList.add('navbar-scrolled');
-        } else {
-            navbar.classList.remove('navbar-scrolled');
+    if (_navbarScrollTicking) return;
+    _navbarScrollTicking = true;
+    requestAnimationFrame(() => {
+        try {
+            const navbar = document.getElementById('navbar');
+            if (!navbar) return;
+            if (Router.currentPage === 'landing') {
+                if (window.scrollY > 60) {
+                    navbar.classList.add('navbar-scrolled');
+                } else {
+                    navbar.classList.remove('navbar-scrolled');
+                }
+            }
+        } finally {
+            _navbarScrollTicking = false;
         }
-    }
-});
+    });
+}, { passive: true });

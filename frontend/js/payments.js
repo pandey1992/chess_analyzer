@@ -2,16 +2,23 @@ const Payments = {
     config: null,
     proStatus: { active: false, pro_expires_at: null },
     initialized: false,
+    coachingFormBound: false,
 
     async init() {
         if (this.initialized) return;
         this.initialized = true;
 
         document.addEventListener('click', (event) => {
-            const unlockBtn = event.target.closest('.btn-unlock-pro');
-            if (!unlockBtn) return;
-            event.preventDefault();
-            this.startProCheckout();
+            try {
+                const target = event && event.target;
+                if (!target || typeof target.closest !== 'function') return;
+                const unlockBtn = target.closest('.btn-unlock-pro');
+                if (!unlockBtn) return;
+                event.preventDefault();
+                this.startProCheckout();
+            } catch (error) {
+                console.error('Unlock Pro click handler failed:', error);
+            }
         });
 
         try {
@@ -23,6 +30,7 @@ const Payments = {
 
         await this.refreshProStatus();
         this._prefillCoachingForm();
+        this._bindCoachingFormGuards();
     },
 
     async refreshProStatus() {
@@ -209,6 +217,34 @@ const Payments = {
         const emailEl = document.getElementById('coachingEmail');
         if (nameEl && !nameEl.value && user.username) nameEl.value = user.username;
         if (emailEl && !emailEl.value && user.email) emailEl.value = user.email;
+    },
+
+    _bindCoachingFormGuards() {
+        if (this.coachingFormBound) return;
+        this.coachingFormBound = true;
+
+        const coachingInputs = [
+            document.getElementById('coachingName'),
+            document.getElementById('coachingEmail'),
+            document.getElementById('coachingPhone'),
+            document.getElementById('coachingGoals')
+        ].filter(Boolean);
+
+        if (!coachingInputs.length) return;
+
+        coachingInputs.forEach((el) => {
+            // Prevent accidental submit/navigation when pressing Enter inside pricing inputs.
+            el.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && el.tagName !== 'TEXTAREA') {
+                    event.preventDefault();
+                }
+            });
+
+            // Clear stale payment status while user edits contact details.
+            el.addEventListener('input', () => {
+                this._setText('coachingPaymentStatus', '');
+            });
+        });
     },
 
     _renderProAccess() {

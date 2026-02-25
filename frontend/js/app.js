@@ -979,11 +979,31 @@ ${window.currentStudyPlan}
 }
 
 // Modal close on background click
-window.onclick = function(event) {
-    const modal = document.getElementById('gameModal');
-    if (event.target === modal) {
-        closeModal();
+window.addEventListener('click', (event) => {
+    try {
+        const modal = document.getElementById('gameModal');
+        if (event.target === modal && typeof closeModal === 'function') {
+            closeModal();
+        }
+    } catch (error) {
+        console.error('Modal click handler failed:', error);
     }
+});
+
+let globalErrorGuardsInstalled = false;
+function installGlobalErrorGuards() {
+    if (globalErrorGuardsInstalled) return;
+    globalErrorGuardsInstalled = true;
+
+    window.addEventListener('error', (event) => {
+        const message = event?.error?.message || event?.message || 'Unexpected script error';
+        console.error('Global error:', message);
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+        const message = event?.reason?.message || String(event?.reason || 'Unhandled promise rejection');
+        console.error('Unhandled rejection:', message);
+    });
 }
 
 // ==================== App Initialization ====================
@@ -992,6 +1012,7 @@ let appInitialized = false;
 async function initApp() {
     if (appInitialized) return;
     appInitialized = true;
+    installGlobalErrorGuards();
 
     // Check if user is already logged in, but do not block router boot.
     try {
