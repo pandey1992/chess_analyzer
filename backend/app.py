@@ -50,6 +50,11 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting Chess Analyzer ({settings.environment.value} mode)")
+    logger.info(
+        "Runtime flags: transactional_emails_enabled=%s, razorpay_enabled=%s",
+        settings.transactional_emails_enabled,
+        bool(settings.razorpay_key_id and settings.razorpay_key_secret),
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await _prune_old_records()

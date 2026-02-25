@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from_email: str = "chessaicoach.contact@gmail.com"
     payment_admin_email: str = "chessaicoach.contact@gmail.com"
+    transactional_emails_enabled: bool = False
 
     # External APIs
     chess_com_api_base: str = "https://api.chess.com/pub"

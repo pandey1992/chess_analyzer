@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import hmac
 import json
@@ -39,6 +40,7 @@ class PaymentConfigResponse(BaseModel):
     pro_monthly_amount_inr: int
     coaching_hourly_amount_inr: int
     coaching_monthly_amount_inr: int
+    transactional_emails_enabled: bool
 
 
 class CustomerInfo(BaseModel):
@@ -199,6 +201,20 @@ async def _send_payment_confirmation_emails(
         await send_email(settings.payment_admin_email, admin_subject, admin_body)
 
 
+def _queue_payment_confirmation_emails(**kwargs) -> None:
+    if not settings.transactional_emails_enabled:
+        logger.info("Transactional emails disabled; skipping payment confirmation send")
+        return
+
+    async def _runner() -> None:
+        try:
+            await _send_payment_confirmation_emails(**kwargs)
+        except Exception:
+            logger.exception("Unexpected error while sending payment confirmation emails")
+
+    asyncio.create_task(_runner())
+
+
 def _price_for_purpose_in_paise(purpose: str, coaching_plan: Optional[str] = None) -> int:
     if purpose == PURPOSE_PRO:
         return int(settings.pro_monthly_price_inr) * 100
@@ -219,6 +235,7 @@ async def get_payment_config():
         pro_monthly_amount_inr=settings.pro_monthly_price_inr,
         coaching_hourly_amount_inr=settings.coaching_hourly_price_inr,
         coaching_monthly_amount_inr=settings.coaching_monthly_10_price_inr,
+        transactional_emails_enabled=settings.transactional_emails_enabled,
     )
 
 
@@ -485,7 +502,7 @@ async def verify_payment(
         signature=body.razorpay_signature,
     )
     if transitioned:
-        await _send_payment_confirmation_emails(
+        _queue_payment_confirmation_emails(
             purpose=payment_order.purpose,
             amount_paise=payment_order.amount_paise,
             order_id=payment_order.provider_order_id,
@@ -557,7 +574,7 @@ async def razorpay_webhook(
         signature=f"webhook:{event}",
     )
     if transitioned:
-        await _send_payment_confirmation_emails(
+        _queue_payment_confirmation_emails(
             purpose=payment_order.purpose,
             amount_paise=payment_order.amount_paise,
             order_id=payment_order.provider_order_id,
