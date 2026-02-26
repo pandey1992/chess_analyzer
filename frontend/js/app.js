@@ -13,6 +13,7 @@ let proPuzzleDragSource = null;
 let proPuzzleStreak = 0;
 let proPuzzleBestStreak = 0;
 let proPuzzleHintUsage = {};
+let latestDashboardData = null;
 
 function renderInlineErrorCard(container, title, message, retryLabel = '', onRetry = null) {
     if (!container) return;
@@ -33,6 +34,14 @@ function renderInlineErrorCard(container, title, message, retryLabel = '', onRet
 function selectPlatform(platform) {
     currentPlatform = platform;
 }
+
+function scrollToAppSection(sectionId) {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+window.scrollToAppSection = scrollToAppSection;
 
 async function startAnalysis() {
     console.log('Analysis button clicked');
@@ -56,6 +65,7 @@ async function startAnalysis() {
     hideError();
     showLoading();
     openingsVisible = 10;
+    latestDashboardData = null;
 
     const platformName = currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com';
 
@@ -75,6 +85,7 @@ async function startAnalysis() {
 
         // Analysis stays client-side
         analyzeAndDisplay(allGames);
+        renderProgressTrackingPanel();
 
         setLoadingStatus('Building dashboard...', 'Rendering insights and charts', 90);
         hideLoading();
@@ -95,6 +106,28 @@ async function startAnalysis() {
         hideLoading();
     }
 }
+
+function getSelectedGameTypes() {
+    const gameTypes = [];
+    if (document.getElementById('rapid')?.checked) gameTypes.push('rapid');
+    if (document.getElementById('blitz')?.checked) gameTypes.push('blitz');
+    if (document.getElementById('bullet')?.checked) gameTypes.push('bullet');
+    return gameTypes;
+}
+
+async function refreshWeeklyDashboardIfReady() {
+    const dashboardSection = document.getElementById('dashboardSection');
+    if (!dashboardSection) return false;
+    if (!username || !allGames || allGames.length === 0) return false;
+
+    const gameTypes = getSelectedGameTypes();
+    if (!gameTypes.length) return false;
+
+    await fetchWeeklyDashboard(username, gameTypes);
+    return true;
+}
+
+window.refreshWeeklyDashboardIfReady = refreshWeeklyDashboardIfReady;
 
 async function generateProPuzzles() {
     const section = document.getElementById('proPuzzleSection');
@@ -659,6 +692,136 @@ function showProPuzzleHint() {
     feedback.className = 'pro-puzzle-feedback';
 }
 
+function _getWeakPhaseSummary() {
+    const totalLosses = Math.max(1, stats.losses || 0);
+    const phases = [
+        { name: 'Opening', losses: stats.openingPhaseLosses || 0 },
+        { name: 'Middlegame', losses: stats.middlegameLosses || 0 },
+        { name: 'Endgame', losses: stats.endgameLosses || 0 }
+    ];
+    const worst = phases.sort((a, b) => b.losses - a.losses)[0] || { name: 'Opening', losses: 0 };
+    return {
+        name: worst.name,
+        losses: worst.losses,
+        pct: Math.round((worst.losses / totalLosses) * 100)
+    };
+}
+
+function _avg(nums) {
+    if (!nums || !nums.length) return null;
+    return nums.reduce((sum, n) => sum + n, 0) / nums.length;
+}
+
+function _formatDelta(delta, positiveGood = true, suffix = '%') {
+    if (delta === null || Number.isNaN(delta)) return { text: 'No trend yet', cls: 'neutral' };
+    const rounded = Math.round(delta * 10) / 10;
+    const sign = rounded > 0 ? '+' : '';
+    const good = positiveGood ? rounded >= 0 : rounded <= 0;
+    if (Math.abs(rounded) < 0.1) return { text: 'Flat vs baseline', cls: 'neutral' };
+    return {
+        text: `${sign}${rounded}${suffix} vs baseline`,
+        cls: good ? 'good' : 'bad'
+    };
+}
+
+function renderProgressTrackingPanel() {
+    const section = document.getElementById('progressTrackingSection');
+    if (!section) return;
+    if (!stats || !stats.totalGames) {
+        section.style.display = 'none';
+        return;
+    }
+
+    const totalGames = stats.totalGames || 0;
+    const overallWinRate = totalGames > 0 ? (stats.wins / totalGames) * 100 : 0;
+    const recentGames = (stats.recentGames || []).slice(0, 10);
+    const recentWinRate = recentGames.length
+        ? (recentGames.filter(g => g.result === 'win').length / recentGames.length) * 100
+        : null;
+    const weakPhase = _getWeakPhaseSummary();
+
+    let accuracyValue = 'Pending';
+    let accuracyHint = 'Loads after weekly dashboard analysis';
+    let accuracyTrend = { text: 'No trend yet', cls: 'neutral' };
+
+    let blunderValue = 'Pending';
+    let blunderHint = 'Waiting for move-quality data';
+    let blunderTrend = { text: 'No trend yet', cls: 'neutral' };
+
+    if (latestDashboardData && !latestDashboardData.pro_locked) {
+        const overallAcc = latestDashboardData?.overall?.accuracy;
+        const gameAccs = (latestDashboardData?.game_accuracies || [])
+            .map(g => Number(g.accuracy))
+            .filter(n => Number.isFinite(n));
+
+        if (Number.isFinite(overallAcc)) {
+            accuracyValue = `${Math.round(overallAcc * 10) / 10}%`;
+            accuracyHint = `${latestDashboardData.total_analyzed_games || 0} games this week`;
+        }
+
+        if (gameAccs.length >= 6) {
+            const recentAvg = _avg(gameAccs.slice(0, 3));
+            const prevAvg = _avg(gameAccs.slice(3, 6));
+            accuracyTrend = _formatDelta(recentAvg - prevAvg, true, '%');
+        }
+
+        const blunders = Number(latestDashboardData?.move_quality?.blunder || 0);
+        const analyzed = Math.max(1, Number(latestDashboardData?.total_analyzed_games || 0));
+        const blundersPerGame = blunders / analyzed;
+        blunderValue = `${blunders}`;
+        blunderHint = `${blundersPerGame.toFixed(2)} blunders/game`;
+        blunderTrend = blundersPerGame <= 0.7
+            ? { text: 'Controlled blunder rate', cls: 'good' }
+            : blundersPerGame <= 1.2
+            ? { text: 'Moderate blunder rate', cls: 'neutral' }
+            : { text: 'High blunder rate', cls: 'bad' };
+    } else {
+        const likelyBlunders = (stats.gamesToReview?.quickCollapses?.length || 0) +
+            (stats.gamesToReview?.middlegameBlunders?.length || 0);
+        blunderValue = `${likelyBlunders}`;
+        blunderHint = 'Likely blunder games (local estimate)';
+        blunderTrend = likelyBlunders <= Math.max(3, Math.round(totalGames * 0.15))
+            ? { text: 'Within expected range', cls: 'good' }
+            : { text: 'Needs cleanup', cls: 'bad' };
+    }
+
+    const winRateDelta = recentWinRate === null ? null : (recentWinRate - overallWinRate);
+    const winRateTrend = _formatDelta(winRateDelta, true, '%');
+
+    section.style.display = 'block';
+    section.innerHTML = `
+        <div class="section-header">
+            <h2 class="section-title">Progress Tracking</h2>
+        </div>
+        <div class="progress-grid">
+            <div class="progress-card">
+                <div class="progress-label">Accuracy</div>
+                <div class="progress-value">${accuracyValue}</div>
+                <div class="progress-hint">${accuracyHint}</div>
+                <div class="progress-trend ${accuracyTrend.cls}">${accuracyTrend.text}</div>
+            </div>
+            <div class="progress-card">
+                <div class="progress-label">Blunders</div>
+                <div class="progress-value">${blunderValue}</div>
+                <div class="progress-hint">${blunderHint}</div>
+                <div class="progress-trend ${blunderTrend.cls}">${blunderTrend.text}</div>
+            </div>
+            <div class="progress-card">
+                <div class="progress-label">Win Rate</div>
+                <div class="progress-value">${overallWinRate.toFixed(1)}%</div>
+                <div class="progress-hint">Overall (${stats.wins}W / ${stats.losses}L / ${stats.draws}D)</div>
+                <div class="progress-trend ${winRateTrend.cls}">${winRateTrend.text}</div>
+            </div>
+            <div class="progress-card">
+                <div class="progress-label">Weak Phase</div>
+                <div class="progress-value">${weakPhase.name}</div>
+                <div class="progress-hint">${weakPhase.losses} losses in this phase</div>
+                <div class="progress-trend ${weakPhase.pct >= 40 ? 'bad' : weakPhase.pct >= 25 ? 'neutral' : 'good'}">${weakPhase.pct}% of all losses</div>
+            </div>
+        </div>
+    `;
+}
+
 async function fetchWeeklyDashboard(username, gameTypes) {
     const dashboardSection = document.getElementById('dashboardSection');
 
@@ -673,6 +836,8 @@ async function fetchWeeklyDashboard(username, gameTypes) {
 
     try {
         const dashboardData = await ChessAPI.fetchDashboard(username, gameTypes, currentPlatform);
+        latestDashboardData = dashboardData;
+        renderProgressTrackingPanel();
 
         if (dashboardData && dashboardData.pro_locked) {
             displayDashboard(dashboardData);
@@ -693,6 +858,7 @@ async function fetchWeeklyDashboard(username, gameTypes) {
         displayDashboard(dashboardData);
     } catch (error) {
         console.error('Dashboard error:', error);
+        renderProgressTrackingPanel();
         dashboardSection.innerHTML = `
             <div id="dashboardErrorWrap" class="chart-container" style="text-align: center; padding: 30px;"></div>
         `;

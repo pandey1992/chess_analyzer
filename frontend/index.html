@@ -6,7 +6,7 @@
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260225a">
+    <link rel="stylesheet" href="/css/styles.css?v=20260226d">
 </head>
 <body>
 
@@ -34,7 +34,10 @@
 
             <!-- Logged-in navigation -->
             <div class="navbar-actions" id="userNav" style="display: none;">
-                <span class="nav-username" id="navUsername"></span>
+                <span class="nav-username-wrap">
+                    <span class="nav-username" id="navUsername"></span>
+                    <span class="nav-pro-badge" id="navProBadge" style="display:none;">PRO</span>
+                </span>
                 <button class="nav-btn nav-btn-ghost" onclick="Auth.handleLogout()">Log Out</button>
             </div>
 
@@ -486,127 +489,144 @@
     <!-- ==================== PAGE: APP (Analysis Tool) ==================== -->
     <div data-page="app" style="display: none;">
         <div class="container">
-            <div class="error" id="error"></div>
+            <div class="app-layout">
+                <aside class="app-sidebar" aria-label="App Navigation">
+                    <div class="app-sidebar-title">Workspace</div>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('analyzeSection')">Analyze Games</button>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('dashboardSection')">Weekly Dashboard</button>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('progressTrackingSection')">Progress Tracking</button>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('proPuzzleSection')">Pro Puzzles</button>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('leaksSection')">Biggest Leaks</button>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('timeManagementSection')">Time Management</button>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('overallStatsSection')">Overall Stats</button>
+                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('studyPlanSection')">Study Plan</button>
+                </aside>
 
-            <div class="input-section">
-                <div class="form-group">
-                    <label for="platform">Platform</label>
-                    <select id="platform" onchange="selectPlatform(this.value)">
-                        <option value="chesscom">Chess.com</option>
-                        <option value="lichess">Lichess</option>
-                    </select>
-                </div>
+                <div class="app-main">
+                    <div class="error" id="error"></div>
 
-                <div class="form-group">
-                    <label for="username" id="usernameLabel">Username</label>
-                    <input type="text" id="username" placeholder="Enter your username" value="">
-                </div>
-
-                <div class="form-group">
-                    <label>Game Types</label>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="rapid" checked>
-                            <label for="rapid" style="margin: 0;">Rapid</label>
+                    <div class="input-section" id="analyzeSection">
+                        <div class="form-group">
+                            <label for="platform">Platform</label>
+                            <select id="platform" onchange="selectPlatform(this.value)">
+                                <option value="chesscom">Chess.com</option>
+                                <option value="lichess">Lichess</option>
+                            </select>
                         </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="blitz" checked>
-                            <label for="blitz" style="margin: 0;">Blitz</label>
+
+                        <div class="form-group">
+                            <label for="username" id="usernameLabel">Username</label>
+                            <input type="text" id="username" placeholder="Enter your username" value="">
                         </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bullet">
-                            <label for="bullet" style="margin: 0;">Bullet</label>
+
+                        <div class="form-group">
+                            <label>Game Types</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="rapid" checked>
+                                    <label for="rapid" style="margin: 0;">Rapid</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="blitz" checked>
+                                    <label for="blitz" style="margin: 0;">Blitz</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="bullet">
+                                    <label for="bullet" style="margin: 0;">Bullet</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="startAnalysis()">Analyze Games</button>
+                    </div>
+
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p id="loadingStage">Fetching games...</p>
+                        <p id="loadingDetail" class="loading-detail">Connecting to platform API</p>
+                        <div class="loading-progress">
+                            <div id="loadingProgressFill" class="loading-progress-fill"></div>
                         </div>
                     </div>
-                </div>
 
-                <button onclick="startAnalysis()">Analyze Games</button>
-            </div>
+                    <!-- Weekly Accuracy Dashboard -->
+                    <div id="dashboardSection" style="display: none;"></div>
 
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p id="loadingStage">Fetching games...</p>
-                <p id="loadingDetail" class="loading-detail">Connecting to platform API</p>
-                <div class="loading-progress">
-                    <div id="loadingProgressFill" class="loading-progress-fill"></div>
-                </div>
-            </div>
-
-            <!-- Weekly Accuracy Dashboard -->
-            <div id="dashboardSection" style="display: none;"></div>
-
-            <!-- Pro Puzzle Trainer -->
-            <div id="proPuzzleSection" class="chart-container" style="display: none;">
-                <div class="section-header">
-                    <h2 class="section-title">Pro: Puzzles From Your Mistakes</h2>
-                </div>
-                <p style="color: #4a5568; margin-bottom: 14px;">
-                    We find your bad moves, ask Stockfish for the best move, and turn them into solveable puzzles.
-                </p>
-                <div id="proUpsell" class="pro-puzzle-empty" style="display:none; margin-bottom:14px;">
-                    Pro is required for this section. <button type="button" class="btn-unlock-pro">Unlock Pro - &#8377;50/month</button>
-                    <div id="proStatusLine" style="margin-top:8px;"></div>
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-                    <button id="generateProPuzzlesBtn" onclick="generateProPuzzles()">Generate Puzzles From My Mistakes</button>
-                    <button onclick="loadProPuzzles()" style="background:#4a5568;">Load Saved Puzzles</button>
-                </div>
-                <div class="chart-container" style="margin: 0 0 14px; background:#f8fafc;">
-                    <h3 class="chart-title" style="margin-bottom:8px;">Chess AI Coach (Soon)</h3>
-                    <p style="margin:0; color:#4a5568;">
-                        Inside Pro, we're adding an interactive AI Coach for guided game review, training plans, and Q&amp;A.
-                    </p>
-                </div>
-                <div id="proPuzzleResults"></div>
-            </div>
-
-            <div class="results" id="results">
-                <div id="heroSection"></div>
-                <div class="section-header">
-                    <h2 class="section-title">Your Biggest Leaks</h2>
-                </div>
-                <div class="leaks-grid" id="leaksGrid"></div>
-                <div class="insights-section">
-                    <h2 class="section-title" style="margin-bottom: 20px;">Personal Insights</h2>
-                    <div id="insightsContainer"></div>
-                </div>
-                <div class="study-recommendations">
-                    <h2 style="font-size: 1.8em; margin-bottom: 20px;">What to Study Next</h2>
-                    <div id="studyContainer"></div>
-                </div>
-                <div id="timeManagementSection"></div>
-                <div id="gamesToReviewSection"></div>
-                <div class="section-header">
-                    <h2 class="section-title">Overall Statistics</h2>
-                </div>
-                <div class="stats-grid" id="statsGrid"></div>
-                <div class="chart-container">
-                    <h3 class="chart-title">Win/Loss/Draw by Color</h3>
-                    <canvas id="colorChart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <h3 class="chart-title">Performance by Opening</h3>
-                    <canvas id="openingChart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <h3 class="chart-title">Opening Statistics</h3>
-                    <table id="openingTable"></table>
-                </div>
-                <div id="endgameAnalysisSection"></div>
-
-                <!-- Study Plan Section -->
-                <div class="study-plan-section">
-                    <div class="study-plan-intro">
-                        <h2>Personalized Study Plan</h2>
-                        <p>Get an AI-powered, customized 4-week study plan based on your game analysis</p>
-                        <p style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">
-                            Powered by Groq AI (Fast & Free) &bull; Llama 3.3 70B Model
+                    <!-- Pro Puzzle Trainer -->
+                    <div id="proPuzzleSection" class="chart-container" style="display: none;">
+                        <div class="section-header">
+                            <h2 class="section-title">Puzzles From Your Mistakes <span class="feature-pro-badge">PRO</span></h2>
+                        </div>
+                        <p style="color: #4a5568; margin-bottom: 14px;">
+                            We find your bad moves, ask Stockfish for the best move, and turn them into solveable puzzles.
                         </p>
-                        <button class="generate-plan-btn" id="generateStudyPlanBtn" onclick="generateStudyPlan()">
-                            Generate My Study Plan
-                        </button>
+                        <div id="proUpsell" class="pro-puzzle-empty" style="display:none; margin-bottom:14px;">
+                            Pro is required for this section. <button type="button" class="btn-unlock-pro">Unlock Pro - &#8377;50/month</button>
+                            <div id="proStatusLine" style="margin-top:8px;"></div>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                            <button id="generateProPuzzlesBtn" onclick="generateProPuzzles()">Generate Puzzles From My Mistakes</button>
+                            <button onclick="loadProPuzzles()" style="background:#4a5568;">Load Saved Puzzles</button>
+                        </div>
+                        <div class="chart-container" style="margin: 0 0 14px; background:#f8fafc;">
+                            <h3 class="chart-title" style="margin-bottom:8px;">Chess AI Coach (Soon)</h3>
+                            <p style="margin:0; color:#4a5568;">
+                                Inside Pro, we're adding an interactive AI Coach for guided game review, training plans, and Q&amp;A.
+                            </p>
+                        </div>
+                        <div id="proPuzzleResults"></div>
                     </div>
-                    <div id="studyPlanResults" style="display: none;"></div>
+
+                    <div class="results" id="results">
+                        <div id="heroSection"></div>
+                        <div id="progressTrackingSection" class="chart-container progress-tracking-section" style="display: none;"></div>
+                        <div class="section-header" id="leaksSection">
+                            <h2 class="section-title">Your Biggest Leaks</h2>
+                        </div>
+                        <div class="leaks-grid" id="leaksGrid"></div>
+                        <div class="insights-section">
+                            <h2 class="section-title" style="margin-bottom: 20px;">Personal Insights</h2>
+                            <div id="insightsContainer"></div>
+                        </div>
+                        <div class="study-recommendations">
+                            <h2 style="font-size: 1.8em; margin-bottom: 20px;">What to Study Next</h2>
+                            <div id="studyContainer"></div>
+                        </div>
+                        <div id="timeManagementSection"></div>
+                        <div id="gamesToReviewSection"></div>
+                        <div class="section-header" id="overallStatsSection">
+                            <h2 class="section-title">Overall Statistics</h2>
+                        </div>
+                        <div class="stats-grid" id="statsGrid"></div>
+                        <div class="chart-container">
+                            <h3 class="chart-title">Win/Loss/Draw by Color</h3>
+                            <canvas id="colorChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 class="chart-title">Performance by Opening</h3>
+                            <canvas id="openingChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 class="chart-title">Opening Statistics</h3>
+                            <table id="openingTable"></table>
+                        </div>
+                        <div id="endgameAnalysisSection"></div>
+
+                        <!-- Study Plan Section -->
+                        <div class="study-plan-section" id="studyPlanSection">
+                            <div class="study-plan-intro">
+                                <h2>Personalized Study Plan</h2>
+                                <p>Get an AI-powered, customized 4-week study plan based on your game analysis</p>
+                                <p style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">
+                                    Powered by Groq AI (Fast & Free) &bull; Llama 3.3 70B Model
+                                </p>
+                                <button class="generate-plan-btn" id="generateStudyPlanBtn" onclick="generateStudyPlan()">
+                                    Generate My Study Plan
+                                </button>
+                            </div>
+                            <div id="studyPlanResults" style="display: none;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -634,11 +654,11 @@
     <script src="/js/router.js?v=20260225a"></script>
     <script src="/js/analysis.js?v=20260225a"></script>
     <script src="/js/charts.js?v=20260225a"></script>
-    <script src="/js/display.js?v=20260225a"></script>
-    <script src="/js/app.js?v=20260225d"></script>
+    <script src="/js/display.js?v=20260226b"></script>
+    <script src="/js/app.js?v=20260226d"></script>
     <script src="/js/daily_puzzle.js?v=20260225b"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="/js/payments.js?v=20260225f"></script>
+    <script src="/js/payments.js?v=20260226b"></script>
 </body>
 </html>
 

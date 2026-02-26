@@ -37,6 +37,7 @@ const Payments = {
         if (!Auth.isLoggedIn()) {
             this.proStatus = { active: false, pro_expires_at: null };
             this._renderProAccess();
+            this._renderNavbarProBadge();
             return this.proStatus;
         }
         try {
@@ -45,6 +46,7 @@ const Payments = {
             this.proStatus = { active: false, pro_expires_at: null };
         }
         this._renderProAccess();
+        this._renderNavbarProBadge();
         this._prefillCoachingForm();
         return this.proStatus;
     },
@@ -142,6 +144,13 @@ const Payments = {
                     });
                     if (order.purpose === 'pro_monthly') {
                         await this.refreshProStatus();
+                        if (this.proStatus && this.proStatus.active && typeof window.refreshWeeklyDashboardIfReady === 'function') {
+                            try {
+                                await window.refreshWeeklyDashboardIfReady();
+                            } catch (refreshError) {
+                                console.warn('Weekly dashboard refresh after Pro unlock failed:', refreshError);
+                            }
+                        }
                         alert(verify.message || 'Pro unlocked successfully.');
                     } else {
                         this._setText('coachingPaymentStatus', 'Payment received. We will contact you soon for scheduling.');
@@ -268,6 +277,13 @@ const Payments = {
                 statusLine.textContent = 'Unlock Pro to generate and solve mistake-based puzzles.';
             }
         }
+    },
+
+    _renderNavbarProBadge() {
+        const badge = document.getElementById('navProBadge');
+        if (!badge) return;
+        const show = Auth.isLoggedIn() && !!(this.proStatus && this.proStatus.active);
+        badge.style.display = show ? 'inline-flex' : 'none';
     },
 
     _setText(id, text) {

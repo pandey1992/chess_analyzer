@@ -153,6 +153,37 @@
             font-size: 0.95em;
         }
 
+        .nav-username-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-pro-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 0.68em;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            line-height: 1.4;
+            border: 1px solid transparent;
+        }
+
+        .navbar-landing .nav-pro-badge {
+            color: #1a202c;
+            background: #f6e05e;
+            border-color: #ecc94b;
+        }
+
+        .navbar-solid .nav-pro-badge {
+            color: #744210;
+            background: #faf089;
+            border-color: #d69e2e;
+        }
+
         .navbar-landing .nav-username { color: white; }
         .navbar-solid .nav-username { color: #2d3748; }
 
@@ -1239,6 +1270,135 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
+        .app-layout {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .app-sidebar {
+            position: sticky;
+            top: 96px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .app-sidebar-title {
+            font-size: 0.78em;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #4a5568;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .app-sidebar-link {
+            width: 100%;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #2d3748;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .app-sidebar-link:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .app-sidebar-link:last-child {
+            margin-bottom: 0;
+        }
+
+        .app-main {
+            min-width: 0;
+        }
+
+        #analyzeSection,
+        #dashboardSection,
+        #progressTrackingSection,
+        #proPuzzleSection,
+        #leaksSection,
+        #timeManagementSection,
+        #overallStatsSection,
+        #studyPlanSection {
+            scroll-margin-top: 100px;
+        }
+
+        .progress-tracking-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .progress-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(170px, 1fr));
+            gap: 14px;
+        }
+
+        .progress-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .progress-label {
+            font-size: 0.8em;
+            color: #718096;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .progress-value {
+            font-size: 1.5em;
+            font-weight: 800;
+            color: #1a202c;
+            margin-top: 6px;
+        }
+
+        .progress-hint {
+            font-size: 0.86em;
+            color: #4a5568;
+            margin-top: 4px;
+            min-height: 32px;
+        }
+
+        .progress-trend {
+            margin-top: 8px;
+            font-size: 0.83em;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 4px 9px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .progress-trend.good {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .progress-trend.bad {
+            background: #fed7d7;
+            color: #822727;
+        }
+
+        .progress-trend.neutral {
+            background: #edf2f7;
+            color: #4a5568;
+        }
+
         h1 {
             color: #2d3748;
             margin-bottom: 10px;
@@ -1763,6 +1923,23 @@
             font-size: 1.8em;
             color: #2d3748;
             font-weight: 700;
+        }
+
+        .feature-pro-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            margin-left: 8px;
+            border-radius: 999px;
+            padding: 2px 9px;
+            font-size: 0.5em;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            line-height: 1.5;
+            color: #744210;
+            background: #faf089;
+            border: 1px solid #d69e2e;
         }
 
         .stats-grid {
@@ -2923,6 +3100,18 @@
             .container {
                 padding: 28px;
             }
+
+            .app-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .app-sidebar {
+                display: none;
+            }
+
+            .progress-grid {
+                grid-template-columns: repeat(2, minmax(180px, 1fr));
+            }
         }
 
         @media (max-width: 768px) {
@@ -2980,6 +3169,10 @@
             .analysis-summary {
                 grid-template-columns: 1fr;
                 gap: 12px;
+            }
+
+            .progress-grid {
+                grid-template-columns: 1fr;
             }
 
             .coaching-layout,

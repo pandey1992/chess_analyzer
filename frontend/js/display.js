@@ -1059,7 +1059,7 @@ function displayDashboard(data) {
     let html = `
         <div class="dashboard-section">
             <div class="dashboard-header">
-                <h2>📊 Weekly Accuracy Dashboard</h2>
+                <h2>📊 Weekly Accuracy Dashboard <span class="feature-pro-badge">PRO</span></h2>
                 <p class="dashboard-period">${data.period} &bull; ${data.total_analyzed_games} analyzed games</p>
             </div>
 
@@ -1174,7 +1174,7 @@ function displayLockedDashboard(data) {
     section.innerHTML = `
         <div class="dashboard-section">
             <div class="dashboard-header">
-                <h2>Weekly Accuracy Dashboard</h2>
+                <h2>Weekly Accuracy Dashboard <span class="feature-pro-badge">PRO</span></h2>
                 <p class="dashboard-period">${data.period} &bull; ${recentGames} recent games found</p>
             </div>
             <div class="dashboard-locked-shell">

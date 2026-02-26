@@ -25,6 +25,20 @@ services:
         value: 60
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: PRO_MONTHLY_PRICE_INR
+        value: 50
+      - key: COACHING_HOURLY_PRICE_INR
+        value: 500
+      - key: COACHING_MONTHLY_10_PRICE_INR
+        value: 5000
+      - key: TRANSACTIONAL_EMAILS_ENABLED
+        value: "false"
       - key: CORS_ORIGINS
         value: https://chessaicoach.com,https://www.chessaicoach.com
       - key: ENVIRONMENT
