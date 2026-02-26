@@ -1308,11 +1308,51 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
 
         .app-sidebar-link:hover {
             background: #edf2f7;
             border-color: #cbd5e0;
+        }
+
+        .app-sidebar-link.active {
+            background: #ebf4ff;
+            border-color: #90cdf4;
+            color: #1a365d;
+        }
+
+        .sidebar-badge {
+            font-size: 0.68em;
+            font-weight: 700;
+            color: #4a5568;
+            background: #edf2f7;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 2px 8px;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .sidebar-badge.good {
+            color: #22543d;
+            background: #c6f6d5;
+            border-color: #9ae6b4;
+        }
+
+        .sidebar-badge.warn {
+            color: #744210;
+            background: #fefcbf;
+            border-color: #faf089;
+        }
+
+        .sidebar-badge.bad {
+            color: #742a2a;
+            background: #fed7d7;
+            border-color: #feb2b2;
         }
 
         .app-sidebar-link:last-child {
@@ -1397,6 +1437,66 @@
         .progress-trend.neutral {
             background: #edf2f7;
             color: #4a5568;
+        }
+
+        .home-puzzle-hub {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .home-puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .home-puzzle-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .home-puzzle-card.daily {
+            grid-column: span 3;
+            background: #ebf8ff;
+            border-color: #90cdf4;
+        }
+
+        .home-puzzle-title {
+            font-size: 0.82em;
+            color: #4a5568;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+        }
+
+        .home-puzzle-main {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .home-puzzle-meta {
+            margin-top: 4px;
+            font-size: 0.86em;
+            color: #4a5568;
+        }
+
+        .home-puzzle-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: #2b6cb0;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.88em;
+        }
+
+        .home-puzzle-link:hover {
+            text-decoration: underline;
         }
 
         h1 {
@@ -3112,6 +3212,14 @@
             .progress-grid {
                 grid-template-columns: repeat(2, minmax(180px, 1fr));
             }
+
+            .home-puzzle-grid {
+                grid-template-columns: repeat(2, minmax(160px, 1fr));
+            }
+
+            .home-puzzle-card.daily {
+                grid-column: span 2;
+            }
         }
 
         @media (max-width: 768px) {
@@ -3173,6 +3281,14 @@
 
             .progress-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .home-puzzle-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .home-puzzle-card.daily {
+                grid-column: span 1;
             }
 
             .coaching-layout,

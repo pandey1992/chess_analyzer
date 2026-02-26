@@ -63,6 +63,9 @@ const Router = {
         if (page === 'puzzle' && typeof DailyPuzzle !== 'undefined') {
             DailyPuzzle.init();
         }
+        if (page === 'landing' && typeof HomePuzzles !== 'undefined') {
+            HomePuzzles.init();
+        }
     },
 
     updateNavbar(page) {

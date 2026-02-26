@@ -150,6 +150,15 @@ const ChessAPI = {
         return await response.json();
     },
 
+    async fetchFeaturedPuzzles(count = 5) {
+        const response = await fetch(`${CONFIG.API_BASE}/puzzles/featured?count=${count}`);
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to fetch featured puzzles');
+        }
+        return await response.json();
+    },
+
     async attemptProPuzzle(puzzleId, move) {
         const response = await fetch(`${CONFIG.API_BASE}/pro/puzzles/${puzzleId}/attempt`, {
             method: 'POST',

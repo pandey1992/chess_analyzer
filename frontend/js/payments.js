@@ -47,6 +47,9 @@ const Payments = {
         }
         this._renderProAccess();
         this._renderNavbarProBadge();
+        if (typeof window.refreshSidebarState === 'function') {
+            window.refreshSidebarState();
+        }
         this._prefillCoachingForm();
         return this.proStatus;
     },

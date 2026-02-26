@@ -14,6 +14,7 @@ let proPuzzleStreak = 0;
 let proPuzzleBestStreak = 0;
 let proPuzzleHintUsage = {};
 let latestDashboardData = null;
+let sidebarObserver = null;
 
 function renderInlineErrorCard(container, title, message, retryLabel = '', onRetry = null) {
     if (!container) return;
@@ -39,9 +40,130 @@ function scrollToAppSection(sectionId) {
     const el = document.getElementById(sectionId);
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setActiveSidebarBySection(sectionId);
 }
 
 window.scrollToAppSection = scrollToAppSection;
+
+function _readSidebarGameContext() {
+    const enteredUsername = (document.getElementById('username')?.value || '').trim();
+    const gameTypes = getSelectedGameTypes();
+    return { enteredUsername, gameTypes };
+}
+
+function _setSidebarBadge(id, text, tone = 'warn') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = `sidebar-badge ${tone}`;
+}
+
+function setActiveSidebarBySection(sectionId) {
+    const map = {
+        analyzeSection: 'analyze',
+        dashboardSection: 'dashboard',
+        progressTrackingSection: 'progress',
+        proPuzzleSection: 'puzzles',
+        leaksSection: 'leaks',
+        timeManagementSection: 'time',
+        openingSection: 'openings',
+        overallStatsSection: 'overall',
+        studyPlanSection: 'study'
+    };
+    const key = map[sectionId];
+    if (!key) return;
+    document.querySelectorAll('.app-sidebar-link').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.sidebar === key);
+    });
+}
+
+function initSidebarObserver() {
+    if (sidebarObserver) return;
+    const targets = [
+        'analyzeSection',
+        'dashboardSection',
+        'progressTrackingSection',
+        'proPuzzleSection',
+        'leaksSection',
+        'timeManagementSection',
+        'openingSection',
+        'overallStatsSection',
+        'studyPlanSection'
+    ];
+    const sections = targets
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+    if (!sections.length || typeof IntersectionObserver !== 'function') return;
+
+    sidebarObserver = new IntersectionObserver((entries) => {
+        const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible && visible.target && visible.target.id) {
+            setActiveSidebarBySection(visible.target.id);
+        }
+    }, { root: null, threshold: [0.35, 0.6], rootMargin: '-80px 0px -50% 0px' });
+
+    sections.forEach((s) => sidebarObserver.observe(s));
+}
+
+function refreshSidebarState() {
+    const enteredUsername = (document.getElementById('username')?.value || '').trim();
+    const gameTypes = getSelectedGameTypes();
+    const hasGameContext = !!enteredUsername && gameTypes.length > 0;
+    const hasAnalysis = !!(stats && stats.totalGames);
+    const hasPro = !!(typeof Payments !== 'undefined' && Payments.proStatus && Payments.proStatus.active);
+
+    _setSidebarBadge('sidebarBadgeAnalyze', enteredUsername ? 'Ready' : 'Needs Username', enteredUsername ? 'good' : 'warn');
+    _setSidebarBadge('sidebarBadgeDashboard', hasGameContext ? 'Ready' : 'Needs Username', hasGameContext ? 'good' : 'warn');
+    _setSidebarBadge('sidebarBadgeStudy', hasAnalysis ? 'Ready' : 'Needs Analysis', hasAnalysis ? 'good' : 'warn');
+    _setSidebarBadge('sidebarBadgePro', hasPro ? 'Unlocked' : (Auth.isLoggedIn() ? 'Upgrade' : 'Login'), hasPro ? 'good' : (Auth.isLoggedIn() ? 'warn' : 'bad'));
+}
+window.refreshSidebarState = refreshSidebarState;
+
+async function openWeeklyDashboardFromSidebar() {
+    const { enteredUsername, gameTypes } = _readSidebarGameContext();
+    if (!enteredUsername) {
+        showError('Enter username first, then open Weekly Dashboard.');
+        scrollToAppSection('analyzeSection');
+        return;
+    }
+    if (!gameTypes.length) {
+        showError('Select at least one game type to load Weekly Dashboard.');
+        scrollToAppSection('analyzeSection');
+        return;
+    }
+    username = enteredUsername;
+    hideError();
+    setActiveSidebarBySection('dashboardSection');
+    await fetchWeeklyDashboard(username, gameTypes);
+    scrollToAppSection('dashboardSection');
+}
+
+async function openProPuzzlesFromSidebar() {
+    setActiveSidebarBySection('proPuzzleSection');
+    scrollToAppSection('proPuzzleSection');
+    await loadProPuzzles();
+}
+
+function openStudyPlanFromSidebar() {
+    setActiveSidebarBySection('studyPlanSection');
+    scrollToAppSection('studyPlanSection');
+    if (!stats || !stats.totalGames) {
+        const studyPlanSection = document.getElementById('studyPlanResults');
+        if (!studyPlanSection) return;
+        studyPlanSection.innerHTML = `
+            <div style="background: #fef3c7; color: #92400e; padding: 14px; border-radius: 10px; margin-top: 10px;">
+                Run <strong>Analyze Games</strong> first to generate your personalized study plan.
+            </div>
+        `;
+        studyPlanSection.style.display = 'block';
+    }
+}
+
+window.openWeeklyDashboardFromSidebar = openWeeklyDashboardFromSidebar;
+window.openProPuzzlesFromSidebar = openProPuzzlesFromSidebar;
+window.openStudyPlanFromSidebar = openStudyPlanFromSidebar;
 
 async function startAnalysis() {
     console.log('Analysis button clicked');
@@ -86,6 +208,7 @@ async function startAnalysis() {
         // Analysis stays client-side
         analyzeAndDisplay(allGames);
         renderProgressTrackingPanel();
+        refreshSidebarState();
 
         setLoadingStatus('Building dashboard...', 'Rendering insights and charts', 90);
         hideLoading();
@@ -820,6 +943,7 @@ function renderProgressTrackingPanel() {
             </div>
         </div>
     `;
+    refreshSidebarState();
 }
 
 async function fetchWeeklyDashboard(username, gameTypes) {
@@ -838,6 +962,7 @@ async function fetchWeeklyDashboard(username, gameTypes) {
         const dashboardData = await ChessAPI.fetchDashboard(username, gameTypes, currentPlatform);
         latestDashboardData = dashboardData;
         renderProgressTrackingPanel();
+        refreshSidebarState();
 
         if (dashboardData && dashboardData.pro_locked) {
             displayDashboard(dashboardData);
@@ -859,6 +984,7 @@ async function fetchWeeklyDashboard(username, gameTypes) {
     } catch (error) {
         console.error('Dashboard error:', error);
         renderProgressTrackingPanel();
+        refreshSidebarState();
         dashboardSection.innerHTML = `
             <div id="dashboardErrorWrap" class="chart-container" style="text-align: center; padding: 30px;"></div>
         `;
@@ -1192,6 +1318,15 @@ async function initApp() {
 
     // Initialize the router (shows correct page based on hash + auth state)
     Router.init();
+
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) usernameInput.addEventListener('input', refreshSidebarState);
+    ['rapid', 'blitz', 'bullet'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', refreshSidebarState);
+    });
+    refreshSidebarState();
+    initSidebarObserver();
 
     console.log('Chess AI Coach loaded successfully');
 }

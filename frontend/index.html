@@ -6,7 +6,7 @@
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260226d">
+    <link rel="stylesheet" href="/css/styles.css?v=20260226e">
 </head>
 <body>
 
@@ -94,6 +94,14 @@
                         <span class="hero-stat-label">No Credit Card</span>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="how-it-works" id="homePuzzleHubSection">
+            <div class="section-container">
+                <h2 class="landing-section-title">Daily + Random Lichess Puzzles</h2>
+                <p class="landing-section-sub">Solve today's puzzle and jump into 5 random challenges.</p>
+                <div id="homePuzzleHub" class="home-puzzle-hub"></div>
             </div>
         </section>
 
@@ -492,14 +500,15 @@
             <div class="app-layout">
                 <aside class="app-sidebar" aria-label="App Navigation">
                     <div class="app-sidebar-title">Workspace</div>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('analyzeSection')">Analyze Games</button>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('dashboardSection')">Weekly Dashboard</button>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('progressTrackingSection')">Progress Tracking</button>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('proPuzzleSection')">Pro Puzzles</button>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('leaksSection')">Biggest Leaks</button>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('timeManagementSection')">Time Management</button>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('overallStatsSection')">Overall Stats</button>
-                    <button type="button" class="app-sidebar-link" onclick="scrollToAppSection('studyPlanSection')">Study Plan</button>
+                    <button type="button" class="app-sidebar-link active" data-sidebar="analyze" onclick="scrollToAppSection('analyzeSection')">Analyze Games <span class="sidebar-badge" id="sidebarBadgeAnalyze">Ready</span></button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="dashboard" onclick="openWeeklyDashboardFromSidebar()">Weekly Dashboard <span class="sidebar-badge" id="sidebarBadgeDashboard">Needs Username</span></button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="progress" onclick="scrollToAppSection('progressTrackingSection')">Progress Tracking</button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="puzzles" onclick="openProPuzzlesFromSidebar()">Pro Puzzles <span class="sidebar-badge" id="sidebarBadgePro">Locked</span></button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="leaks" onclick="scrollToAppSection('leaksSection')">Biggest Leaks</button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="time" onclick="scrollToAppSection('timeManagementSection')">Time Management</button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="openings" onclick="scrollToAppSection('openingSection')">Openings</button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="overall" onclick="scrollToAppSection('overallStatsSection')">Overall Stats</button>
+                    <button type="button" class="app-sidebar-link" data-sidebar="study" onclick="openStudyPlanFromSidebar()">Study Plan <span class="sidebar-badge" id="sidebarBadgeStudy">Needs Analysis</span></button>
                 </aside>
 
                 <div class="app-main">
@@ -602,7 +611,7 @@
                             <h3 class="chart-title">Win/Loss/Draw by Color</h3>
                             <canvas id="colorChart"></canvas>
                         </div>
-                        <div class="chart-container">
+                        <div class="chart-container" id="openingSection">
                             <h3 class="chart-title">Performance by Opening</h3>
                             <canvas id="openingChart"></canvas>
                         </div>
@@ -649,14 +658,15 @@
     <!-- Scripts: load order matters -->
     <script src="/js/config.js?v=20260225a"></script>
     <script src="/js/utils.js?v=20260225a"></script>
-    <script src="/js/api.js?v=20260225c"></script>
+    <script src="/js/api.js?v=20260226d"></script>
     <script src="/js/auth.js?v=20260225d"></script>
-    <script src="/js/router.js?v=20260225a"></script>
+    <script src="/js/router.js?v=20260226b"></script>
     <script src="/js/analysis.js?v=20260225a"></script>
     <script src="/js/charts.js?v=20260225a"></script>
     <script src="/js/display.js?v=20260226b"></script>
-    <script src="/js/app.js?v=20260226d"></script>
+    <script src="/js/app.js?v=20260226f"></script>
     <script src="/js/daily_puzzle.js?v=20260225b"></script>
+    <script src="/js/home_puzzles.js?v=20260226a"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="/js/payments.js?v=20260226b"></script>
 </body>

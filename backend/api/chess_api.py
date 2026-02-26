@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import math
+import random
 import re
 from datetime import datetime, timedelta
 
@@ -44,6 +45,43 @@ PRO_HEADER_VALUES = {"1", "true", "yes", "pro"}
 
 # ---- Daily puzzle cache (keyed by UTC date string) ----
 _daily_puzzle_cache: dict = {}
+_puzzle_next_themes = [
+    "mix",
+    "middlegame",
+    "endgame",
+    "opening",
+    "mate",
+    "fork",
+    "pin",
+    "skewer",
+    "discoveredAttack",
+]
+_puzzle_next_difficulties = ["easiest", "easier", "normal", "harder", "hardest"]
+
+
+def _normalize_lichess_puzzle_payload(payload: dict) -> dict:
+    puzzle = payload.get("puzzle", {})
+    game = payload.get("game", {})
+    pgn_moves = game.get("pgn", "")
+    initial_ply = puzzle.get("initialPly", 0)
+    solution_uci = puzzle.get("solution", [])
+    game_id = game.get("id", "")
+
+    fen, side_to_move = _pgn_moves_to_fen(pgn_moves, initial_ply)
+    return {
+        "puzzle_id": puzzle.get("id", ""),
+        "fen": fen,
+        "solution_uci": solution_uci,
+        "player_solution_uci": solution_uci[0::2],
+        "system_solution_uci": solution_uci[1::2],
+        "themes": puzzle.get("themes", []),
+        "rating": puzzle.get("rating", 0),
+        "plays": puzzle.get("plays", 0),
+        "date": datetime.utcnow().strftime("%Y-%m-%d"),
+        "side_to_move": side_to_move,
+        "game_url": f"https://lichess.org/{game_id}#{initial_ply}" if game_id else None,
+        "puzzle_url": f"https://lichess.org/training/{puzzle.get('id', '')}" if puzzle.get("id") else None,
+    }
 
 
 def _pgn_moves_to_fen(pgn_moves: str, target_ply: int) -> tuple[str, str]:
@@ -162,38 +200,60 @@ async def get_daily_puzzle(request: Request):
         raise HTTPException(status_code=502, detail="Lichess puzzle unavailable.")
 
     data = resp.json()
-    puzzle = data.get("puzzle", {})
-    game = data.get("game", {})
-    pgn_moves = game.get("pgn", "")
-    initial_ply = puzzle.get("initialPly", 0)
-    solution_uci = puzzle.get("solution", [])
-    game_id = game.get("id", "")
-
     try:
-        fen, side_to_move = _pgn_moves_to_fen(pgn_moves, initial_ply)
+        result = _normalize_lichess_puzzle_payload(data)
     except Exception as exc:
         logger.error("Failed to parse Lichess puzzle PGN: %s", exc)
         raise HTTPException(status_code=500, detail="Failed to compute puzzle position.")
-
-    result = {
-        "puzzle_id": puzzle.get("id", ""),
-        "fen": fen,
-        "solution_uci": solution_uci,
-        # Lichess provides one full principal-variation line; split it by turn.
-        "player_solution_uci": solution_uci[0::2],
-        "system_solution_uci": solution_uci[1::2],
-        "themes": puzzle.get("themes", []),
-        "rating": puzzle.get("rating", 0),
-        "plays": puzzle.get("plays", 0),
-        "date": today,
-        "side_to_move": side_to_move,
-        "game_url": f"https://lichess.org/{game_id}#{initial_ply}" if game_id else None,
-        "puzzle_url": f"https://lichess.org/training/{puzzle.get('id', '')}" if puzzle.get("id") else None,
-    }
+    result["date"] = today
 
     _daily_puzzle_cache["date"] = today
     _daily_puzzle_cache["data"] = result
     return result
+
+
+@router.get("/puzzles/featured")
+@limiter.limit("20/minute")
+async def get_featured_puzzles(
+    request: Request,
+    count: int = Query(default=5, ge=1, le=10),
+):
+    """
+    Returns today's daily puzzle plus up to `count` random puzzles from Lichess.
+    Random puzzles are fetched from /api/puzzle/next with randomized theme + difficulty.
+    """
+    daily = await get_daily_puzzle(request)
+    random_puzzles = []
+    seen = {daily.get("puzzle_id")}
+    attempts = max(6, count * 3)
+
+    async with httpx.AsyncClient(timeout=12.0) as client:
+        for _ in range(attempts):
+            if len(random_puzzles) >= count:
+                break
+            theme = random.choice(_puzzle_next_themes)
+            difficulty = random.choice(_puzzle_next_difficulties)
+            try:
+                resp = await client.get(
+                    "https://lichess.org/api/puzzle/next",
+                    params={"angle": theme, "difficulty": difficulty},
+                    headers={"Accept": "application/json"},
+                )
+            except httpx.RequestError:
+                continue
+            if resp.status_code != 200:
+                continue
+            try:
+                item = _normalize_lichess_puzzle_payload(resp.json())
+            except Exception:
+                continue
+            pid = item.get("puzzle_id")
+            if not pid or pid in seen:
+                continue
+            seen.add(pid)
+            random_puzzles.append(item)
+
+    return {"daily": daily, "random": random_puzzles}
 
 
 @router.get("/games/{username}")
