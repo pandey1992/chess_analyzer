@@ -1359,6 +1359,138 @@
             margin-bottom: 0;
         }
 
+        /* Sidebar section group labels (TOOLS / INSIGHTS / COACHING) */
+        .sidebar-section-label {
+            font-size: 0.67em;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            padding: 12px 4px 5px;
+            margin: 0;
+            user-select: none;
+        }
+        .sidebar-section-label:first-child {
+            padding-top: 2px;
+        }
+
+        /* Icon + label layout inside sidebar buttons */
+        .sidebar-item-inner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+        .sidebar-icon {
+            font-size: 1em;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        /* View panels — only one is shown at a time */
+        .app-view {
+            display: block;
+        }
+
+        /* Coaching view styles */
+        .coaching-view-panel {
+            max-width: 720px;
+        }
+        .coaching-options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .coaching-option-tile {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+        }
+        .coaching-option-tile.coaching-option-featured {
+            background: #ebf8ff;
+            border-color: #90cdf4;
+        }
+        .coaching-option-badge {
+            position: absolute;
+            top: -10px;
+            right: 14px;
+            background: #3182ce;
+            color: #fff;
+            font-size: 0.68em;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 999px;
+            letter-spacing: 0.5px;
+        }
+        .coaching-option-icon {
+            font-size: 1.6em;
+            margin-bottom: 8px;
+        }
+        .coaching-option-price {
+            font-size: 1.7em;
+            font-weight: 800;
+            color: #1a365d;
+            line-height: 1.1;
+        }
+        .coaching-option-name {
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 12px;
+        }
+        .coaching-option-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 16px;
+            flex: 1;
+        }
+        .coaching-option-features li {
+            font-size: 0.85em;
+            color: #4a5568;
+            padding: 3px 0;
+        }
+        .coaching-option-features li::before {
+            content: "✓ ";
+            color: #38a169;
+            font-weight: 700;
+        }
+        .btn-coaching-book {
+            background: #2b6cb0;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 0.88em;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .btn-coaching-book:hover {
+            background: #2c5282;
+        }
+        .btn-whatsapp-coaching {
+            display: inline-block;
+            background: #25d366;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 10px;
+            padding: 12px 28px;
+            font-size: 0.95em;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+        .btn-whatsapp-coaching:hover {
+            background: #1da851;
+        }
+
         .app-main {
             min-width: 0;
         }
@@ -3219,6 +3351,10 @@
 
             .home-puzzle-card.daily {
                 grid-column: span 2;
+            }
+
+            .coaching-options-grid {
+                grid-template-columns: 1fr;
             }
         }
 

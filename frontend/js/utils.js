@@ -12,6 +12,9 @@ function hideLoading() {
 
 function showResults() {
     document.getElementById('results').style.display = 'block';
+    // Ensure the analyzer view panel is visible (in case user switched away during loading)
+    const vAnalyzer = document.getElementById('viewAnalyzer');
+    if (vAnalyzer) vAnalyzer.style.display = '';
 }
 
 window.__lastErrorRetry = null;

@@ -36,14 +36,71 @@ function selectPlatform(platform) {
     currentPlatform = platform;
 }
 
-function scrollToAppSection(sectionId) {
-    const el = document.getElementById(sectionId);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setActiveSidebarBySection(sectionId);
-}
+// ── View-switching sidebar ──────────────────────────────────────
+// Each sidebar item maps to a distinct tool/feature panel (viewName → element ID).
+const _VIEW_PANELS = {
+    analyzer: 'viewAnalyzer',
+    trainer:  'viewTrainer',
+    dashboard: 'viewDashboard',
+    studyplan: 'viewStudyplan',
+    coaching:  'viewCoaching'
+};
 
-window.scrollToAppSection = scrollToAppSection;
+function switchView(viewName) {
+    // Daily Puzzle navigates to its own full page
+    if (viewName === 'puzzle') {
+        Router.navigate('puzzle');
+        return;
+    }
+
+    // Hide all view panels
+    Object.values(_VIEW_PANELS).forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    // Show the selected view
+    const targetId = _VIEW_PANELS[viewName];
+    if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) el.style.display = '';
+    }
+
+    // Update active sidebar link
+    document.querySelectorAll('.app-sidebar-link').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.view === viewName);
+    });
+
+    window.scrollTo(0, 0);
+    hideError();
+
+    // View-specific initialization
+    if (viewName === 'dashboard') {
+        const { enteredUsername, gameTypes } = _readSidebarGameContext();
+        if (enteredUsername && gameTypes.length) {
+            username = enteredUsername;
+            fetchWeeklyDashboard(username, gameTypes);
+        } else {
+            const dc = document.getElementById('dashboardSection');
+            if (dc && !dc.innerHTML.trim()) {
+                dc.innerHTML = `<div class="inline-error-card"><div class="inline-error-title">Username required</div><div class="inline-error-message">Enter your username in <strong>Game Analyzer</strong> and run an analysis first, then come back here to see your weekly progress.</div></div>`;
+            }
+        }
+    }
+    if (viewName === 'trainer') {
+        loadProPuzzles();
+    }
+    if (viewName === 'studyplan') {
+        if (!stats || !stats.totalGames) {
+            const sp = document.getElementById('studyPlanResults');
+            if (sp) {
+                sp.innerHTML = `<div style="background:#fef3c7;color:#92400e;padding:14px;border-radius:10px;margin-top:10px;">Run <strong>Game Analyzer</strong> first, then come back here to generate your personalized study plan.</div>`;
+                sp.style.display = 'block';
+            }
+        }
+    }
+}
+window.switchView = switchView;
 
 function _readSidebarGameContext() {
     const enteredUsername = (document.getElementById('username')?.value || '').trim();
@@ -58,55 +115,6 @@ function _setSidebarBadge(id, text, tone = 'warn') {
     el.className = `sidebar-badge ${tone}`;
 }
 
-function setActiveSidebarBySection(sectionId) {
-    const map = {
-        analyzeSection: 'analyze',
-        dashboardSection: 'dashboard',
-        progressTrackingSection: 'progress',
-        proPuzzleSection: 'puzzles',
-        leaksSection: 'leaks',
-        timeManagementSection: 'time',
-        openingSection: 'openings',
-        overallStatsSection: 'overall',
-        studyPlanSection: 'study'
-    };
-    const key = map[sectionId];
-    if (!key) return;
-    document.querySelectorAll('.app-sidebar-link').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.sidebar === key);
-    });
-}
-
-function initSidebarObserver() {
-    if (sidebarObserver) return;
-    const targets = [
-        'analyzeSection',
-        'dashboardSection',
-        'progressTrackingSection',
-        'proPuzzleSection',
-        'leaksSection',
-        'timeManagementSection',
-        'openingSection',
-        'overallStatsSection',
-        'studyPlanSection'
-    ];
-    const sections = targets
-        .map((id) => document.getElementById(id))
-        .filter(Boolean);
-    if (!sections.length || typeof IntersectionObserver !== 'function') return;
-
-    sidebarObserver = new IntersectionObserver((entries) => {
-        const visible = entries
-            .filter((e) => e.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible && visible.target && visible.target.id) {
-            setActiveSidebarBySection(visible.target.id);
-        }
-    }, { root: null, threshold: [0.35, 0.6], rootMargin: '-80px 0px -50% 0px' });
-
-    sections.forEach((s) => sidebarObserver.observe(s));
-}
-
 function refreshSidebarState() {
     const enteredUsername = (document.getElementById('username')?.value || '').trim();
     const gameTypes = getSelectedGameTypes();
@@ -114,56 +122,25 @@ function refreshSidebarState() {
     const hasAnalysis = !!(stats && stats.totalGames);
     const hasPro = !!(typeof Payments !== 'undefined' && Payments.proStatus && Payments.proStatus.active);
 
-    _setSidebarBadge('sidebarBadgeAnalyze', enteredUsername ? 'Ready' : 'Needs Username', enteredUsername ? 'good' : 'warn');
-    _setSidebarBadge('sidebarBadgeDashboard', hasGameContext ? 'Ready' : 'Needs Username', hasGameContext ? 'good' : 'warn');
-    _setSidebarBadge('sidebarBadgeStudy', hasAnalysis ? 'Ready' : 'Needs Analysis', hasAnalysis ? 'good' : 'warn');
+    _setSidebarBadge('sidebarBadgeAnalyze', enteredUsername ? 'Ready' : 'Enter Username', enteredUsername ? 'good' : 'warn');
+    _setSidebarBadge('sidebarBadgeDashboard', hasGameContext ? 'Ready' : 'Setup', hasGameContext ? 'good' : 'warn');
+    _setSidebarBadge('sidebarBadgeStudy', hasAnalysis ? 'Ready' : 'Analyze First', hasAnalysis ? 'good' : 'warn');
     _setSidebarBadge('sidebarBadgePro', hasPro ? 'Unlocked' : (Auth.isLoggedIn() ? 'Upgrade' : 'Login'), hasPro ? 'good' : (Auth.isLoggedIn() ? 'warn' : 'bad'));
 }
 window.refreshSidebarState = refreshSidebarState;
 
-async function openWeeklyDashboardFromSidebar() {
-    const { enteredUsername, gameTypes } = _readSidebarGameContext();
-    if (!enteredUsername) {
-        showError('Enter username first, then open Weekly Dashboard.');
-        scrollToAppSection('analyzeSection');
-        return;
-    }
-    if (!gameTypes.length) {
-        showError('Select at least one game type to load Weekly Dashboard.');
-        scrollToAppSection('analyzeSection');
-        return;
-    }
-    username = enteredUsername;
-    hideError();
-    setActiveSidebarBySection('dashboardSection');
-    await fetchWeeklyDashboard(username, gameTypes);
-    scrollToAppSection('dashboardSection');
-}
-
-async function openProPuzzlesFromSidebar() {
-    setActiveSidebarBySection('proPuzzleSection');
-    scrollToAppSection('proPuzzleSection');
-    await loadProPuzzles();
-}
-
-function openStudyPlanFromSidebar() {
-    setActiveSidebarBySection('studyPlanSection');
-    scrollToAppSection('studyPlanSection');
-    if (!stats || !stats.totalGames) {
-        const studyPlanSection = document.getElementById('studyPlanResults');
-        if (!studyPlanSection) return;
-        studyPlanSection.innerHTML = `
-            <div style="background: #fef3c7; color: #92400e; padding: 14px; border-radius: 10px; margin-top: 10px;">
-                Run <strong>Analyze Games</strong> first to generate your personalized study plan.
-            </div>
-        `;
-        studyPlanSection.style.display = 'block';
-    }
-}
-
-window.openWeeklyDashboardFromSidebar = openWeeklyDashboardFromSidebar;
-window.openProPuzzlesFromSidebar = openProPuzzlesFromSidebar;
-window.openStudyPlanFromSidebar = openStudyPlanFromSidebar;
+// Keep legacy aliases so any external callers don't break
+function initSidebarObserver() { /* replaced by view-switching — no-op */ }
+window.scrollToAppSection = function(sectionId) {
+    switchView('analyzer');
+    setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+};
+window.openWeeklyDashboardFromSidebar = () => switchView('dashboard');
+window.openProPuzzlesFromSidebar      = () => switchView('trainer');
+window.openStudyPlanFromSidebar       = () => switchView('studyplan');
 
 async function startAnalysis() {
     console.log('Analysis button clicked');
@@ -1326,7 +1303,8 @@ async function initApp() {
         if (el) el.addEventListener('change', refreshSidebarState);
     });
     refreshSidebarState();
-    initSidebarObserver();
+    // Ensure analyzer view is visible on first load (view-switching replaces IntersectionObserver)
+    switchView('analyzer');
 
     console.log('Chess AI Coach loaded successfully');
 }

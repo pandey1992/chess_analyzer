@@ -6,7 +6,7 @@
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260226e">
+    <link rel="stylesheet" href="/css/styles.css?v=20260306a">
 </head>
 <body>
 
@@ -499,20 +499,40 @@
         <div class="container">
             <div class="app-layout">
                 <aside class="app-sidebar" aria-label="App Navigation">
-                    <div class="app-sidebar-title">Workspace</div>
-                    <button type="button" class="app-sidebar-link active" data-sidebar="analyze" onclick="scrollToAppSection('analyzeSection')">Analyze Games <span class="sidebar-badge" id="sidebarBadgeAnalyze">Ready</span></button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="dashboard" onclick="openWeeklyDashboardFromSidebar()">Weekly Dashboard <span class="sidebar-badge" id="sidebarBadgeDashboard">Needs Username</span></button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="progress" onclick="scrollToAppSection('progressTrackingSection')">Progress Tracking</button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="puzzles" onclick="openProPuzzlesFromSidebar()">Pro Puzzles <span class="sidebar-badge" id="sidebarBadgePro">Locked</span></button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="leaks" onclick="scrollToAppSection('leaksSection')">Biggest Leaks</button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="time" onclick="scrollToAppSection('timeManagementSection')">Time Management</button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="openings" onclick="scrollToAppSection('openingSection')">Openings</button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="overall" onclick="scrollToAppSection('overallStatsSection')">Overall Stats</button>
-                    <button type="button" class="app-sidebar-link" data-sidebar="study" onclick="openStudyPlanFromSidebar()">Study Plan <span class="sidebar-badge" id="sidebarBadgeStudy">Needs Analysis</span></button>
+                    <div class="sidebar-section-label">Tools</div>
+                    <button type="button" class="app-sidebar-link active" data-view="analyzer" onclick="switchView('analyzer')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">🔍</span><span>Game Analyzer</span></span>
+                        <span class="sidebar-badge good" id="sidebarBadgeAnalyze">Ready</span>
+                    </button>
+                    <button type="button" class="app-sidebar-link" data-view="puzzle" onclick="switchView('puzzle')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">📅</span><span>Daily Puzzle</span></span>
+                    </button>
+                    <button type="button" class="app-sidebar-link" data-view="trainer" onclick="switchView('trainer')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">🧩</span><span>Puzzle Trainer</span></span>
+                        <span class="sidebar-badge bad" id="sidebarBadgePro">PRO</span>
+                    </button>
+
+                    <div class="sidebar-section-label">Insights</div>
+                    <button type="button" class="app-sidebar-link" data-view="dashboard" onclick="switchView('dashboard')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">📊</span><span>Progress Dashboard</span></span>
+                        <span class="sidebar-badge warn" id="sidebarBadgeDashboard">Setup</span>
+                    </button>
+                    <button type="button" class="app-sidebar-link" data-view="studyplan" onclick="switchView('studyplan')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">🤖</span><span>Study Plan</span></span>
+                        <span class="sidebar-badge warn" id="sidebarBadgeStudy">Analyze First</span>
+                    </button>
+
+                    <div class="sidebar-section-label">Coaching</div>
+                    <button type="button" class="app-sidebar-link" data-view="coaching" onclick="switchView('coaching')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">👨‍🏫</span><span>Book a Session</span></span>
+                    </button>
                 </aside>
 
                 <div class="app-main">
                     <div class="error" id="error"></div>
+
+                    <!-- ═══ VIEW: Game Analyzer ═══ -->
+                    <div id="viewAnalyzer" class="app-view">
 
                     <div class="input-section" id="analyzeSection">
                         <div class="form-group">
@@ -558,34 +578,6 @@
                         </div>
                     </div>
 
-                    <!-- Weekly Accuracy Dashboard -->
-                    <div id="dashboardSection" style="display: none;"></div>
-
-                    <!-- Pro Puzzle Trainer -->
-                    <div id="proPuzzleSection" class="chart-container" style="display: none;">
-                        <div class="section-header">
-                            <h2 class="section-title">Puzzles From Your Mistakes <span class="feature-pro-badge">PRO</span></h2>
-                        </div>
-                        <p style="color: #4a5568; margin-bottom: 14px;">
-                            We find your bad moves, ask Stockfish for the best move, and turn them into solveable puzzles.
-                        </p>
-                        <div id="proUpsell" class="pro-puzzle-empty" style="display:none; margin-bottom:14px;">
-                            Pro is required for this section. <button type="button" class="btn-unlock-pro">Unlock Pro - &#8377;50/month</button>
-                            <div id="proStatusLine" style="margin-top:8px;"></div>
-                        </div>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-                            <button id="generateProPuzzlesBtn" onclick="generateProPuzzles()">Generate Puzzles From My Mistakes</button>
-                            <button onclick="loadProPuzzles()" style="background:#4a5568;">Load Saved Puzzles</button>
-                        </div>
-                        <div class="chart-container" style="margin: 0 0 14px; background:#f8fafc;">
-                            <h3 class="chart-title" style="margin-bottom:8px;">Chess AI Coach (Soon)</h3>
-                            <p style="margin:0; color:#4a5568;">
-                                Inside Pro, we're adding an interactive AI Coach for guided game review, training plans, and Q&amp;A.
-                            </p>
-                        </div>
-                        <div id="proPuzzleResults"></div>
-                    </div>
-
                     <div class="results" id="results">
                         <div id="heroSection"></div>
                         <div id="progressTrackingSection" class="chart-container progress-tracking-section" style="display: none;"></div>
@@ -620,14 +612,50 @@
                             <table id="openingTable"></table>
                         </div>
                         <div id="endgameAnalysisSection"></div>
+                    </div>
 
-                        <!-- Study Plan Section -->
+                    </div><!-- end viewAnalyzer -->
+
+                    <!-- ═══ VIEW: Puzzle Trainer ═══ -->
+                    <div id="viewTrainer" class="app-view" style="display:none;">
+                        <div id="proPuzzleSection" class="chart-container">
+                            <div class="section-header">
+                                <h2 class="section-title">Puzzles From Your Mistakes <span class="feature-pro-badge">PRO</span></h2>
+                            </div>
+                            <p style="color: #4a5568; margin-bottom: 14px;">
+                                We find your bad moves, ask Stockfish for the best move, and turn them into solveable puzzles.
+                            </p>
+                            <div id="proUpsell" class="pro-puzzle-empty" style="display:none; margin-bottom:14px;">
+                                Pro is required for this section. <button type="button" class="btn-unlock-pro">Unlock Pro - &#8377;50/month</button>
+                                <div id="proStatusLine" style="margin-top:8px;"></div>
+                            </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                                <button id="generateProPuzzlesBtn" onclick="generateProPuzzles()">Generate Puzzles From My Mistakes</button>
+                                <button onclick="loadProPuzzles()" style="background:#4a5568;">Load Saved Puzzles</button>
+                            </div>
+                            <div class="chart-container" style="margin: 0 0 14px; background:#f8fafc;">
+                                <h3 class="chart-title" style="margin-bottom:8px;">Chess AI Coach (Soon)</h3>
+                                <p style="margin:0; color:#4a5568;">
+                                    Inside Pro, we're adding an interactive AI Coach for guided game review, training plans, and Q&amp;A.
+                                </p>
+                            </div>
+                            <div id="proPuzzleResults"></div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ VIEW: Progress Dashboard ═══ -->
+                    <div id="viewDashboard" class="app-view" style="display:none;">
+                        <div id="dashboardSection"></div>
+                    </div>
+
+                    <!-- ═══ VIEW: Study Plan ═══ -->
+                    <div id="viewStudyplan" class="app-view" style="display:none;">
                         <div class="study-plan-section" id="studyPlanSection">
                             <div class="study-plan-intro">
                                 <h2>Personalized Study Plan</h2>
                                 <p>Get an AI-powered, customized 4-week study plan based on your game analysis</p>
                                 <p style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">
-                                    Powered by Groq AI (Fast & Free) &bull; Llama 3.3 70B Model
+                                    Powered by Groq AI (Fast &amp; Free) &bull; Llama 3.3 70B Model
                                 </p>
                                 <button class="generate-plan-btn" id="generateStudyPlanBtn" onclick="generateStudyPlan()">
                                     Generate My Study Plan
@@ -636,7 +664,52 @@
                             <div id="studyPlanResults" style="display: none;"></div>
                         </div>
                     </div>
-                </div>
+
+                    <!-- ═══ VIEW: Book Coaching ═══ -->
+                    <div id="viewCoaching" class="app-view" style="display:none;">
+                        <div class="chart-container coaching-view-panel">
+                            <div class="section-header">
+                                <h2 class="section-title">Book a Coaching Session</h2>
+                            </div>
+                            <p style="color: #4a5568; margin-bottom: 24px;">
+                                Work directly with <strong>Coach Suraj</strong> — FIDE-rated 2000+ with 5+ years coaching experience — for personalized game review, opening preparation, and a structured improvement roadmap.
+                            </p>
+                            <div class="coaching-options-grid">
+                                <div class="coaching-option-tile">
+                                    <div class="coaching-option-icon">⚡</div>
+                                    <div class="coaching-option-price">&#8377;500</div>
+                                    <div class="coaching-option-name">1-Hour Session</div>
+                                    <ul class="coaching-option-features">
+                                        <li>Game review &amp; blunder analysis</li>
+                                        <li>Opening recommendations</li>
+                                        <li>Targeted tactical exercises</li>
+                                    </ul>
+                                    <button type="button" class="btn-coaching-book" onclick="Router.scrollToSection('coaching')">Book Now &rarr;</button>
+                                </div>
+                                <div class="coaching-option-tile coaching-option-featured">
+                                    <div class="coaching-option-badge">Best Value</div>
+                                    <div class="coaching-option-icon">🚀</div>
+                                    <div class="coaching-option-price">&#8377;5000</div>
+                                    <div class="coaching-option-name">10-Session Pack</div>
+                                    <ul class="coaching-option-features">
+                                        <li>Full improvement roadmap</li>
+                                        <li>Custom opening repertoire</li>
+                                        <li>Weekly homework &amp; follow-ups</li>
+                                    </ul>
+                                    <button type="button" class="btn-coaching-book" onclick="Router.scrollToSection('coaching')">Book Now &rarr;</button>
+                                </div>
+                            </div>
+                            <div style="text-align: center; margin-top: 24px;">
+                                <a href="https://wa.me/9573905408?text=Hi%20I%20want%20to%20book%20a%20demo%20chess%20coaching%20session"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="btn-whatsapp-coaching">
+                                    💬 Book a Free Demo on WhatsApp
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- end app-main -->
             </div>
 
             <div class="modal" id="gameModal">
@@ -657,14 +730,14 @@
 
     <!-- Scripts: load order matters -->
     <script src="/js/config.js?v=20260225a"></script>
-    <script src="/js/utils.js?v=20260225a"></script>
+    <script src="/js/utils.js?v=20260306a"></script>
     <script src="/js/api.js?v=20260226d"></script>
     <script src="/js/auth.js?v=20260225d"></script>
     <script src="/js/router.js?v=20260226b"></script>
     <script src="/js/analysis.js?v=20260225a"></script>
     <script src="/js/charts.js?v=20260225a"></script>
     <script src="/js/display.js?v=20260226b"></script>
-    <script src="/js/app.js?v=20260226f"></script>
+    <script src="/js/app.js?v=20260306a"></script>
     <script src="/js/daily_puzzle.js?v=20260225b"></script>
     <script src="/js/home_puzzles.js?v=20260226a"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
