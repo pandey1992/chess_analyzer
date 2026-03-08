@@ -39,11 +39,13 @@ function selectPlatform(platform) {
 // ── View-switching sidebar ──────────────────────────────────────
 // Each sidebar item maps to a distinct tool/feature panel (viewName → element ID).
 const _VIEW_PANELS = {
-    analyzer: 'viewAnalyzer',
-    trainer:  'viewTrainer',
-    dashboard: 'viewDashboard',
-    studyplan: 'viewStudyplan',
-    coaching:  'viewCoaching'
+    analyzer:        'viewAnalyzer',
+    trainer:         'viewTrainer',
+    dashboard:       'viewDashboard',
+    studyplan:       'viewStudyplan',
+    coaching:        'viewCoaching',
+    puzzlerush:      'viewPuzzleRush',      // ← NEW
+    openingexplorer: 'viewOpeningExplorer', // ← NEW
 };
 
 function switchView(viewName) {
@@ -74,7 +76,7 @@ function switchView(viewName) {
     window.scrollTo(0, 0);
     hideError();
 
-    // View-specific initialization
+    // ── View-specific initialization ────────────────────────────────
     if (viewName === 'dashboard') {
         const { enteredUsername, gameTypes } = _readSidebarGameContext();
         if (enteredUsername && gameTypes.length) {
@@ -98,6 +100,12 @@ function switchView(viewName) {
                 sp.style.display = 'block';
             }
         }
+    }
+    if (viewName === 'puzzlerush') {
+        if (typeof PuzzleRush !== 'undefined') PuzzleRush.renderLobby();
+    }
+    if (viewName === 'openingexplorer') {
+        if (typeof OpeningExplorer !== 'undefined') OpeningExplorer.init();
     }
 }
 window.switchView = switchView;

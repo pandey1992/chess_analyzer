@@ -6,7 +6,7 @@
     <title>Chess AI Coach</title>
     <meta name="description" content="AI-powered chess analysis and personalized coaching. Analyze your games, find your leaks, and improve with a 2000+ rated coach.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/css/styles.css?v=20260306a">
+    <link rel="stylesheet" href="/css/styles.css?v=20260308a">
 </head>
 <body>
 
@@ -499,7 +499,7 @@
         <div class="container">
             <div class="app-layout">
                 <aside class="app-sidebar" aria-label="App Navigation">
-                    <div class="sidebar-section-label">Tools</div>
+                    <div class="sidebar-section-label">Play &amp; Train</div>
                     <button type="button" class="app-sidebar-link active" data-view="analyzer" onclick="switchView('analyzer')">
                         <span class="sidebar-item-inner"><span class="sidebar-icon">🔍</span><span>Game Analyzer</span></span>
                         <span class="sidebar-badge good" id="sidebarBadgeAnalyze">Ready</span>
@@ -507,12 +507,20 @@
                     <button type="button" class="app-sidebar-link" data-view="puzzle" onclick="switchView('puzzle')">
                         <span class="sidebar-item-inner"><span class="sidebar-icon">📅</span><span>Daily Puzzle</span></span>
                     </button>
+                    <button type="button" class="app-sidebar-link" data-view="puzzlerush" onclick="switchView('puzzlerush')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">🏃</span><span>Puzzle Rush</span></span>
+                        <span class="sidebar-badge good">New</span>
+                    </button>
                     <button type="button" class="app-sidebar-link" data-view="trainer" onclick="switchView('trainer')">
                         <span class="sidebar-item-inner"><span class="sidebar-icon">🧩</span><span>Puzzle Trainer</span></span>
                         <span class="sidebar-badge bad" id="sidebarBadgePro">PRO</span>
                     </button>
 
-                    <div class="sidebar-section-label">Insights</div>
+                    <div class="sidebar-section-label">Learn</div>
+                    <button type="button" class="app-sidebar-link" data-view="openingexplorer" onclick="switchView('openingexplorer')">
+                        <span class="sidebar-item-inner"><span class="sidebar-icon">📖</span><span>Opening Explorer</span></span>
+                        <span class="sidebar-badge good">New</span>
+                    </button>
                     <button type="button" class="app-sidebar-link" data-view="dashboard" onclick="switchView('dashboard')">
                         <span class="sidebar-item-inner"><span class="sidebar-icon">📊</span><span>Progress Dashboard</span></span>
                         <span class="sidebar-badge warn" id="sidebarBadgeDashboard">Setup</span>
@@ -709,6 +717,48 @@
                         </div>
                     </div>
 
+                    <!-- ═══ VIEW: Puzzle Rush ═══ -->
+                    <div id="viewPuzzleRush" class="app-view" style="display:none;">
+                        <div class="chart-container">
+                            <div class="section-header">
+                                <h2 class="section-title">🏃 Puzzle Rush</h2>
+                            </div>
+                            <p style="color:#4a5568;margin-bottom:20px;">
+                                Race against the clock! Solve as many puzzles as you can. Each wrong first move costs a life — lose 3 and it's game over.
+                            </p>
+                            <div id="puzzleRushContainer"></div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ VIEW: Opening Explorer ═══ -->
+                    <div id="viewOpeningExplorer" class="app-view" style="display:none;">
+                        <div class="section-header" style="margin-bottom:8px;">
+                            <h2 class="section-title">📖 Opening Explorer</h2>
+                        </div>
+                        <p style="color:#4a5568;margin-bottom:16px;">
+                            Click any move to explore deeper. Win % bars show results from millions of Lichess games (1600–2500 rated).
+                        </p>
+                        <div class="oe-layout">
+                            <div class="oe-left-panel">
+                                <div class="chart-container" style="padding:14px;">
+                                    <div id="oeBoard" class="dp-board-wrap"></div>
+                                    <div class="oe-board-controls">
+                                        <button class="dp-btn secondary" onclick="OpeningExplorer.back()">← Back</button>
+                                        <button class="dp-btn secondary" onclick="OpeningExplorer.reset()">Reset</button>
+                                    </div>
+                                    <div id="oeBreadcrumb" class="oe-breadcrumb">Starting position</div>
+                                    <div id="oeOpeningName" class="oe-opening-name"></div>
+                                </div>
+                            </div>
+                            <div class="oe-right-panel">
+                                <div class="chart-container" style="padding:14px;">
+                                    <h3 class="chart-title" style="margin-bottom:12px;">Top Moves</h3>
+                                    <div id="oeMovesTable"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div><!-- end app-main -->
             </div>
 
@@ -737,8 +787,10 @@
     <script src="/js/analysis.js?v=20260225a"></script>
     <script src="/js/charts.js?v=20260225a"></script>
     <script src="/js/display.js?v=20260226b"></script>
-    <script src="/js/app.js?v=20260306a"></script>
+    <script src="/js/app.js?v=20260308a"></script>
     <script src="/js/daily_puzzle.js?v=20260225b"></script>
+    <script src="/js/puzzle_rush.js?v=20260308a"></script>
+    <script src="/js/opening_explorer.js?v=20260308a"></script>
     <script src="/js/home_puzzles.js?v=20260226a"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="/js/payments.js?v=20260226b"></script>
