@@ -2882,6 +2882,12 @@
             font-weight: 700;
             color: #2d3748;
             margin-bottom: 10px;
+            font-size: 1.05em;
+            padding: 6px 14px;
+            background: #edf2f7;
+            border-radius: 8px;
+            display: inline-block;
+            border-left: 4px solid #4299e1;
         }
 
         .pro-puzzle-head {
@@ -3061,19 +3067,90 @@
         }
 
         .pro-puzzle-feedback {
-            margin-top: 8px;
-            font-size: 0.9em;
+            margin-top: 12px;
+            margin-bottom: 4px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05em;
+            font-weight: 600;
             color: #4a5568;
+            border-radius: 10px;
+            padding: 10px 18px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .pro-puzzle-feedback:empty {
+            min-height: 0;
+            padding: 0;
+            margin: 4px 0;
         }
 
         .pro-puzzle-feedback.success {
-            color: #2f855a;
-            font-weight: 600;
+            color: #22543d;
+            background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+            border: 2px solid #48bb78;
+            font-size: 1.15em;
+            animation: feedbackPop 0.4s ease;
         }
 
         .pro-puzzle-feedback.error {
-            color: #c53030;
-            font-weight: 600;
+            color: #742a2a;
+            background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+            border: 2px solid #fc8181;
+            font-size: 1.1em;
+            animation: feedbackShake 0.5s ease;
+        }
+
+        .pro-puzzle-feedback.checking {
+            color: #2b6cb0;
+            background: #ebf4ff;
+            border: 2px solid #90cdf4;
+        }
+
+        @keyframes feedbackPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes feedbackShake {
+            0%, 100% { transform: translateX(0); }
+            15% { transform: translateX(-8px); }
+            30% { transform: translateX(8px); }
+            45% { transform: translateX(-6px); }
+            60% { transform: translateX(6px); }
+            75% { transform: translateX(-3px); }
+            90% { transform: translateX(3px); }
+        }
+
+        @keyframes boardShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            40% { transform: translateX(4px); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(2px); }
+        }
+
+        .pro-board-grid.shake {
+            animation: boardShake 0.4s ease;
+        }
+
+        .pro-board-square.highlight-correct {
+            background: #68d391 !important;
+            box-shadow: inset 0 0 8px rgba(56, 161, 105, 0.6);
+        }
+
+        .pro-board-square.highlight-incorrect {
+            background: #fc8181 !important;
+            box-shadow: inset 0 0 8px rgba(229, 62, 62, 0.5);
+        }
+
+        .pro-board-square.highlight-from {
+            background: #90cdf4 !important;
+            box-shadow: inset 0 0 6px rgba(66, 153, 225, 0.5);
         }
 
         .pro-player-nav {

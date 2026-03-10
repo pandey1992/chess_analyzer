@@ -309,8 +309,16 @@ function renderCurrentProPuzzle() {
     if (title) title.textContent = `Puzzle ${AppStore.proPuzzleCurrentIndex + 1} / ${AppStore.proPuzzles.length}`;
     if (sub) sub.textContent = `Move ${puzzle.move_number} | Eval Drop ${puzzle.cp_loss} | ${status.toUpperCase()}`;
     if (feedback) {
-        feedback.textContent = '';
-        feedback.className = 'pro-puzzle-feedback';
+        if (status === 'solved') {
+            feedback.innerHTML = '<span style="font-size:1.3em">&#10004;</span> Already solved!';
+            feedback.className = 'pro-puzzle-feedback success';
+        } else if (status === 'skipped') {
+            feedback.innerHTML = 'Skipped - make a move to try again.';
+            feedback.className = 'pro-puzzle-feedback checking';
+        } else {
+            feedback.innerHTML = '';
+            feedback.className = 'pro-puzzle-feedback';
+        }
     }
 
     const remainingPill = document.getElementById('proRemainingPill');
@@ -465,11 +473,22 @@ function handleProPuzzleMove(puzzleId, from, to) {
     const isWhitePiece = movingPiece === movingPiece.toUpperCase();
     if ((state.sideToMove === 'w' && !isWhitePiece) || (state.sideToMove === 'b' && isWhitePiece)) return;
 
+    // Skip if puzzle already solved
+    const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
+    if (puzzle && AppStore.proPuzzleProgress[puzzle.id]?.status === 'solved') return;
+
     let pieceToPlace = movingPiece;
     let uci = `${from}${to}`;
     if ((movingPiece === 'P' && to.endsWith('8')) || (movingPiece === 'p' && to.endsWith('1'))) {
         uci += 'q';
         pieceToPlace = movingPiece === 'P' ? 'Q' : 'q';
+    }
+
+    // Clear previous feedback when making a new move
+    const feedback = document.getElementById('proPuzzleFeedback');
+    if (feedback) {
+        feedback.innerHTML = '';
+        feedback.className = 'pro-puzzle-feedback';
     }
 
     delete state.pieces[from];
@@ -513,50 +532,98 @@ async function submitCurrentProPuzzle(moveOverride = null) {
 
     const move = moveOverride || '';
     if (!move) {
-        feedback.textContent = 'Make a move on the board first.';
+        feedback.innerHTML = 'Make a move on the board first.';
         feedback.className = 'pro-puzzle-feedback error';
         return;
     }
 
-    feedback.textContent = 'Checking...';
-    feedback.className = 'pro-puzzle-feedback';
+    // Extract from/to squares from the UCI move for highlighting
+    const moveFrom = move.substring(0, 2);
+    const moveTo = move.substring(2, 4);
+
+    feedback.innerHTML = 'Checking...';
+    feedback.className = 'pro-puzzle-feedback checking';
 
     try {
         const result = await ChessAPI.attemptProPuzzle(puzzle.id, move);
         AppStore.proPuzzleProgress[puzzle.id].attempts += 1;
+
         if (result.correct) {
-            feedback.textContent = result.message || 'Correct.';
+            // Highlight the correct move squares on the board
+            highlightBoardSquares(puzzle.id, moveFrom, moveTo, 'correct');
+
+            feedback.innerHTML = '<span style="font-size:1.3em">&#10004;</span> Correct! Well done.';
             feedback.className = 'pro-puzzle-feedback success';
             AppStore.proPuzzleStreak += 1;
             AppStore.proPuzzleBestStreak = Math.max(AppStore.proPuzzleBestStreak, AppStore.proPuzzleStreak);
             AppStore.proPuzzleProgress[puzzle.id].status = 'solved';
-            setTimeout(() => moveToNextUnsolvedOrStay(), 650);
+
+            // Update streak pills immediately
+            const streakPill = document.getElementById('proStreakPill');
+            const bestStreakPill = document.getElementById('proBestStreakPill');
+            if (streakPill) streakPill.textContent = `Streak ${AppStore.proPuzzleStreak}`;
+            if (bestStreakPill) bestStreakPill.textContent = `Best ${AppStore.proPuzzleBestStreak}`;
+
+            // Move to next puzzle after a pause to let user see feedback
+            setTimeout(() => moveToNextUnsolvedOrStay(), 1500);
         } else {
-            feedback.textContent = 'Incorrect, try again';
+            // Highlight incorrect move squares
+            highlightBoardSquares(puzzle.id, moveFrom, moveTo, 'incorrect');
+
+            // Shake the board
+            const boardGrid = document.querySelector('.pro-board-grid');
+            if (boardGrid) {
+                boardGrid.classList.add('shake');
+                setTimeout(() => boardGrid.classList.remove('shake'), 500);
+            }
+
+            const attempts = AppStore.proPuzzleProgress[puzzle.id].attempts;
+            const attemptText = attempts === 1 ? '1st attempt' : attempts === 2 ? '2nd attempt' : `${attempts} attempts`;
+            feedback.innerHTML = `<span style="font-size:1.3em">&#10008;</span> Incorrect - Try again! <span style="font-size:0.85em;opacity:0.7">(${attemptText})</span>`;
             feedback.className = 'pro-puzzle-feedback error';
             AppStore.proPuzzleStreak = 0;
             const streakPill = document.getElementById('proStreakPill');
             if (streakPill) streakPill.textContent = `Streak ${AppStore.proPuzzleStreak}`;
+
+            // Reset board after showing the wrong move briefly
             setTimeout(() => {
                 const latestPuzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
                 if (!latestPuzzle || latestPuzzle.id !== puzzle.id) return;
                 AppStore.proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
                 renderProPuzzleBoard(puzzle.id);
-            }, 900);
-            setTimeout(() => {
-                const latestPuzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
-                if (!latestPuzzle || latestPuzzle.id !== puzzle.id) return;
-                const latestFeedback = document.getElementById('proPuzzleFeedback');
-                if (latestFeedback) {
-                    latestFeedback.textContent = '';
-                    latestFeedback.className = 'pro-puzzle-feedback';
-                }
-            }, 2000);
+            }, 1200);
+
+            // Keep the feedback visible until user makes next move (don't auto-clear)
         }
     } catch (error) {
-        feedback.textContent = error.message || 'Could not submit answer.';
+        feedback.innerHTML = '<span style="font-size:1.3em">&#9888;</span> ' + (error.message || 'Could not submit answer. Please try again.');
         feedback.className = 'pro-puzzle-feedback error';
     }
+}
+
+// Highlight squares on the board after a move
+function highlightBoardSquares(puzzleId, fromSquare, toSquare, type) {
+    const container = document.getElementById('proPuzzleBoard');
+    if (!container) return;
+
+    const squares = container.querySelectorAll('.pro-board-square');
+    squares.forEach(sq => {
+        // Remove any existing highlights
+        sq.classList.remove('highlight-correct', 'highlight-incorrect', 'highlight-from');
+
+        // Get the square's coordinates from its onclick attribute
+        const onclickAttr = sq.getAttribute('onclick') || '';
+        const sqMatch = onclickAttr.match(/'([a-h][1-8])'/);
+        if (!sqMatch) return;
+        const sqName = sqMatch[1];
+
+        if (sqName === fromSquare) {
+            sq.classList.add(type === 'correct' ? 'highlight-correct' : 'highlight-from');
+        }
+        if (sqName === toSquare) {
+            sq.classList.add(type === 'correct' ? 'highlight-correct' : 'highlight-incorrect');
+        }
+    });
 }
 
 async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
@@ -587,7 +654,7 @@ function moveToNextUnsolvedOrStay() {
     renderCurrentProPuzzle();
     const feedback = document.getElementById('proPuzzleFeedback');
     if (feedback) {
-        feedback.textContent = 'All puzzles are solved/skipped. Use Previous to review.';
+        feedback.innerHTML = '<span style="font-size:1.3em">&#127942;</span> All puzzles completed! Use Previous to review.';
         feedback.className = 'pro-puzzle-feedback success';
     }
 }
@@ -639,21 +706,21 @@ function showProPuzzleHint() {
     const hintFile = puzzle.hint_from_file || null;
 
     if (used === 0) {
-        feedback.textContent = `Hint 1/2: Consider moving your ${hintPiece}.`;
-        feedback.className = 'pro-puzzle-feedback';
+        feedback.innerHTML = `<span style="font-size:1.2em">&#128161;</span> Hint 1/2: Consider moving your <strong>${hintPiece}</strong>.`;
+        feedback.className = 'pro-puzzle-feedback checking';
         AppStore.proPuzzleHintUsage[puzzle.id] = 1;
         return;
     }
 
     if (used === 1 && hintFile) {
-        feedback.textContent = `Hint 2/2: The move starts from the ${hintFile}-file.`;
-        feedback.className = 'pro-puzzle-feedback';
+        feedback.innerHTML = `<span style="font-size:1.2em">&#128161;</span> Hint 2/2: The move starts from the <strong>${hintFile}-file</strong>.`;
+        feedback.className = 'pro-puzzle-feedback checking';
         AppStore.proPuzzleHintUsage[puzzle.id] = 2;
         return;
     }
 
-    feedback.textContent = 'No more hints for this puzzle.';
-    feedback.className = 'pro-puzzle-feedback';
+    feedback.innerHTML = 'No more hints for this puzzle.';
+    feedback.className = 'pro-puzzle-feedback checking';
 }
 
 function _getWeakPhaseSummary() {
