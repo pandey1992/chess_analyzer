@@ -56,7 +56,7 @@ function initializeStats() {
 
 function processGame(game, stats) {
     stats.totalGames++;
-    const isWhite = game.white.username.toLowerCase() === username.toLowerCase();
+    const isWhite = game.white.username.toLowerCase() === AppStore.username.toLowerCase();
     const result = game.white.result;
     const opening = game.eco || 'Unknown';
     const openingName = extractOpeningName(game.pgn);
