@@ -15,6 +15,7 @@ const PageController = {
             case 'openings': this.initOpenings(); break;
             case 'study-plan': this.initStudyPlan(); break;
             case 'coaching': this.initCoaching(); break;
+            case 'opponent-prep': this.initOpponentPrep(); break;
         }
     },
 
@@ -364,6 +365,29 @@ const PageController = {
             if (monthlyBtn && Payments.config.coaching_monthly_amount_inr) {
                 monthlyBtn.textContent = `Pay \u20B9${Payments.config.coaching_monthly_amount_inr} (10 Sessions)`;
             }
+        }
+    },
+
+    // ==================== OPPONENT PREP ====================
+    initOpponentPrep() {
+        // Restore platform preference from current session
+        const platform = document.getElementById('opponentPlatform');
+        if (platform && AppStore.currentPlatform) {
+            platform.value = AppStore.currentPlatform;
+        }
+
+        // Allow Enter key to trigger scout
+        const input = document.getElementById('opponentUsername');
+        if (input && !input._oppPrepBound) {
+            input._oppPrepBound = true;
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') scoutOpponent();
+            });
+        }
+
+        // If we have cached opponent results from this session, re-render
+        if (typeof OpponentPrep !== 'undefined' && OpponentPrep._lastResult) {
+            OpponentPrep.renderResults(OpponentPrep._lastResult);
         }
     }
 };

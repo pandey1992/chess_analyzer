@@ -3,7 +3,7 @@
 const Router = {
     currentPage: null,
     initialized: false,
-    authRequiredPages: ['home', 'analyze', 'performance', 'puzzles', 'openings', 'study-plan', 'coaching'],
+    authRequiredPages: ['home', 'analyze', 'performance', 'puzzles', 'openings', 'study-plan', 'coaching', 'opponent-prep'],
     guestOnlyPages: ['login', 'signup'],
 
     init() {

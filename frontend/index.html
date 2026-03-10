@@ -506,6 +506,7 @@
                 <a href="#openings" class="app-sidebar-link" data-sidebar="openings">&#9812; Openings</a>
                 <a href="#study-plan" class="app-sidebar-link" data-sidebar="study-plan">&#9998; Study Plan</a>
                 <a href="#coaching" class="app-sidebar-link" data-sidebar="coaching">&#9814; Coaching</a>
+                <a href="#opponent-prep" class="app-sidebar-link" data-sidebar="opponent-prep">&#9876; Opponent Prep</a>
             </aside>
             <div class="app-main" id="appMainContent">
 
@@ -776,6 +777,96 @@
         </div>
     </div>
 
+    <!-- ==================== PAGE: OPPONENT PREP ==================== -->
+    <div data-page="opponent-prep" style="display: none;">
+        <h1 class="page-title">Opponent Prep</h1>
+        <p style="color:#4a5568; margin-bottom:24px;">Scout any opponent's games to find their opening weaknesses and get personalized recommendations for what to play against them.</p>
+
+        <!-- Scout Form -->
+        <div class="input-section" id="opponentScoutSection">
+            <div class="form-group">
+                <label for="opponentPlatform">Platform</label>
+                <select id="opponentPlatform">
+                    <option value="chesscom">Chess.com</option>
+                    <option value="lichess">Lichess</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="opponentUsername">Opponent Username</label>
+                <input type="text" id="opponentUsername" placeholder="Enter opponent's username">
+            </div>
+            <div class="form-group">
+                <label>Game Types</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="oppRapid" checked>
+                        <label for="oppRapid" style="margin:0;">Rapid</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="oppBlitz" checked>
+                        <label for="oppBlitz" style="margin:0;">Blitz</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="oppBullet">
+                        <label for="oppBullet" style="margin:0;">Bullet</label>
+                    </div>
+                </div>
+            </div>
+            <button onclick="scoutOpponent()" id="scoutOpponentBtn">Scout Opponent</button>
+        </div>
+
+        <!-- Error -->
+        <div class="error" id="opponentError" style="display:none;"></div>
+
+        <!-- Loading -->
+        <div class="loading" id="opponentLoading" style="display:none;">
+            <div class="spinner"></div>
+            <p id="opponentLoadingStage">Fetching opponent's games...</p>
+            <p id="opponentLoadingDetail" class="loading-detail"></p>
+            <div class="loading-progress">
+                <div id="opponentProgressFill" class="loading-progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="opponentResults" style="display:none;">
+            <!-- Overview -->
+            <div class="section-header">
+                <h2 class="section-title" id="opponentResultsTitle">Scouting Report</h2>
+            </div>
+            <div class="home-quick-stats" id="opponentOverviewStats"></div>
+
+            <!-- Weaknesses as White -->
+            <div class="chart-container">
+                <h3 class="chart-title">Weakest Openings as White</h3>
+                <p class="opp-section-hint">Your opponent struggles most in these openings when playing White. Consider steering the game into these as Black.</p>
+                <table id="opponentWeakWhiteTable"></table>
+            </div>
+
+            <!-- Weaknesses as Black -->
+            <div class="chart-container">
+                <h3 class="chart-title">Weakest Openings as Black</h3>
+                <p class="opp-section-hint">Your opponent struggles most in these openings when playing Black. Play these openings as White to exploit the weakness.</p>
+                <table id="opponentWeakBlackTable"></table>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="section-header">
+                <h2 class="section-title">Actionable Recommendations</h2>
+            </div>
+            <div class="opp-recommendations" id="opponentRecommendations"></div>
+
+            <!-- Perfect Match (only shown when user has own analysis) -->
+            <div id="opponentPerfectMatch" style="display:none;">
+                <div class="section-header">
+                    <h2 class="section-title">Perfect Match: Your Strengths vs Their Weaknesses</h2>
+                </div>
+                <p class="opp-section-hint">These openings are where you perform best AND your opponent performs worst. Maximum advantage.</p>
+                <div class="opp-match-cards" id="opponentMatchCards"></div>
+            </div>
+        </div>
+    </div>
+
             </div><!-- /.app-main -->
         </div><!-- /.app-layout -->
 
@@ -802,6 +893,9 @@
             <a href="#coaching" class="bottom-nav-item" data-bnav="coaching">
                 <span class="bnav-icon">&#9814;</span>Coach
             </a>
+            <a href="#opponent-prep" class="bottom-nav-item" data-bnav="opponent-prep">
+                <span class="bnav-icon">&#9876;</span>Prep
+            </a>
         </nav>
     </div><!-- /#appShell -->
 
@@ -816,6 +910,7 @@
     <script src="/js/charts.js?v=20260309a"></script>
     <script src="/js/display.js?v=20260309a"></script>
     <script src="/js/app.js?v=20260309a"></script>
+    <script src="/js/opponent_prep.js?v=20260311a"></script>
     <script src="/js/pages.js?v=20260309a"></script>
     <script src="/js/daily_puzzle.js?v=20260309a"></script>
     <script src="/js/home_puzzles.js?v=20260309a"></script>

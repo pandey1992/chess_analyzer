@@ -4373,3 +4373,188 @@
             margin-bottom: 24px;
             line-height: 1.5;
         }
+
+        /* ============================
+           OPPONENT PREP PAGE
+           ============================ */
+
+        .opp-section-hint {
+            color: #718096;
+            font-size: 0.92em;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        /* Recommendation cards grid */
+        .opp-recommendations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .opp-rec-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .opp-rec-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .opp-rec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .opp-rec-card.rec-white::before {
+            background: linear-gradient(90deg, #e2e8f0, #cbd5e0);
+        }
+
+        .opp-rec-card.rec-black::before {
+            background: linear-gradient(90deg, #2d3748, #4a5568);
+        }
+
+        .opp-rec-color-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.78em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .opp-rec-color-badge.badge-white {
+            background: #f7fafc;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+        }
+
+        .opp-rec-color-badge.badge-black {
+            background: #2d3748;
+            color: #f7fafc;
+        }
+
+        .opp-rec-opening {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .opp-rec-eco {
+            font-size: 0.85em;
+            color: #718096;
+            margin-bottom: 12px;
+        }
+
+        .opp-rec-message {
+            color: #4a5568;
+            font-size: 0.9em;
+            line-height: 1.55;
+            margin-bottom: 12px;
+        }
+
+        .opp-rec-stat {
+            display: inline-block;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #dc2626;
+            font-weight: 700;
+            font-size: 0.88em;
+        }
+
+        /* Perfect match cards */
+        .opp-match-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .opp-match-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+
+        .opp-match-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+        }
+
+        .opp-match-title {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #059669;
+            margin-bottom: 10px;
+        }
+
+        .opp-match-detail {
+            color: #4a5568;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .opp-match-score {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 5px 12px;
+            background: #059669;
+            color: white;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85em;
+        }
+
+        /* Opponent weakness table loss-rate coloring (inverted: high loss = good for user) */
+        .loss-rate-high {
+            color: #059669;
+            font-weight: 700;
+        }
+
+        .loss-rate-medium {
+            color: #d97706;
+            font-weight: 700;
+        }
+
+        .loss-rate-low {
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .opp-recommendations {
+                grid-template-columns: 1fr;
+            }
+
+            .opp-match-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .opp-rec-card {
+                padding: 18px;
+            }
+
+            .opp-match-card {
+                padding: 18px;
+            }
+        }
