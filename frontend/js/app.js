@@ -1,20 +1,5 @@
-﻿// Main app orchestrator - Chess Analyzer
-// Global state
-let allGames = [];
-let username = '';
-let openingsVisible = 10;
-let stats = {};
-let currentPlatform = 'chesscom';
-let proPuzzles = [];
-let proPuzzleBoards = {};
-let proPuzzleCurrentIndex = 0;
-let proPuzzleProgress = {};
-let proPuzzleDragSource = null;
-let proPuzzleStreak = 0;
-let proPuzzleBestStreak = 0;
-let proPuzzleHintUsage = {};
-let latestDashboardData = null;
-let sidebarObserver = null;
+// Main app orchestrator - Chess Analyzer
+// Global state now lives in AppStore (store.js)
 
 function renderInlineErrorCard(container, title, message, retryLabel = '', onRetry = null) {
     if (!container) return;
@@ -33,152 +18,19 @@ function renderInlineErrorCard(container, title, message, retryLabel = '', onRet
 }
 
 function selectPlatform(platform) {
-    currentPlatform = platform;
+    AppStore.currentPlatform = platform;
 }
-
-function scrollToAppSection(sectionId) {
-    const el = document.getElementById(sectionId);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setActiveSidebarBySection(sectionId);
-}
-
-window.scrollToAppSection = scrollToAppSection;
-
-function _readSidebarGameContext() {
-    const enteredUsername = (document.getElementById('username')?.value || '').trim();
-    const gameTypes = getSelectedGameTypes();
-    return { enteredUsername, gameTypes };
-}
-
-function _setSidebarBadge(id, text, tone = 'warn') {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = text;
-    el.className = `sidebar-badge ${tone}`;
-}
-
-function setActiveSidebarBySection(sectionId) {
-    const map = {
-        analyzeSection: 'analyze',
-        dashboardSection: 'dashboard',
-        progressTrackingSection: 'progress',
-        proPuzzleSection: 'puzzles',
-        leaksSection: 'leaks',
-        timeManagementSection: 'time',
-        openingSection: 'openings',
-        overallStatsSection: 'overall',
-        studyPlanSection: 'study'
-    };
-    const key = map[sectionId];
-    if (!key) return;
-    document.querySelectorAll('.app-sidebar-link').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.sidebar === key);
-    });
-}
-
-function initSidebarObserver() {
-    if (sidebarObserver) return;
-    const targets = [
-        'analyzeSection',
-        'dashboardSection',
-        'progressTrackingSection',
-        'proPuzzleSection',
-        'leaksSection',
-        'timeManagementSection',
-        'openingSection',
-        'overallStatsSection',
-        'studyPlanSection'
-    ];
-    const sections = targets
-        .map((id) => document.getElementById(id))
-        .filter(Boolean);
-    if (!sections.length || typeof IntersectionObserver !== 'function') return;
-
-    sidebarObserver = new IntersectionObserver((entries) => {
-        const visible = entries
-            .filter((e) => e.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible && visible.target && visible.target.id) {
-            setActiveSidebarBySection(visible.target.id);
-        }
-    }, { root: null, threshold: [0.35, 0.6], rootMargin: '-80px 0px -50% 0px' });
-
-    sections.forEach((s) => sidebarObserver.observe(s));
-}
-
-function refreshSidebarState() {
-    const enteredUsername = (document.getElementById('username')?.value || '').trim();
-    const gameTypes = getSelectedGameTypes();
-    const hasGameContext = !!enteredUsername && gameTypes.length > 0;
-    const hasAnalysis = !!(stats && stats.totalGames);
-    const hasPro = !!(typeof Payments !== 'undefined' && Payments.proStatus && Payments.proStatus.active);
-
-    _setSidebarBadge('sidebarBadgeAnalyze', enteredUsername ? 'Ready' : 'Needs Username', enteredUsername ? 'good' : 'warn');
-    _setSidebarBadge('sidebarBadgeDashboard', hasGameContext ? 'Ready' : 'Needs Username', hasGameContext ? 'good' : 'warn');
-    _setSidebarBadge('sidebarBadgeStudy', hasAnalysis ? 'Ready' : 'Needs Analysis', hasAnalysis ? 'good' : 'warn');
-    _setSidebarBadge('sidebarBadgePro', hasPro ? 'Unlocked' : (Auth.isLoggedIn() ? 'Upgrade' : 'Login'), hasPro ? 'good' : (Auth.isLoggedIn() ? 'warn' : 'bad'));
-}
-window.refreshSidebarState = refreshSidebarState;
-
-async function openWeeklyDashboardFromSidebar() {
-    const { enteredUsername, gameTypes } = _readSidebarGameContext();
-    if (!enteredUsername) {
-        showError('Enter username first, then open Weekly Dashboard.');
-        scrollToAppSection('analyzeSection');
-        return;
-    }
-    if (!gameTypes.length) {
-        showError('Select at least one game type to load Weekly Dashboard.');
-        scrollToAppSection('analyzeSection');
-        return;
-    }
-    username = enteredUsername;
-    hideError();
-    setActiveSidebarBySection('dashboardSection');
-    await fetchWeeklyDashboard(username, gameTypes);
-    scrollToAppSection('dashboardSection');
-}
-
-async function openProPuzzlesFromSidebar() {
-    setActiveSidebarBySection('proPuzzleSection');
-    scrollToAppSection('proPuzzleSection');
-    await loadProPuzzles();
-}
-
-function openStudyPlanFromSidebar() {
-    setActiveSidebarBySection('studyPlanSection');
-    scrollToAppSection('studyPlanSection');
-    if (!stats || !stats.totalGames) {
-        const studyPlanSection = document.getElementById('studyPlanResults');
-        if (!studyPlanSection) return;
-        studyPlanSection.innerHTML = `
-            <div style="background: #fef3c7; color: #92400e; padding: 14px; border-radius: 10px; margin-top: 10px;">
-                Run <strong>Analyze Games</strong> first to generate your personalized study plan.
-            </div>
-        `;
-        studyPlanSection.style.display = 'block';
-    }
-}
-
-window.openWeeklyDashboardFromSidebar = openWeeklyDashboardFromSidebar;
-window.openProPuzzlesFromSidebar = openProPuzzlesFromSidebar;
-window.openStudyPlanFromSidebar = openStudyPlanFromSidebar;
 
 async function startAnalysis() {
     console.log('Analysis button clicked');
-    username = document.getElementById('username').value.trim();
+    AppStore.username = document.getElementById('username').value.trim();
 
-    if (!username) {
+    if (!AppStore.username) {
         showError('Please enter a username');
         return;
     }
 
-    const gameTypes = [];
-    if (document.getElementById('rapid').checked) gameTypes.push('rapid');
-    if (document.getElementById('blitz').checked) gameTypes.push('blitz');
-    if (document.getElementById('bullet').checked) gameTypes.push('bullet');
-
+    const gameTypes = getSelectedGameTypes();
     if (gameTypes.length === 0) {
         showError('Please select at least one game type');
         return;
@@ -186,36 +38,36 @@ async function startAnalysis() {
 
     hideError();
     showLoading();
-    openingsVisible = 10;
-    latestDashboardData = null;
+    AppStore.openingsVisible = 10;
+    AppStore.latestDashboardData = null;
 
-    const platformName = currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com';
+    const platformName = AppStore.currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com';
 
     try {
         setLoadingStatus('Fetching games...', `Reading your recent ${platformName} games`, 20);
 
-        // Call backend API with platform selection
-        allGames = await ChessAPI.fetchGames(username, gameTypes, currentPlatform);
+        AppStore.allGames = await ChessAPI.fetchGames(AppStore.username, gameTypes, AppStore.currentPlatform);
 
-        if (allGames.length === 0) {
+        if (AppStore.allGames.length === 0) {
             showError(`No games found for this user on ${platformName}`);
             hideLoading();
             return;
         }
 
-        setLoadingStatus('Analyzing patterns...', `Processing ${allGames.length} games`, 62);
+        setLoadingStatus('Analyzing patterns...', `Processing ${AppStore.allGames.length} games`, 62);
 
-        // Analysis stays client-side
-        analyzeAndDisplay(allGames);
+        analyzeAndDisplay(AppStore.allGames);
         renderProgressTrackingPanel();
-        refreshSidebarState();
 
         setLoadingStatus('Building dashboard...', 'Rendering insights and charts', 90);
         hideLoading();
         showResults();
 
+        // Save analysis to session so other pages can access it
+        AppStore.saveToSession();
+
         // Fetch weekly accuracy dashboard in background
-        fetchWeeklyDashboard(username, gameTypes);
+        fetchWeeklyDashboard(AppStore.username, gameTypes);
         loadProPuzzles();
     } catch (error) {
         console.error('Error:', error);
@@ -241,12 +93,12 @@ function getSelectedGameTypes() {
 async function refreshWeeklyDashboardIfReady() {
     const dashboardSection = document.getElementById('dashboardSection');
     if (!dashboardSection) return false;
-    if (!username || !allGames || allGames.length === 0) return false;
+    if (!AppStore.username || !AppStore.allGames || AppStore.allGames.length === 0) return false;
 
     const gameTypes = getSelectedGameTypes();
     if (!gameTypes.length) return false;
 
-    await fetchWeeklyDashboard(username, gameTypes);
+    await fetchWeeklyDashboard(AppStore.username, gameTypes);
     return true;
 }
 
@@ -257,10 +109,10 @@ async function generateProPuzzles() {
     const resultsEl = document.getElementById('proPuzzleResults');
     const btn = document.getElementById('generateProPuzzlesBtn');
 
-    section.style.display = 'block';
+    if (section) section.style.display = 'block';
 
     if (!Auth.isLoggedIn()) {
-        resultsEl.innerHTML = `
+        if (resultsEl) resultsEl.innerHTML = `
             <div class="pro-puzzle-empty">
                 Pro puzzle training requires login. Please log in to generate and save puzzles.
             </div>
@@ -270,7 +122,7 @@ async function generateProPuzzles() {
     if (typeof Payments !== 'undefined') {
         const pro = await Payments.refreshProStatus();
         if (!pro.active) {
-            resultsEl.innerHTML = `
+            if (resultsEl) resultsEl.innerHTML = `
                 <div class="pro-puzzle-empty">
                     Pro subscription required. Click <strong>Unlock Pro</strong> to continue.
                 </div>
@@ -279,8 +131,8 @@ async function generateProPuzzles() {
         }
     }
 
-    if (!allGames || allGames.length === 0 || !username) {
-        resultsEl.innerHTML = `
+    if (!AppStore.allGames || AppStore.allGames.length === 0 || !AppStore.username) {
+        if (resultsEl) resultsEl.innerHTML = `
             <div class="pro-puzzle-empty">
                 Analyze games first, then generate puzzles from your mistakes.
             </div>
@@ -288,28 +140,28 @@ async function generateProPuzzles() {
         return;
     }
 
-    btn.disabled = true;
-    btn.textContent = 'Generating puzzles...';
-    resultsEl.innerHTML = '<div class="pro-puzzle-empty">Analyzing your bad moves and building puzzles...</div>';
+    if (btn) btn.disabled = true;
+    if (btn) btn.textContent = 'Generating puzzles...';
+    if (resultsEl) resultsEl.innerHTML = '<div class="pro-puzzle-empty">Analyzing your bad moves and building puzzles...</div>';
 
     try {
-        const selectedGames = [...allGames]
+        const selectedGames = [...AppStore.allGames]
             .sort((a, b) => (b.end_time || 0) - (a.end_time || 0))
             .slice(0, 15)
             .filter(g => g.pgn)
             .map(g => ({ pgn: g.pgn, url: g.url || '' }));
 
-        const data = await ChessAPI.generateProPuzzles(username, selectedGames, 15, 20, 120);
-        proPuzzles = data.puzzles || [];
-        proPuzzleCurrentIndex = 0;
-        proPuzzleProgress = {};
-        proPuzzleBoards = {};
-        proPuzzleStreak = 0;
-        proPuzzleBestStreak = 0;
-        proPuzzleHintUsage = {};
-        if (proPuzzles.length === 0) {
+        const data = await ChessAPI.generateProPuzzles(AppStore.username, selectedGames, 15, 20, 120);
+        AppStore.proPuzzles = data.puzzles || [];
+        AppStore.proPuzzleCurrentIndex = 0;
+        AppStore.proPuzzleProgress = {};
+        AppStore.proPuzzleBoards = {};
+        AppStore.proPuzzleStreak = 0;
+        AppStore.proPuzzleBestStreak = 0;
+        AppStore.proPuzzleHintUsage = {};
+        if (AppStore.proPuzzles.length === 0) {
             const limits = data.limits || {};
-            resultsEl.innerHTML = `
+            if (resultsEl) resultsEl.innerHTML = `
                 <div class="pro-puzzle-empty">
                     No puzzle candidates found from recent games yet.
                     ${limits.max_games_used ? `<br>Analyzed up to ${limits.max_games_used} games on current server limits.` : ''}
@@ -328,8 +180,8 @@ async function generateProPuzzles() {
             () => generateProPuzzles()
         );
     } finally {
-        btn.disabled = false;
-        btn.textContent = 'Generate Puzzles From My Mistakes';
+        if (btn) btn.disabled = false;
+        if (btn) btn.textContent = 'Generate Puzzles From My Mistakes';
     }
 }
 
@@ -361,13 +213,13 @@ async function loadProPuzzles() {
 
     try {
         const data = await ChessAPI.getProPuzzles(20);
-        proPuzzles = data.puzzles || [];
-        proPuzzleCurrentIndex = 0;
-        proPuzzleProgress = {};
-        proPuzzleBoards = {};
-        proPuzzleStreak = 0;
-        proPuzzleBestStreak = 0;
-        proPuzzleHintUsage = {};
+        AppStore.proPuzzles = data.puzzles || [];
+        AppStore.proPuzzleCurrentIndex = 0;
+        AppStore.proPuzzleProgress = {};
+        AppStore.proPuzzleBoards = {};
+        AppStore.proPuzzleStreak = 0;
+        AppStore.proPuzzleBestStreak = 0;
+        AppStore.proPuzzleHintUsage = {};
         renderProPuzzles();
     } catch (error) {
         renderInlineErrorCard(
@@ -385,7 +237,7 @@ function renderProPuzzles() {
     const resultsEl = document.getElementById('proPuzzleResults');
     if (!resultsEl) return;
 
-    if (!proPuzzles || proPuzzles.length === 0) {
+    if (!AppStore.proPuzzles || AppStore.proPuzzles.length === 0) {
         resultsEl.innerHTML = `
             <div class="pro-puzzle-empty">
                 No puzzles yet. Click "Generate Puzzles From My Mistakes" after analysis.
@@ -394,13 +246,13 @@ function renderProPuzzles() {
         return;
     }
 
-    if (proPuzzleCurrentIndex < 0 || proPuzzleCurrentIndex >= proPuzzles.length) {
-        proPuzzleCurrentIndex = 0;
+    if (AppStore.proPuzzleCurrentIndex < 0 || AppStore.proPuzzleCurrentIndex >= AppStore.proPuzzles.length) {
+        AppStore.proPuzzleCurrentIndex = 0;
     }
 
-    proPuzzles.forEach((p) => {
-        if (!proPuzzleProgress[p.id]) {
-            proPuzzleProgress[p.id] = { status: 'unsolved', attempts: 0 };
+    AppStore.proPuzzles.forEach((p) => {
+        if (!AppStore.proPuzzleProgress[p.id]) {
+            AppStore.proPuzzleProgress[p.id] = { status: 'unsolved', attempts: 0 };
         }
     });
 
@@ -441,20 +293,20 @@ function renderProPuzzles() {
 }
 
 function renderCurrentProPuzzle() {
-    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
     if (!puzzle) return;
 
-    const status = proPuzzleProgress[puzzle.id]?.status || 'unsolved';
-    const solved = Object.values(proPuzzleProgress).filter(p => p.status === 'solved').length;
-    const skipped = Object.values(proPuzzleProgress).filter(p => p.status === 'skipped').length;
-    const remaining = proPuzzles.length - solved - skipped;
+    const status = AppStore.proPuzzleProgress[puzzle.id]?.status || 'unsolved';
+    const solved = Object.values(AppStore.proPuzzleProgress).filter(p => p.status === 'solved').length;
+    const skipped = Object.values(AppStore.proPuzzleProgress).filter(p => p.status === 'skipped').length;
+    const remaining = AppStore.proPuzzles.length - solved - skipped;
 
     const title = document.getElementById('proPuzzleTitle');
     const sub = document.getElementById('proPuzzleSub');
     const toMoveEl = document.getElementById('proToMove');
     const feedback = document.getElementById('proPuzzleFeedback');
 
-    if (title) title.textContent = `Puzzle ${proPuzzleCurrentIndex + 1} / ${proPuzzles.length}`;
+    if (title) title.textContent = `Puzzle ${AppStore.proPuzzleCurrentIndex + 1} / ${AppStore.proPuzzles.length}`;
     if (sub) sub.textContent = `Move ${puzzle.move_number} | Eval Drop ${puzzle.cp_loss} | ${status.toUpperCase()}`;
     if (feedback) {
         feedback.textContent = '';
@@ -470,24 +322,23 @@ function renderCurrentProPuzzle() {
     if (remainingPill) remainingPill.textContent = `Remaining ${remaining}`;
     if (solvedPill) solvedPill.textContent = `Solved ${solved}`;
     if (skippedPill) skippedPill.textContent = `Skipped ${skipped}`;
-    if (streakPill) streakPill.textContent = `Streak ${proPuzzleStreak}`;
-    if (bestStreakPill) bestStreakPill.textContent = `Best ${proPuzzleBestStreak}`;
+    if (streakPill) streakPill.textContent = `Streak ${AppStore.proPuzzleStreak}`;
+    if (bestStreakPill) bestStreakPill.textContent = `Best ${AppStore.proPuzzleBestStreak}`;
     if (progressFill) {
-        const pct = Math.round((solved / Math.max(1, proPuzzles.length)) * 100);
+        const pct = Math.round((solved / Math.max(1, AppStore.proPuzzles.length)) * 100);
         progressFill.style.width = `${pct}%`;
     }
 
-    if (!proPuzzleBoards[puzzle.id]) {
-        proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
+    if (!AppStore.proPuzzleBoards[puzzle.id]) {
+        AppStore.proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
     }
-    const state = proPuzzleBoards[puzzle.id];
+    const state = AppStore.proPuzzleBoards[puzzle.id];
     if (toMoveEl) toMoveEl.textContent = state.sideToMove === 'w' ? 'White to move' : 'Black to move';
 
     renderProPuzzleBoard(puzzle.id);
 }
 
 function initProPuzzleBoards() {
-    // Kept for compatibility with previous calls.
     renderCurrentProPuzzle();
 }
 
@@ -520,7 +371,7 @@ function buildBoardStateFromFen(fen, puzzleId = null) {
 
 function renderProPuzzleBoard(puzzleId) {
     const container = document.getElementById('proPuzzleBoard');
-    const state = proPuzzleBoards[puzzleId];
+    const state = AppStore.proPuzzleBoards[puzzleId];
     if (!container || !state) return;
 
     const orientationWhite = state.sideToMove === 'w';
@@ -567,7 +418,7 @@ function isDraggablePiece(piece, sideToMove) {
 }
 
 function onProPuzzleDragStart(event, puzzleId, square) {
-    proPuzzleDragSource = square;
+    AppStore.proPuzzleDragSource = square;
     if (event.dataTransfer) {
         event.dataTransfer.setData('text/plain', square);
         event.dataTransfer.effectAllowed = 'move';
@@ -576,14 +427,14 @@ function onProPuzzleDragStart(event, puzzleId, square) {
 
 function onProPuzzleDrop(event, puzzleId, targetSquare) {
     event.preventDefault();
-    const fromSquare = (event.dataTransfer && event.dataTransfer.getData('text/plain')) || proPuzzleDragSource;
-    proPuzzleDragSource = null;
+    const fromSquare = (event.dataTransfer && event.dataTransfer.getData('text/plain')) || AppStore.proPuzzleDragSource;
+    AppStore.proPuzzleDragSource = null;
     if (!fromSquare) return;
     handleProPuzzleMove(puzzleId, fromSquare, targetSquare);
 }
 
 function onProPuzzleSquareClick(puzzleId, square) {
-    const state = proPuzzleBoards[puzzleId];
+    const state = AppStore.proPuzzleBoards[puzzleId];
     if (!state) return;
     const clickedPiece = state.pieces[square];
 
@@ -606,7 +457,7 @@ function onProPuzzleSquareClick(puzzleId, square) {
 }
 
 function handleProPuzzleMove(puzzleId, from, to) {
-    const state = proPuzzleBoards[puzzleId];
+    const state = AppStore.proPuzzleBoards[puzzleId];
     if (!state) return;
     const movingPiece = state.pieces[from];
     if (!movingPiece) return;
@@ -644,19 +495,18 @@ function pieceToImageUrl(piece) {
 }
 
 function resetCurrentProPuzzle() {
-    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
     if (!puzzle) return;
-    proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
+    AppStore.proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
     renderCurrentProPuzzle();
 }
 
 function resetProPuzzleBoard() {
-    // Backward compatibility if old inline handlers exist.
     resetCurrentProPuzzle();
 }
 
 async function submitCurrentProPuzzle(moveOverride = null) {
-    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
     if (!puzzle) return;
     const feedback = document.getElementById('proPuzzleFeedback');
     if (!feedback) return;
@@ -673,29 +523,28 @@ async function submitCurrentProPuzzle(moveOverride = null) {
 
     try {
         const result = await ChessAPI.attemptProPuzzle(puzzle.id, move);
-        proPuzzleProgress[puzzle.id].attempts += 1;
+        AppStore.proPuzzleProgress[puzzle.id].attempts += 1;
         if (result.correct) {
             feedback.textContent = result.message || 'Correct.';
             feedback.className = 'pro-puzzle-feedback success';
-            proPuzzleStreak += 1;
-            proPuzzleBestStreak = Math.max(proPuzzleBestStreak, proPuzzleStreak);
-            proPuzzleProgress[puzzle.id].status = 'solved';
+            AppStore.proPuzzleStreak += 1;
+            AppStore.proPuzzleBestStreak = Math.max(AppStore.proPuzzleBestStreak, AppStore.proPuzzleStreak);
+            AppStore.proPuzzleProgress[puzzle.id].status = 'solved';
             setTimeout(() => moveToNextUnsolvedOrStay(), 650);
         } else {
-            const incorrectText = 'Incorrect, try again';
-            feedback.textContent = incorrectText;
+            feedback.textContent = 'Incorrect, try again';
             feedback.className = 'pro-puzzle-feedback error';
-            proPuzzleStreak = 0;
+            AppStore.proPuzzleStreak = 0;
             const streakPill = document.getElementById('proStreakPill');
-            if (streakPill) streakPill.textContent = `Streak ${proPuzzleStreak}`;
+            if (streakPill) streakPill.textContent = `Streak ${AppStore.proPuzzleStreak}`;
             setTimeout(() => {
-                const latestPuzzle = proPuzzles[proPuzzleCurrentIndex];
+                const latestPuzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
                 if (!latestPuzzle || latestPuzzle.id !== puzzle.id) return;
-                proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
+                AppStore.proPuzzleBoards[puzzle.id] = buildBoardStateFromFen(puzzle.fen, puzzle.id);
                 renderProPuzzleBoard(puzzle.id);
             }, 900);
             setTimeout(() => {
-                const latestPuzzle = proPuzzles[proPuzzleCurrentIndex];
+                const latestPuzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
                 if (!latestPuzzle || latestPuzzle.id !== puzzle.id) return;
                 const latestFeedback = document.getElementById('proPuzzleFeedback');
                 if (latestFeedback) {
@@ -711,27 +560,26 @@ async function submitCurrentProPuzzle(moveOverride = null) {
 }
 
 async function submitProPuzzleAttempt(puzzleId, moveOverride = null) {
-    // Backward compatibility for older button handlers.
     if (typeof puzzleId === 'number') {
-        const idx = proPuzzles.findIndex(p => p.id === puzzleId);
-        if (idx >= 0) proPuzzleCurrentIndex = idx;
+        const idx = AppStore.proPuzzles.findIndex(p => p.id === puzzleId);
+        if (idx >= 0) AppStore.proPuzzleCurrentIndex = idx;
     }
     await submitCurrentProPuzzle(moveOverride);
 }
 
 function moveToNextUnsolvedOrStay() {
-    for (let i = proPuzzleCurrentIndex + 1; i < proPuzzles.length; i++) {
-        const p = proPuzzles[i];
-        if ((proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
-            proPuzzleCurrentIndex = i;
+    for (let i = AppStore.proPuzzleCurrentIndex + 1; i < AppStore.proPuzzles.length; i++) {
+        const p = AppStore.proPuzzles[i];
+        if ((AppStore.proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
+            AppStore.proPuzzleCurrentIndex = i;
             renderCurrentProPuzzle();
             return;
         }
     }
-    for (let i = 0; i < proPuzzles.length; i++) {
-        const p = proPuzzles[i];
-        if ((proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
-            proPuzzleCurrentIndex = i;
+    for (let i = 0; i < AppStore.proPuzzles.length; i++) {
+        const p = AppStore.proPuzzles[i];
+        if ((AppStore.proPuzzleProgress[p.id]?.status || 'unsolved') === 'unsolved') {
+            AppStore.proPuzzleCurrentIndex = i;
             renderCurrentProPuzzle();
             return;
         }
@@ -745,34 +593,27 @@ function moveToNextUnsolvedOrStay() {
 }
 
 function goPrevProPuzzle() {
-    if (proPuzzleCurrentIndex <= 0) return;
-    proPuzzleCurrentIndex -= 1;
+    if (AppStore.proPuzzleCurrentIndex <= 0) return;
+    AppStore.proPuzzleCurrentIndex -= 1;
     renderCurrentProPuzzle();
 }
 
 function goNextProPuzzle() {
-    if (proPuzzleCurrentIndex >= proPuzzles.length - 1) return;
-    proPuzzleCurrentIndex += 1;
+    if (AppStore.proPuzzleCurrentIndex >= AppStore.proPuzzles.length - 1) return;
+    AppStore.proPuzzleCurrentIndex += 1;
     renderCurrentProPuzzle();
 }
 
 function skipCurrentProPuzzle() {
-    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
     if (!puzzle) return;
-    proPuzzleStreak = 0;
-    proPuzzleProgress[puzzle.id].status = 'skipped';
+    AppStore.proPuzzleStreak = 0;
+    AppStore.proPuzzleProgress[puzzle.id].status = 'skipped';
     moveToNextUnsolvedOrStay();
 }
 
 function clearProPuzzleSession(reason = 'logged_out') {
-    proPuzzles = [];
-    proPuzzleBoards = {};
-    proPuzzleCurrentIndex = 0;
-    proPuzzleProgress = {};
-    proPuzzleDragSource = null;
-    proPuzzleStreak = 0;
-    proPuzzleBestStreak = 0;
-    proPuzzleHintUsage = {};
+    AppStore.clearPuzzles();
 
     const resultsEl = document.getElementById('proPuzzleResults');
     if (resultsEl) {
@@ -789,25 +630,25 @@ function clearProPuzzleSession(reason = 'logged_out') {
 window.clearProPuzzleSession = clearProPuzzleSession;
 
 function showProPuzzleHint() {
-    const puzzle = proPuzzles[proPuzzleCurrentIndex];
+    const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
     const feedback = document.getElementById('proPuzzleFeedback');
     if (!puzzle || !feedback) return;
 
-    const used = proPuzzleHintUsage[puzzle.id] || 0;
+    const used = AppStore.proPuzzleHintUsage[puzzle.id] || 0;
     const hintPiece = puzzle.hint_piece || 'piece';
     const hintFile = puzzle.hint_from_file || null;
 
     if (used === 0) {
         feedback.textContent = `Hint 1/2: Consider moving your ${hintPiece}.`;
         feedback.className = 'pro-puzzle-feedback';
-        proPuzzleHintUsage[puzzle.id] = 1;
+        AppStore.proPuzzleHintUsage[puzzle.id] = 1;
         return;
     }
 
     if (used === 1 && hintFile) {
         feedback.textContent = `Hint 2/2: The move starts from the ${hintFile}-file.`;
         feedback.className = 'pro-puzzle-feedback';
-        proPuzzleHintUsage[puzzle.id] = 2;
+        AppStore.proPuzzleHintUsage[puzzle.id] = 2;
         return;
     }
 
@@ -816,11 +657,12 @@ function showProPuzzleHint() {
 }
 
 function _getWeakPhaseSummary() {
-    const totalLosses = Math.max(1, stats.losses || 0);
+    const s = AppStore.stats;
+    const totalLosses = Math.max(1, s.losses || 0);
     const phases = [
-        { name: 'Opening', losses: stats.openingPhaseLosses || 0 },
-        { name: 'Middlegame', losses: stats.middlegameLosses || 0 },
-        { name: 'Endgame', losses: stats.endgameLosses || 0 }
+        { name: 'Opening', losses: s.openingPhaseLosses || 0 },
+        { name: 'Middlegame', losses: s.middlegameLosses || 0 },
+        { name: 'Endgame', losses: s.endgameLosses || 0 }
     ];
     const worst = phases.sort((a, b) => b.losses - a.losses)[0] || { name: 'Opening', losses: 0 };
     return {
@@ -847,9 +689,10 @@ function _formatDelta(delta, positiveGood = true, suffix = '%') {
     };
 }
 
-function renderProgressTrackingPanel() {
-    const section = document.getElementById('progressTrackingSection');
+function renderProgressTrackingPanel(targetId) {
+    const section = document.getElementById(targetId || 'progressTrackingSection');
     if (!section) return;
+    const stats = AppStore.stats;
     if (!stats || !stats.totalGames) {
         section.style.display = 'none';
         return;
@@ -871,15 +714,15 @@ function renderProgressTrackingPanel() {
     let blunderHint = 'Waiting for move-quality data';
     let blunderTrend = { text: 'No trend yet', cls: 'neutral' };
 
-    if (latestDashboardData && !latestDashboardData.pro_locked) {
-        const overallAcc = latestDashboardData?.overall?.accuracy;
-        const gameAccs = (latestDashboardData?.game_accuracies || [])
+    if (AppStore.latestDashboardData && !AppStore.latestDashboardData.pro_locked) {
+        const overallAcc = AppStore.latestDashboardData?.overall?.accuracy;
+        const gameAccs = (AppStore.latestDashboardData?.game_accuracies || [])
             .map(g => Number(g.accuracy))
             .filter(n => Number.isFinite(n));
 
         if (Number.isFinite(overallAcc)) {
             accuracyValue = `${Math.round(overallAcc * 10) / 10}%`;
-            accuracyHint = `${latestDashboardData.total_analyzed_games || 0} games this week`;
+            accuracyHint = `${AppStore.latestDashboardData.total_analyzed_games || 0} games this week`;
         }
 
         if (gameAccs.length >= 6) {
@@ -888,8 +731,8 @@ function renderProgressTrackingPanel() {
             accuracyTrend = _formatDelta(recentAvg - prevAvg, true, '%');
         }
 
-        const blunders = Number(latestDashboardData?.move_quality?.blunder || 0);
-        const analyzed = Math.max(1, Number(latestDashboardData?.total_analyzed_games || 0));
+        const blunders = Number(AppStore.latestDashboardData?.move_quality?.blunder || 0);
+        const analyzed = Math.max(1, Number(AppStore.latestDashboardData?.total_analyzed_games || 0));
         const blundersPerGame = blunders / analyzed;
         blunderValue = `${blunders}`;
         blunderHint = `${blundersPerGame.toFixed(2)} blunders/game`;
@@ -943,29 +786,28 @@ function renderProgressTrackingPanel() {
             </div>
         </div>
     `;
-    refreshSidebarState();
 }
 
-async function fetchWeeklyDashboard(username, gameTypes) {
-    const dashboardSection = document.getElementById('dashboardSection');
+async function fetchWeeklyDashboard(username, gameTypes, targetId) {
+    const dashboardSection = document.getElementById(targetId || 'dashboardSection');
+    if (!dashboardSection) return;
 
-    // Show loading state
     dashboardSection.style.display = 'block';
     dashboardSection.innerHTML = `
         <div class="dashboard-loading">
             <div class="spinner"></div>
-            <p>Loading weekly accuracy dashboard${currentPlatform === 'chesscom' ? ' (deep-analyzing up to 20 games with Stockfish at depth 15 - this may take a few minutes...)' : ''}...</p>
+            <p>Loading weekly accuracy dashboard${AppStore.currentPlatform === 'chesscom' ? ' (deep-analyzing up to 20 games with Stockfish at depth 15 - this may take a few minutes...)' : ''}...</p>
         </div>
     `;
 
     try {
-        const dashboardData = await ChessAPI.fetchDashboard(username, gameTypes, currentPlatform);
-        latestDashboardData = dashboardData;
+        const dashboardData = await ChessAPI.fetchDashboard(username, gameTypes, AppStore.currentPlatform);
+        AppStore.latestDashboardData = dashboardData;
+        AppStore.saveToSession();
         renderProgressTrackingPanel();
-        refreshSidebarState();
 
         if (dashboardData && dashboardData.pro_locked) {
-            displayDashboard(dashboardData);
+            displayDashboard(dashboardData, targetId);
             return;
         }
 
@@ -974,17 +816,16 @@ async function fetchWeeklyDashboard(username, gameTypes) {
                 <div class="chart-container" style="text-align: center; padding: 30px;">
                     <h2>Weekly Accuracy Dashboard</h2>
                     <p style="color: #718096; margin-top: 12px;">No analyzed games found for the past week.
-                    ${currentPlatform === 'lichess' ? 'Request computer analysis on your Lichess games to see accuracy data.' : ''}</p>
+                    ${AppStore.currentPlatform === 'lichess' ? 'Request computer analysis on your Lichess games to see accuracy data.' : ''}</p>
                 </div>
             `;
             return;
         }
 
-        displayDashboard(dashboardData);
+        displayDashboard(dashboardData, targetId);
     } catch (error) {
         console.error('Dashboard error:', error);
         renderProgressTrackingPanel();
-        refreshSidebarState();
         dashboardSection.innerHTML = `
             <div id="dashboardErrorWrap" class="chart-container" style="text-align: center; padding: 30px;"></div>
         `;
@@ -994,44 +835,44 @@ async function fetchWeeklyDashboard(username, gameTypes) {
             'Could not load weekly dashboard',
             error.message || 'Dashboard data is temporarily unavailable.',
             'Retry Dashboard',
-            () => fetchWeeklyDashboard(username, gameTypes)
+            () => fetchWeeklyDashboard(username, gameTypes, targetId)
         );
     }
 }
 
 async function generateStudyPlan() {
-    const studyPlanBtn = document.getElementById('generateStudyPlanBtn');
+    const studyPlanBtn = document.getElementById('generateStudyPlanBtnPage') || document.getElementById('generateStudyPlanBtn');
     const studyPlanSection = document.getElementById('studyPlanResults');
 
-    // Check if stats is available
+    const stats = AppStore.stats;
     if (!stats || !stats.totalGames) {
-        studyPlanSection.innerHTML = `
-            <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
-                <h3>No Analysis Data Found</h3>
-                <p>Please analyze your games first before generating a study plan.</p>
-                <p style="margin-top: 12px;">Click "Analyze Games" at the top to get started!</p>
-            </div>
-        `;
-        studyPlanSection.style.display = 'block';
+        if (studyPlanSection) {
+            studyPlanSection.innerHTML = `
+                <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
+                    <h3>No Analysis Data Found</h3>
+                    <p>Please analyze your games first before generating a study plan.</p>
+                    <p style="margin-top: 12px;"><a href="#analyze">Click here to Analyze Games</a></p>
+                </div>
+            `;
+            studyPlanSection.style.display = 'block';
+        }
         return;
     }
 
-    studyPlanBtn.disabled = true;
-    studyPlanBtn.textContent = 'Generating Your Personalized Study Plan...';
-    studyPlanSection.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div><p style="text-align: center; color: white;">Analyzing your games and creating custom recommendations...</p>';
-    studyPlanSection.style.display = 'block';
+    if (studyPlanBtn) {
+        studyPlanBtn.disabled = true;
+        studyPlanBtn.textContent = 'Generating Your Personalized Study Plan...';
+    }
+    if (studyPlanSection) {
+        studyPlanSection.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div><p style="text-align: center;">Analyzing your games and creating custom recommendations...</p>';
+        studyPlanSection.style.display = 'block';
+    }
 
     try {
-        // Build weaknesses and strengths for display
         const { weaknesses, strengths, specificIssues } = computeWeaknessesAndStrengths(stats);
-
-        // Build stats payload for backend
         const statsPayload = buildStatsPayload(stats, weaknesses, strengths, specificIssues);
-
-        // Call backend API (no API key in frontend!)
         const plan = await ChessAPI.generateStudyPlan(statsPayload);
         displayStudyPlan(plan, weaknesses, strengths);
-
     } catch (error) {
         console.error('Error generating study plan:', error);
 
@@ -1048,16 +889,20 @@ async function generateStudyPlan() {
             helpText = '<p style="margin-top: 12px;">If the problem persists, please try again later.</p>';
         }
 
-        studyPlanSection.innerHTML = `
-            <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
-                <h3>Error Generating Study Plan</h3>
-                <p>${errorMessage}</p>
-                ${helpText}
-            </div>
-        `;
+        if (studyPlanSection) {
+            studyPlanSection.innerHTML = `
+                <div style="background: #fed7d7; color: #c53030; padding: 24px; border-radius: 12px; margin-top: 20px;">
+                    <h3>Error Generating Study Plan</h3>
+                    <p>${errorMessage}</p>
+                    ${helpText}
+                </div>
+            `;
+        }
     } finally {
-        studyPlanBtn.disabled = false;
-        studyPlanBtn.textContent = 'Generate My Study Plan';
+        if (studyPlanBtn) {
+            studyPlanBtn.disabled = false;
+            studyPlanBtn.textContent = 'Generate My Study Plan';
+        }
     }
 }
 
@@ -1071,7 +916,6 @@ function computeWeaknessesAndStrengths(stats) {
     const middlegamePct = ((stats.middlegameLosses / totalLosses) * 100).toFixed(1);
     const endgamePct = ((stats.endgameLosses / totalLosses) * 100).toFixed(1);
 
-    // Worst phase
     const worstPhase = [
         { name: 'Opening', count: stats.openingPhaseLosses },
         { name: 'Middlegame', count: stats.middlegameLosses },
@@ -1090,14 +934,12 @@ function computeWeaknessesAndStrengths(stats) {
         weaknesses.push(`Endgame technique needs work (${stats.endgameLosses} losses, ${endgamePct}% of all losses)`);
     }
 
-    // Time pressure
     const timeoutRate = ((stats.timePressureLosses / totalLosses) * 100).toFixed(1);
     if (stats.timePressureLosses >= totalLosses * 0.15) {
         weaknesses.push(`CRITICAL: Time management problems (${stats.timePressureLosses} timeout losses, ${timeoutRate}% of losses)`);
         specificIssues.timePressure = true;
     }
 
-    // Color performance
     const whiteGames = stats.whiteWins + stats.whiteLosses + stats.whiteDraws;
     const blackGames = stats.blackWins + stats.blackLosses + stats.blackDraws;
     const whiteWinRate = whiteGames > 0 ? ((stats.whiteWins / whiteGames) * 100).toFixed(1) : 0;
@@ -1110,7 +952,6 @@ function computeWeaknessesAndStrengths(stats) {
         specificIssues.colorWeakness = weakerColor;
     }
 
-    // Opening analysis - FIXED: use correct property names (whiteWins+blackWins instead of data.wins)
     const openingPerformance = Object.entries(stats.openings)
         .map(([eco, data]) => ({
             eco,
@@ -1143,7 +984,6 @@ function computeWeaknessesAndStrengths(stats) {
         });
     }
 
-    // Endgame types
     if (stats.endgameLosses > 0 && stats.endgameTypes) {
         const endgameData = Object.entries(stats.endgameTypes)
             .map(([type, data]) => ({
@@ -1166,7 +1006,6 @@ function computeWeaknessesAndStrengths(stats) {
 }
 
 function buildStatsPayload(stats, weaknesses, strengths, specificIssues) {
-    // Opening analysis for payload
     const openingPerformance = Object.entries(stats.openings)
         .map(([eco, data]) => ({
             eco,
@@ -1193,7 +1032,7 @@ function buildStatsPayload(stats, weaknesses, strengths, specificIssues) {
     }));
 
     return {
-        username,
+        username: AppStore.username,
         total_games: stats.totalGames,
         wins: stats.wins,
         losses: stats.losses,
@@ -1225,7 +1064,7 @@ function downloadStudyPlan() {
     const blob = new Blob([`
 CHESS STUDY PLAN
 Generated: ${new Date().toLocaleDateString()}
-Based on analysis of ${stats.totalGames} games
+Based on analysis of ${AppStore.stats.totalGames} games
 
 ${window.currentStudyPlan}
 
@@ -1236,7 +1075,7 @@ Generated by Chess AI Coach
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `chess-study-plan-${username}-${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `chess-study-plan-${AppStore.username}-${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1259,7 +1098,7 @@ function copyStudyPlan() {
 function emailStudyPlan() {
     if (!window.currentStudyPlan) return;
 
-    const subject = encodeURIComponent(`Chess Study Plan - ${username}`);
+    const subject = encodeURIComponent(`Chess Study Plan - ${AppStore.username}`);
     const body = encodeURIComponent(`
 My Personalized Chess Study Plan
 Generated: ${new Date().toLocaleDateString()}
@@ -1306,6 +1145,9 @@ async function initApp() {
     appInitialized = true;
     installGlobalErrorGuards();
 
+    // Restore analysis data from session
+    AppStore.restoreFromSession();
+
     // Check if user is already logged in, but do not block router boot.
     try {
         await Promise.race([
@@ -1319,15 +1161,6 @@ async function initApp() {
     // Initialize the router (shows correct page based on hash + auth state)
     Router.init();
 
-    const usernameInput = document.getElementById('username');
-    if (usernameInput) usernameInput.addEventListener('input', refreshSidebarState);
-    ['rapid', 'blitz', 'bullet'].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('change', refreshSidebarState);
-    });
-    refreshSidebarState();
-    initSidebarObserver();
-
     console.log('Chess AI Coach loaded successfully');
 }
 
@@ -1337,4 +1170,3 @@ if (document.readyState === 'loading') {
 } else {
     initApp();
 }
-

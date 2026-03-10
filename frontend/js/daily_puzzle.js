@@ -9,14 +9,17 @@ const DailyPuzzle = {
     usedHint: false,
     dragSource: null,
 
+    containerId: 'dailyPuzzleContainer',
+
     // ------------------------------------------------------------------ init
-    async init() {
+    async init(containerId) {
+        if (containerId) this.containerId = containerId;
         await this.load();
     },
 
     // ------------------------------------------------------------------ load
     async load() {
-        const container = document.getElementById('dailyPuzzleContainer');
+        const container = document.getElementById(this.containerId);
         if (!container) return;
         container.innerHTML = '<div class="dp-loading">Loading today\'s puzzle from Lichess\u2026</div>';
 
@@ -51,7 +54,7 @@ const DailyPuzzle = {
 
     // ------------------------------------------------------------------ render
     _render() {
-        const container = document.getElementById('dailyPuzzleContainer');
+        const container = document.getElementById(this.containerId);
         if (!container || !this.puzzle) return;
         const p = this.puzzle;
         const streak = parseInt(localStorage.getItem('dp_streak') || '0', 10);

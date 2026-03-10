@@ -3,7 +3,7 @@
 const Router = {
     currentPage: null,
     initialized: false,
-    authRequiredPages: ['app'],
+    authRequiredPages: ['home', 'analyze', 'performance', 'puzzles', 'openings', 'study-plan', 'coaching'],
     guestOnlyPages: ['login', 'signup'],
 
     init() {
@@ -16,7 +16,13 @@ const Router = {
 
     handleRoute() {
         const hash = window.location.hash.slice(1) || 'landing';
-        const page = hash.split('?')[0]; // strip query params
+        let page = hash.split('?')[0]; // strip query params
+
+        // Backward compatibility: #app redirects to #home
+        if (page === 'app') {
+            window.location.hash = '#home';
+            return;
+        }
 
         // Auth guard: redirect to login if page requires auth
         if (this.authRequiredPages.includes(page) && !Auth.canAccessApp()) {
@@ -24,9 +30,9 @@ const Router = {
             return;
         }
 
-        // Guest guard: redirect to app if already logged in and visiting login/signup
+        // Guest guard: redirect to home if already logged in and visiting login/signup
         if (this.guestOnlyPages.includes(page) && Auth.isLoggedIn()) {
-            window.location.hash = '#app';
+            window.location.hash = '#home';
             return;
         }
 
@@ -51,21 +57,41 @@ const Router = {
             this.currentPage = 'landing';
         }
 
+        // Show/hide app shell for auth pages
+        if (this.authRequiredPages.includes(this.currentPage)) {
+            this.showAppChrome();
+        } else {
+            this.hideAppChrome();
+        }
+
         // Update navbar state
         this.updateNavbar(this.currentPage);
 
-        // Scroll to top on page change (unless it's an anchor scroll)
+        // Scroll to top on page change
         if (!window.location.hash.includes('/')) {
             window.scrollTo(0, 0);
         }
 
         // Page-specific init hooks
+        if (this.authRequiredPages.includes(this.currentPage) && typeof PageController !== 'undefined') {
+            PageController.init(this.currentPage);
+        }
         if (page === 'puzzle' && typeof DailyPuzzle !== 'undefined') {
             DailyPuzzle.init();
         }
         if (page === 'landing' && typeof HomePuzzles !== 'undefined') {
             HomePuzzles.init();
         }
+    },
+
+    showAppChrome() {
+        const shell = document.getElementById('appShell');
+        if (shell) shell.style.display = 'block';
+    },
+
+    hideAppChrome() {
+        const shell = document.getElementById('appShell');
+        if (shell) shell.style.display = 'none';
     },
 
     updateNavbar(page) {

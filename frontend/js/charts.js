@@ -1,7 +1,7 @@
 // Chart.js visualization functions - extracted from chess_analyzer_v2_with_study_plan.html
 
-function displayColorChart(stats) {
-    const canvas = document.getElementById('colorChart');
+function displayColorChart(stats, targetId) {
+    const canvas = document.getElementById(targetId || 'colorChart');
     if (!canvas) return;
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
@@ -39,7 +39,7 @@ function displayColorChart(stats) {
     });
 }
 
-function displayOpeningChart(stats) {
+function displayOpeningChart(stats, targetId) {
     const openingData = Object.entries(stats.openings)
         .map(([eco, data]) => ({
             name: data.name,
@@ -51,7 +51,7 @@ function displayOpeningChart(stats) {
         .sort((a, b) => b.total - a.total)
         .slice(0, 8);
 
-    const canvas = document.getElementById('openingChart');
+    const canvas = document.getElementById(targetId || 'openingChart');
     if (!canvas) return;
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();

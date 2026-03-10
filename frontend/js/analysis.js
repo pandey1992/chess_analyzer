@@ -2,7 +2,7 @@
 // All game analysis functions (verbatim from original)
 
 function analyzeAndDisplay(games) {
-    stats = initializeStats(); // Assign to global stats variable
+    const stats = initializeStats();
 
     games.forEach(game => {
         processGame(game, stats);
@@ -10,6 +10,9 @@ function analyzeAndDisplay(games) {
 
     stats.recentGames.sort((a, b) => b.date - a.date);
     stats.streaks = calculateStreaks(stats.recentGames);
+
+    // Store stats in AppStore so all pages can access them
+    AppStore.stats = stats;
 
     displayAll(stats);
 }

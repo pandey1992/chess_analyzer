@@ -17,7 +17,7 @@ function displayAll(stats) {
     }
 }
 
-function displayHeroSection(stats) {
+function displayHeroSection(stats, targetId) {
     const winRate = ((stats.wins / stats.totalGames) * 100).toFixed(1);
     const recentWinRate = stats.recentGames.length > 0
         ? ((stats.recentGames.slice(0, 10).filter(g => g.result === 'win').length / 10) * 100).toFixed(0)
@@ -71,10 +71,10 @@ function displayHeroSection(stats) {
         </div>
     `;
 
-    document.getElementById('heroSection').innerHTML = html;
+    document.getElementById(targetId || 'heroSection').innerHTML = html;
 }
 
-function displayLeaksGrid(stats) {
+function displayLeaksGrid(stats, targetId) {
     const phases = [
         { name: 'opening', count: stats.openingPhaseLosses, total: stats.losses },
         { name: 'middlegame', count: stats.middlegameLosses, total: stats.losses },
@@ -192,10 +192,10 @@ function displayLeaksGrid(stats) {
         </div>
     `;
 
-    document.getElementById('leaksGrid').innerHTML = html;
+    document.getElementById(targetId || 'leaksGrid').innerHTML = html;
 }
 
-function displayInsights(stats) {
+function displayInsights(stats, targetId) {
     const insights = [];
 
     // Streaks
@@ -270,10 +270,10 @@ function displayInsights(stats) {
         `;
     }
 
-    document.getElementById('insightsContainer').innerHTML = html;
+    document.getElementById(targetId || 'insightsContainer').innerHTML = html;
 }
 
-function displayStudyRecommendations(stats) {
+function displayStudyRecommendations(stats, targetId) {
     const recommendations = [];
 
     // Priority 1: Biggest leak by game phase
@@ -390,10 +390,10 @@ function displayStudyRecommendations(stats) {
         `;
     }
 
-    document.getElementById('studyContainer').innerHTML = studyHTML;
+    document.getElementById(targetId || 'studyContainer').innerHTML = studyHTML;
 }
 
-function displayTimeManagement(stats) {
+function displayTimeManagement(stats, targetId) {
     const timeoutLossRate = stats.losses > 0 ? ((stats.timePressureLosses / stats.losses) * 100).toFixed(0) : 0;
     const timeControlData = Object.entries(stats.timeManagement.byTimeControl)
         .map(([control, data]) => ({
@@ -515,10 +515,10 @@ function displayTimeManagement(stats) {
     }
 
     html += '</div>';
-    document.getElementById('timeManagementSection').innerHTML = html;
+    document.getElementById(targetId || 'timeManagementSection').innerHTML = html;
 }
 
-function displayGamesToReview(stats) {
+function displayGamesToReview(stats, targetId) {
     const totalSuspicious = stats.gamesToReview.quickCollapses.length +
                            stats.gamesToReview.middlegameBlunders.length +
                            stats.gamesToReview.openingDisasters.length;
@@ -580,7 +580,7 @@ function displayGamesToReview(stats) {
     }
 
     html += '</div></div>';
-    document.getElementById('gamesToReviewSection').innerHTML = html;
+    document.getElementById(targetId || 'gamesToReviewSection').innerHTML = html;
 }
 
 function displayGameList(title, games, description, showAll) {
@@ -630,7 +630,7 @@ function displayGameList(title, games, description, showAll) {
     return html;
 }
 
-function displayStats(stats) {
+function displayStats(stats, targetId) {
     const winRate = ((stats.wins / stats.totalGames) * 100).toFixed(1);
     const html = `
         <div class="stat-card">
@@ -654,10 +654,10 @@ function displayStats(stats) {
             <div class="stat-label">Draws</div>
         </div>
     `;
-    document.getElementById('statsGrid').innerHTML = html;
+    document.getElementById(targetId || 'statsGrid').innerHTML = html;
 }
 
-function displayOpeningTable(stats) {
+function displayOpeningTable(stats, targetId) {
     const openingData = Object.entries(stats.openings)
         .map(([eco, data]) => ({
             eco,
@@ -710,18 +710,18 @@ function displayOpeningTable(stats) {
     });
 
     tableHTML += '</tbody>';
-    document.getElementById('openingTable').innerHTML = tableHTML;
+    document.getElementById(targetId || 'openingTable').innerHTML = tableHTML;
 
     if (openingData.length > 10) {
         const showMoreBtn = document.createElement('button');
         showMoreBtn.className = 'show-more-btn';
         showMoreBtn.textContent = `Show More (${openingData.length - 10} more openings)`;
         showMoreBtn.onclick = showMoreOpenings;
-        document.getElementById('openingTable').parentElement.appendChild(showMoreBtn);
+        document.getElementById(targetId || 'openingTable').parentElement.appendChild(showMoreBtn);
     }
 }
 
-function showMoreOpenings() {
+function showMoreOpenings(event) {
     const hiddenRows = document.querySelectorAll('.opening-row-hidden');
     const rowsToShow = Math.min(10, hiddenRows.length);
 
@@ -729,18 +729,20 @@ function showMoreOpenings() {
         hiddenRows[i].classList.remove('opening-row-hidden');
     }
 
-    openingsVisible += rowsToShow;
+    AppStore.openingsVisible += rowsToShow;
     const remaining = hiddenRows.length - rowsToShow;
-    const btn = event.target;
+    const btn = event ? event.target : null;
 
-    if (remaining > 0) {
-        btn.textContent = `Show More (${remaining} more openings)`;
-    } else {
-        btn.remove();
+    if (btn) {
+        if (remaining > 0) {
+            btn.textContent = `Show More (${remaining} more openings)`;
+        } else {
+            btn.remove();
+        }
     }
 }
 
-function displayEndgameAnalysis(stats) {
+function displayEndgameAnalysis(stats, targetId) {
     if (Object.keys(stats.endgameTypes).length === 0) return;
 
     const endgameData = Object.entries(stats.endgameTypes)
@@ -842,17 +844,17 @@ function displayEndgameAnalysis(stats) {
     }
 
     html += '</div>';
-    document.getElementById('endgameAnalysisSection').innerHTML = html;
+    document.getElementById(targetId || 'endgameAnalysisSection').innerHTML = html;
     window.endgameTypesData = stats.endgameTypes;
 }
 
 function showOpeningGames(eco, openingName) {
-    const games = allGames.filter(g => (g.eco || 'Unknown') === eco);
+    const games = AppStore.allGames.filter(g => (g.eco || 'Unknown') === eco);
     document.getElementById('modalTitle').textContent = openingName;
 
     let gamesHTML = '';
     games.forEach(game => {
-        const isWhite = game.white.username.toLowerCase() === username.toLowerCase();
+        const isWhite = game.white.username.toLowerCase() === AppStore.username.toLowerCase();
         const result = isWhite ? game.white.result : game.black.result;
 
         let gameResult = 'Draw';
@@ -887,7 +889,7 @@ function showOpeningGames(eco, openingName) {
                     <span><strong>Time Control:</strong> ${game.time_class}</span>
                 </div>
                 <div class="game-link">
-                    <a href="${game.url}" target="_blank">View game on ${currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
+                    <a href="${game.url}" target="_blank">View game on ${AppStore.currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
                 </div>
             </div>
         `;
@@ -926,7 +928,7 @@ function showEndgameGames(endgameType) {
                     <span><strong>Moves:</strong> ${game.moveCount || 'N/A'}</span>
                 </div>
                 <div class="game-link">
-                    <a href="${game.url}" target="_blank">View game on ${currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
+                    <a href="${game.url}" target="_blank">View game on ${AppStore.currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
                 </div>
             </div>
         `;
@@ -943,7 +945,7 @@ function showReviewGames(category) {
         middlegameBlunders: '🎯 Middlegame Blunders'
     };
 
-    const games = stats.gamesToReview[category];
+    const games = AppStore.stats.gamesToReview[category];
     if (!games || games.length === 0) return;
 
     document.getElementById('modalTitle').textContent =
@@ -968,7 +970,7 @@ function showReviewGames(category) {
                     <span><strong>Time Control:</strong> ${game.timeControl}</span>
                 </div>
                 <div class="game-link">
-                    <a href="${game.url}" target="_blank">View game on ${currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
+                    <a href="${game.url}" target="_blank">View game on ${AppStore.currentPlatform === 'lichess' ? 'Lichess' : 'Chess.com'} →</a>
                 </div>
             </div>
         `;
@@ -989,7 +991,7 @@ function displayStudyPlan(plan, weaknesses, strengths) {
         <div class="study-plan-container">
             <div class="study-plan-header">
                 <h2 style="color: #2d3748; margin-bottom: 12px;">📚 Your Personalized Chess Study Plan</h2>
-                <p style="color: #718096; font-size: 1.05em;">Based on analysis of ${stats.totalGames} games</p>
+                <p style="color: #718096; font-size: 1.05em;">Based on analysis of ${AppStore.stats.totalGames} games</p>
             </div>
 
             <div class="analysis-summary">
@@ -1036,10 +1038,10 @@ function displayStudyPlan(plan, weaknesses, strengths) {
 // WEEKLY ACCURACY DASHBOARD
 // ============================================================
 
-function displayDashboard(data) {
-    const section = document.getElementById('dashboardSection');
+function displayDashboard(data, targetId) {
+    const section = document.getElementById(targetId || 'dashboardSection');
     if (data && data.pro_locked) {
-        displayLockedDashboard(data);
+        displayLockedDashboard(data, targetId);
         return;
     }
 
@@ -1164,8 +1166,8 @@ function displayDashboard(data) {
     }
 }
 
-function displayLockedDashboard(data) {
-    const section = document.getElementById('dashboardSection');
+function displayLockedDashboard(data, targetId) {
+    const section = document.getElementById(targetId || 'dashboardSection');
     const preview = data.locked_preview || {};
     const cards = Array.isArray(preview.sample_cards) ? preview.sample_cards : [];
     const ctaLabel = preview.cta_label || 'Unlock with Pro';

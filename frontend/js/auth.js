@@ -64,7 +64,7 @@ const Auth = {
             if (typeof window.Payments !== 'undefined') {
                 await Payments.refreshProStatus();
             }
-            Router.navigate('app');
+            Router.navigate('home');
         } catch (err) {
             errorEl.textContent = err.message || 'Login failed. Please check your credentials.';
             errorEl.style.display = 'block';
@@ -119,7 +119,7 @@ const Auth = {
             if (typeof window.Payments !== 'undefined') {
                 await Payments.refreshProStatus();
             }
-            Router.navigate('app');
+            Router.navigate('home');
         } catch (err) {
             const msg = err.message || 'Registration failed. Please try again.';
             if (msg.includes('429') || msg.toLowerCase().includes('rate')) {
@@ -158,7 +158,7 @@ const Auth = {
         if (typeof window.Payments !== 'undefined') {
             Payments.refreshProStatus();
         }
-        Router.navigate('app');
+        Router.navigate('home');
     }
 };
 

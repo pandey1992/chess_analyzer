@@ -10,11 +10,15 @@
             min-height: 100vh;
         }
 
-        /* App page keeps the gradient background */
-        [data-page="app"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 100px 20px 20px;
+        /* App pages background */
+        [data-page="home"],
+        [data-page="analyze"],
+        [data-page="performance"],
+        [data-page="puzzles"],
+        [data-page="openings"],
+        [data-page="study-plan"],
+        [data-page="coaching"] {
+            background: transparent;
         }
 
         /* ============================
@@ -1270,107 +1274,13 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        .app-layout {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            gap: 24px;
-            align-items: start;
-        }
+        /* Old sidebar styles removed — see App Shell section at bottom of file */
 
-        .app-sidebar {
-            position: sticky;
-            top: 96px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 14px;
-        }
-
-        .app-sidebar-title {
-            font-size: 0.78em;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            color: #4a5568;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .app-sidebar-link {
-            width: 100%;
-            text-align: left;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
-            color: #2d3748;
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-        }
-
-        .app-sidebar-link:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
-        }
-
-        .app-sidebar-link.active {
-            background: #ebf4ff;
-            border-color: #90cdf4;
-            color: #1a365d;
-        }
-
-        .sidebar-badge {
-            font-size: 0.68em;
-            font-weight: 700;
-            color: #4a5568;
-            background: #edf2f7;
-            border: 1px solid #e2e8f0;
-            border-radius: 999px;
-            padding: 2px 8px;
-            line-height: 1.2;
-            white-space: nowrap;
-        }
-
-        .sidebar-badge.good {
-            color: #22543d;
-            background: #c6f6d5;
-            border-color: #9ae6b4;
-        }
-
-        .sidebar-badge.warn {
-            color: #744210;
-            background: #fefcbf;
-            border-color: #faf089;
-        }
-
-        .sidebar-badge.bad {
-            color: #742a2a;
-            background: #fed7d7;
-            border-color: #feb2b2;
-        }
-
-        .app-sidebar-link:last-child {
-            margin-bottom: 0;
-        }
-
-        .app-main {
-            min-width: 0;
-        }
-
+        /* Legacy scroll-margin kept for in-page anchors */
         #analyzeSection,
         #dashboardSection,
         #progressTrackingSection,
-        #proPuzzleSection,
-        #leaksSection,
-        #timeManagementSection,
-        #overallStatsSection,
-        #studyPlanSection {
+        #proPuzzleSection {
             scroll-margin-top: 100px;
         }
 
@@ -3201,12 +3111,21 @@
                 padding: 28px;
             }
 
+            .app-shell {
+                padding-top: 64px;
+            }
+
             .app-layout {
                 grid-template-columns: 1fr;
             }
 
             .app-sidebar {
                 display: none;
+            }
+
+            /* Bottom navigation bar for mobile */
+            .app-bottom-nav {
+                display: flex;
             }
 
             .progress-grid {
@@ -3223,9 +3142,6 @@
         }
 
         @media (max-width: 768px) {
-            [data-page="app"] {
-                padding: calc(76px + env(safe-area-inset-top)) 12px calc(96px + env(safe-area-inset-bottom));
-            }
 
             .auth-page {
                 padding: calc(80px + env(safe-area-inset-top)) 12px 20px;
@@ -3680,4 +3596,703 @@
             .dp-page-title { font-size: 1.5em; }
             .dp-header { flex-direction: column; gap: 8px; }
             .dp-header-right { flex-direction: row; align-items: center; }
+        }
+
+        /* ============================
+           APP SHELL (Persistent Sidebar + Content)
+           ============================ */
+        .app-shell {
+            min-height: 100vh;
+            background: #f0f2f5;
+            padding-top: 72px;
+        }
+
+        .app-layout {
+            display: grid;
+            grid-template-columns: 230px 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 0;
+            min-height: calc(100vh - 72px);
+        }
+
+        .app-sidebar {
+            position: sticky;
+            top: 72px;
+            height: calc(100vh - 72px);
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            padding: 20px 14px;
+            overflow-y: auto;
+        }
+
+        .app-sidebar-title {
+            font-size: 0.72em;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        .app-sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #4a5568;
+            text-decoration: none;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .app-sidebar-link:hover {
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        .app-sidebar-link.active {
+            background: #ebf4ff;
+            color: #3182ce;
+            font-weight: 700;
+        }
+
+        .app-sidebar-link:last-child {
+            margin-bottom: 0;
+        }
+
+        .sidebar-badge {
+            font-size: 0.68em;
+            font-weight: 700;
+            color: #4a5568;
+            background: #edf2f7;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 2px 8px;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .sidebar-badge.good {
+            color: #22543d;
+            background: #c6f6d5;
+            border-color: #9ae6b4;
+        }
+
+        .sidebar-badge.warn {
+            color: #744210;
+            background: #fefcbf;
+            border-color: #faf089;
+        }
+
+        .sidebar-badge.bad {
+            color: #742a2a;
+            background: #fed7d7;
+            border-color: #feb2b2;
+        }
+
+        .app-main {
+            padding: 28px 32px;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        /* ============================
+           PAGE TITLES
+           ============================ */
+        .page-title {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 24px;
+            letter-spacing: -0.3px;
+        }
+
+        /* ============================
+           HOME DASHBOARD
+           ============================ */
+        .home-welcome {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 28px 32px;
+            color: white;
+            margin-bottom: 28px;
+        }
+
+        .home-welcome h2 {
+            font-size: 1.5em;
+            margin-bottom: 6px;
+        }
+
+        .home-welcome p {
+            opacity: 0.85;
+            font-size: 0.95em;
+        }
+
+        .home-quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .home-stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .home-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        .home-stat-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .home-stat-label {
+            font-size: 0.85em;
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .home-actions-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 16px;
+        }
+
+        .home-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .home-action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .home-action-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .home-action-icon {
+            font-size: 1.8em;
+        }
+
+        .home-action-card h3 {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .home-action-card p {
+            font-size: 0.88em;
+            color: #718096;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .home-section-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 16px;
+        }
+
+        .home-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .home-action-label {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .home-action-desc {
+            font-size: 0.88em;
+            color: #718096;
+            line-height: 1.4;
+        }
+
+        .home-daily-puzzle {
+            margin-bottom: 28px;
+        }
+
+        .home-daily-puzzle-widget {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 28px;
+        }
+
+        .home-puzzle-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .home-puzzle-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .home-puzzle-icon {
+            font-size: 1.4em;
+        }
+
+        .home-puzzle-title {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 1.05em;
+            flex: 1;
+        }
+
+        .home-puzzle-rating {
+            font-size: 0.85em;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .home-puzzle-themes {
+            font-size: 0.88em;
+            color: #718096;
+            margin-bottom: 12px;
+        }
+
+        .home-puzzle-play-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .home-puzzle-play-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+
+        .home-recent-empty {
+            text-align: center;
+            padding: 24px;
+            color: #a0aec0;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .home-recent-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .home-recent-card h3 {
+            font-size: 1.05em;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .home-recent-stats {
+            display: flex;
+            gap: 16px;
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .home-recent-link {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-decoration: none;
+        }
+
+        .home-recent-link:hover {
+            text-decoration: underline;
+        }
+
+        .home-recent-placeholder {
+            text-align: center;
+            padding: 32px;
+            color: #a0aec0;
+        }
+
+        .home-recent-placeholder span {
+            font-size: 2em;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        /* Needs-data page icon */
+        .needs-data-icon {
+            font-size: 3em;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        /* ============================
+           TAB COMPONENT (Performance + Puzzles)
+           ============================ */
+        .perf-tabs,
+        .puzzle-tabs {
+            display: flex;
+            gap: 4px;
+            background: #edf2f7;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        .perf-tab,
+        .puzzle-tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.88em;
+            font-weight: 600;
+            color: #718096;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .perf-tab:hover,
+        .puzzle-tab:hover {
+            color: #4a5568;
+            background: rgba(255,255,255,0.5);
+        }
+
+        .perf-tab.active,
+        .puzzle-tab.active {
+            background: white;
+            color: #2d3748;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        /* ============================
+           PAGE - NEEDS DATA STATE
+           ============================ */
+        .page-needs-data {
+            text-align: center;
+            padding: 60px 24px;
+            max-width: 420px;
+            margin: 40px auto;
+        }
+
+        .page-needs-data span {
+            font-size: 3em;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .page-needs-data h3 {
+            font-size: 1.3em;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .page-needs-data p {
+            color: #718096;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .btn-primary-action {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95em;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+        }
+
+        /* ============================
+           COACHING PAGE
+           ============================ */
+        .coaching-page-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        .coaching-page-form {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .coaching-page-form h3 {
+            font-size: 1.2em;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+
+        .coaching-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            margin-bottom: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            background: #f7fafc;
+        }
+
+        .coaching-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+        }
+
+        textarea.coaching-input {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        select.coaching-input {
+            appearance: auto;
+            cursor: pointer;
+        }
+
+        .coaching-form-label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+
+        .btn-whatsapp {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #25D366;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95em;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-whatsapp:hover {
+            background: #1fba59;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(37,211,102,0.3);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .coaching-page-layout {
+                grid-template-columns: 1fr;
+            }
+            .coach-profile-card {
+                max-width: 360px;
+                margin: 0 auto;
+            }
+        }
+
+        /* ============================
+           MOBILE BOTTOM NAV
+           ============================ */
+        .app-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            z-index: 999;
+            padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            text-decoration: none;
+            color: #a0aec0;
+            font-size: 0.68em;
+            font-weight: 600;
+            padding: 4px 6px;
+            border-radius: 8px;
+            transition: color 0.15s;
+            min-width: 48px;
+        }
+
+        .bottom-nav-item span.bnav-icon {
+            font-size: 1.5em;
+        }
+
+        .bottom-nav-item.active {
+            color: #667eea;
+        }
+
+        .bottom-nav-item:hover {
+            color: #4a5568;
+        }
+
+        @media (max-width: 1024px) {
+            .app-bottom-nav {
+                display: flex;
+            }
+
+            .app-main {
+                padding: 20px 16px calc(70px + env(safe-area-inset-bottom));
+            }
+
+            .home-quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-main {
+                padding: 16px 12px calc(70px + env(safe-area-inset-bottom));
+            }
+
+            .home-welcome {
+                padding: 20px;
+            }
+
+            .home-welcome h2 {
+                font-size: 1.2em;
+            }
+
+            .home-quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .page-tabs {
+                gap: 2px;
+                padding: 3px;
+            }
+
+            .page-tab {
+                padding: 8px 12px;
+                font-size: 0.82em;
+            }
+        }
+
+        /* ============================
+           STUDY PLAN PAGE (standalone)
+           ============================ */
+        .study-plan-page-intro {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .study-plan-page-intro span {
+            font-size: 3em;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .study-plan-page-intro h3 {
+            font-size: 1.3em;
+            color: #2d3748;
+            margin-bottom: 12px;
+        }
+
+        .study-plan-page-intro p {
+            color: #718096;
+            margin-bottom: 24px;
+            line-height: 1.5;
         }
