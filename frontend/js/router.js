@@ -36,6 +36,12 @@ const Router = {
             return;
         }
 
+        // Logged-in user on landing page: redirect to home (app dashboard)
+        if (page === 'landing' && Auth.isLoggedIn()) {
+            window.location.hash = '#home';
+            return;
+        }
+
         this.showPage(page);
     },
 

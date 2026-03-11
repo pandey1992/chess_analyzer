@@ -1225,8 +1225,14 @@ async function initApp() {
         console.warn('Auth check failed during startup:', error);
     }
 
-    // Initialize the router (shows correct page based on hash + auth state)
-    Router.init();
+    // Initialize the router (shows correct page based on hash + auth state).
+    // If router already booted (from router.js auto-init), re-evaluate the
+    // route now that Auth.checkAuth() has validated the token.
+    if (Router.initialized) {
+        Router.handleRoute();
+    } else {
+        Router.init();
+    }
 
     console.log('Chess AI Coach loaded successfully');
 }
