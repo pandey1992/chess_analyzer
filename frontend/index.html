@@ -498,15 +498,16 @@
     <div id="appShell" class="app-shell" style="display: none;">
         <div class="app-layout">
             <aside class="app-sidebar" aria-label="App Navigation">
-                <div class="app-sidebar-title">Workspace</div>
-                <a href="#home" class="app-sidebar-link active" data-sidebar="home">&#9751; Home</a>
-                <a href="#analyze" class="app-sidebar-link" data-sidebar="analyze">&#9878; Analyze</a>
-                <a href="#performance" class="app-sidebar-link" data-sidebar="performance">&#9733; Performance</a>
-                <a href="#puzzles" class="app-sidebar-link" data-sidebar="puzzles">&#9822; Puzzles</a>
-                <a href="#openings" class="app-sidebar-link" data-sidebar="openings">&#9812; Openings</a>
-                <a href="#study-plan" class="app-sidebar-link" data-sidebar="study-plan">&#9998; Study Plan</a>
-                <a href="#coaching" class="app-sidebar-link" data-sidebar="coaching">&#9814; Coaching</a>
-                <a href="#opponent-prep" class="app-sidebar-link" data-sidebar="opponent-prep">&#9876; Opponent Prep</a>
+                <div class="app-sidebar-title">Menu</div>
+                <a href="#home" class="app-sidebar-link active" data-sidebar="home"><span class="sidebar-icon">&#9751;</span> Home</a>
+                <a href="#analyze" class="app-sidebar-link" data-sidebar="analyze"><span class="sidebar-icon">&#9878;</span> Analyze</a>
+                <a href="#performance" class="app-sidebar-link" data-sidebar="performance"><span class="sidebar-icon">&#9733;</span> Performance</a>
+                <a href="#puzzles" class="app-sidebar-link" data-sidebar="puzzles"><span class="sidebar-icon">&#9822;</span> Puzzles</a>
+                <a href="#openings" class="app-sidebar-link" data-sidebar="openings"><span class="sidebar-icon">&#9812;</span> Openings</a>
+                <div class="app-sidebar-divider"></div>
+                <a href="#study-plan" class="app-sidebar-link" data-sidebar="study-plan"><span class="sidebar-icon">&#9998;</span> Study Plan</a>
+                <a href="#coaching" class="app-sidebar-link" data-sidebar="coaching"><span class="sidebar-icon">&#9814;</span> Coaching</a>
+                <a href="#opponent-prep" class="app-sidebar-link" data-sidebar="opponent-prep"><span class="sidebar-icon">&#9876;</span> Opponent Prep</a>
             </aside>
             <div class="app-main" id="appMainContent">
 
@@ -870,9 +871,9 @@
             </div><!-- /.app-main -->
         </div><!-- /.app-layout -->
 
-        <!-- Mobile bottom navigation -->
+        <!-- Mobile bottom navigation: 5 primary tabs + More -->
         <nav class="app-bottom-nav" aria-label="Mobile Navigation">
-            <a href="#home" class="bottom-nav-item active" data-bnav="home">
+            <a href="#home" class="bottom-nav-item" data-bnav="home">
                 <span class="bnav-icon">&#9751;</span>Home
             </a>
             <a href="#analyze" class="bottom-nav-item" data-bnav="analyze">
@@ -887,16 +888,24 @@
             <a href="#openings" class="bottom-nav-item" data-bnav="openings">
                 <span class="bnav-icon">&#9812;</span>Openings
             </a>
-            <a href="#study-plan" class="bottom-nav-item" data-bnav="study-plan">
-                <span class="bnav-icon">&#9998;</span>Study
-            </a>
-            <a href="#coaching" class="bottom-nav-item" data-bnav="coaching">
-                <span class="bnav-icon">&#9814;</span>Coach
-            </a>
-            <a href="#opponent-prep" class="bottom-nav-item" data-bnav="opponent-prep">
-                <span class="bnav-icon">&#9876;</span>Prep
-            </a>
+            <button class="bottom-nav-more" onclick="toggleMoreDrawer()" id="bnavMoreBtn">
+                <span class="bnav-icon">&#8943;</span>More
+            </button>
         </nav>
+
+        <!-- More drawer (slides up above bottom nav) -->
+        <div class="bnav-backdrop" id="bnavBackdrop" onclick="closeMoreDrawer()"></div>
+        <div class="bnav-more-drawer" id="bnavMoreDrawer">
+            <a href="#study-plan" class="bottom-nav-item" data-bnav="study-plan" onclick="closeMoreDrawer()">
+                <span class="bnav-icon">&#9998;</span>Study Plan
+            </a>
+            <a href="#coaching" class="bottom-nav-item" data-bnav="coaching" onclick="closeMoreDrawer()">
+                <span class="bnav-icon">&#9814;</span>Coaching
+            </a>
+            <a href="#opponent-prep" class="bottom-nav-item" data-bnav="opponent-prep" onclick="closeMoreDrawer()">
+                <span class="bnav-icon">&#9876;</span>Opponent Prep
+            </a>
+        </div>
     </div><!-- /#appShell -->
 
     <!-- Scripts: load order matters -->

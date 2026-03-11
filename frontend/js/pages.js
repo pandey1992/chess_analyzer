@@ -19,13 +19,28 @@ const PageController = {
         }
     },
 
+    // Pages that live in the "More" drawer on mobile (not in the primary 5 bottom nav items)
+    _moreDrawerPages: ['study-plan', 'coaching', 'opponent-prep'],
+
     updateSidebarActive(page) {
+        // Desktop sidebar
         document.querySelectorAll('.app-sidebar-link').forEach(link => {
             link.classList.toggle('active', link.dataset.sidebar === page);
         });
+
+        // Mobile bottom nav — both primary items and drawer items
         document.querySelectorAll('.bottom-nav-item').forEach(link => {
             link.classList.toggle('active', link.dataset.bnav === page);
         });
+
+        // Highlight the "More" button if current page is in the drawer
+        const moreBtn = document.getElementById('bnavMoreBtn');
+        if (moreBtn) {
+            moreBtn.classList.toggle('active', this._moreDrawerPages.includes(page));
+        }
+
+        // Close the More drawer on page navigation
+        closeMoreDrawer();
     },
 
     // ==================== HOME ====================
@@ -391,3 +406,27 @@ const PageController = {
         }
     }
 };
+
+
+// ==================== MOBILE MORE DRAWER ====================
+
+function toggleMoreDrawer() {
+    const drawer = document.getElementById('bnavMoreDrawer');
+    const backdrop = document.getElementById('bnavBackdrop');
+    if (!drawer) return;
+
+    const isOpen = drawer.classList.contains('open');
+    if (isOpen) {
+        closeMoreDrawer();
+    } else {
+        drawer.classList.add('open');
+        if (backdrop) backdrop.classList.add('open');
+    }
+}
+
+function closeMoreDrawer() {
+    const drawer = document.getElementById('bnavMoreDrawer');
+    const backdrop = document.getElementById('bnavBackdrop');
+    if (drawer) drawer.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('open');
+}

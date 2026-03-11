@@ -61,7 +61,7 @@
         }
 
         .navbar-solid .navbar-logo {
-            color: #2d3748;
+            color: #e2e8f0;
         }
 
         .logo-text {
@@ -89,11 +89,11 @@
         }
 
         .navbar-solid .navbar-links a {
-            color: #4a5568;
+            color: rgba(255,255,255,0.7);
         }
 
         .navbar-solid .navbar-links a:hover {
-            color: #667eea;
+            color: #a5b4fc;
         }
 
         .navbar-actions {
@@ -134,12 +134,13 @@
         }
 
         .navbar-solid .nav-btn-ghost {
-            color: #667eea;
+            color: rgba(255,255,255,0.8);
             background: transparent;
         }
 
         .navbar-solid .nav-btn-ghost:hover {
-            background: rgba(102,126,234,0.08);
+            background: rgba(255,255,255,0.08);
+            color: white;
         }
 
         .navbar-solid .nav-btn-primary {
@@ -203,8 +204,8 @@
         }
 
         .navbar-solid {
-            background: white;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            background: #1a1f2e;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.25);
         }
 
         /* Hamburger */
@@ -3200,11 +3201,6 @@
                 display: none;
             }
 
-            /* Bottom navigation bar for mobile */
-            .app-bottom-nav {
-                display: flex;
-            }
-
             .progress-grid {
                 grid-template-columns: repeat(2, minmax(180px, 1fr));
             }
@@ -3680,100 +3676,130 @@
            ============================ */
         .app-shell {
             min-height: 100vh;
-            background: #f0f2f5;
+            background: #f4f6f9;
             padding-top: 72px;
         }
 
         .app-layout {
             display: grid;
-            grid-template-columns: 230px 1fr;
-            max-width: 1400px;
+            grid-template-columns: 240px 1fr;
+            max-width: 1440px;
             margin: 0 auto;
             gap: 0;
             min-height: calc(100vh - 72px);
         }
 
+        /* ---- Premium Dark Sidebar ---- */
         .app-sidebar {
             position: sticky;
             top: 72px;
             height: calc(100vh - 72px);
-            background: #ffffff;
-            border-right: 1px solid #e2e8f0;
-            padding: 20px 14px;
+            background: linear-gradient(180deg, #1a1f2e 0%, #151923 100%);
+            border-right: 1px solid rgba(255,255,255,0.06);
+            padding: 24px 14px 20px;
             overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+
+        .app-sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .app-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
         }
 
         .app-sidebar-title {
-            font-size: 0.72em;
-            font-weight: 800;
-            letter-spacing: 0.6px;
-            color: #a0aec0;
+            font-size: 0.68em;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.3);
             text-transform: uppercase;
-            margin-bottom: 12px;
-            padding-left: 4px;
+            margin-bottom: 16px;
+            padding-left: 12px;
         }
 
         .app-sidebar-link {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
-            padding: 10px 12px;
-            margin-bottom: 4px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            font-weight: 600;
-            color: #4a5568;
+            padding: 11px 14px;
+            margin-bottom: 2px;
+            border-radius: 10px;
+            font-size: 0.88em;
+            font-weight: 500;
+            color: rgba(255,255,255,0.55);
             text-decoration: none;
             border: none;
             background: transparent;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .app-sidebar-link .sidebar-icon {
+            font-size: 1.15em;
+            width: 22px;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .app-sidebar-link:hover {
-            background: #f7fafc;
-            color: #2d3748;
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.9);
         }
 
         .app-sidebar-link.active {
-            background: #ebf4ff;
-            color: #3182ce;
-            font-weight: 700;
+            background: linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.15) 100%);
+            color: #a5b4fc;
+            font-weight: 600;
+            box-shadow: inset 3px 0 0 #667eea;
         }
 
         .app-sidebar-link:last-child {
             margin-bottom: 0;
         }
 
+        .app-sidebar-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            margin: 12px 8px;
+        }
+
         .sidebar-badge {
-            font-size: 0.68em;
+            font-size: 0.65em;
             font-weight: 700;
-            color: #4a5568;
-            background: #edf2f7;
-            border: 1px solid #e2e8f0;
+            color: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 999px;
             padding: 2px 8px;
             line-height: 1.2;
             white-space: nowrap;
+            margin-left: auto;
         }
 
         .sidebar-badge.good {
-            color: #22543d;
-            background: #c6f6d5;
-            border-color: #9ae6b4;
+            color: #68d391;
+            background: rgba(104,211,145,0.12);
+            border-color: rgba(104,211,145,0.2);
         }
 
         .sidebar-badge.warn {
-            color: #744210;
-            background: #fefcbf;
-            border-color: #faf089;
+            color: #f6e05e;
+            background: rgba(246,224,94,0.12);
+            border-color: rgba(246,224,94,0.2);
         }
 
         .sidebar-badge.bad {
-            color: #742a2a;
-            background: #fed7d7;
-            border-color: #feb2b2;
+            color: #fc8181;
+            background: rgba(252,129,129,0.12);
+            border-color: rgba(252,129,129,0.2);
         }
 
         .app-main {
@@ -4260,45 +4286,169 @@
         /* ============================
            MOBILE BOTTOM NAV
            ============================ */
+        /* ---- Premium Mobile Bottom Nav ---- */
         .app-bottom-nav {
             display: none;
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
-            border-top: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #1e2233 0%, #181c2a 100%);
+            border-top: 1px solid rgba(255,255,255,0.08);
             z-index: 999;
-            padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+            padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
             justify-content: space-around;
-            align-items: center;
+            align-items: stretch;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
         }
 
         .bottom-nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            justify-content: center;
+            gap: 3px;
             text-decoration: none;
-            color: #a0aec0;
-            font-size: 0.68em;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.62em;
             font-weight: 600;
-            padding: 4px 6px;
-            border-radius: 8px;
-            transition: color 0.15s;
-            min-width: 48px;
+            padding: 8px 4px 6px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            flex: 1;
+            max-width: 72px;
+            position: relative;
+            letter-spacing: 0.2px;
         }
 
         .bottom-nav-item span.bnav-icon {
-            font-size: 1.5em;
+            font-size: 1.45em;
+            line-height: 1;
         }
 
         .bottom-nav-item.active {
-            color: #667eea;
+            color: #a5b4fc;
+        }
+
+        .bottom-nav-item.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 0 0 3px 3px;
         }
 
         .bottom-nav-item:hover {
-            color: #4a5568;
+            color: rgba(255,255,255,0.7);
+        }
+
+        /* Hide overflow items on mobile — show only 5 primary + More */
+        .bottom-nav-item.bnav-overflow {
+            display: none;
+        }
+
+        /* "More" button in bottom nav */
+        .bottom-nav-more {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.62em;
+            font-weight: 600;
+            padding: 8px 4px 6px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            flex: 1;
+            max-width: 72px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            letter-spacing: 0.2px;
+        }
+
+        .bottom-nav-more span.bnav-icon {
+            font-size: 1.45em;
+            line-height: 1;
+        }
+
+        .bottom-nav-more:hover,
+        .bottom-nav-more.active {
+            color: rgba(255,255,255,0.7);
+        }
+
+        /* More menu drawer */
+        .bnav-more-drawer {
+            display: none;
+            position: fixed;
+            bottom: calc(58px + env(safe-area-inset-bottom));
+            left: 8px;
+            right: 8px;
+            background: linear-gradient(180deg, #252a3a 0%, #1e2233 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 8px;
+            z-index: 1000;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.4);
+            animation: drawerSlideUp 0.25s ease;
+        }
+
+        .bnav-more-drawer.open {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .bnav-more-drawer .bottom-nav-item {
+            display: flex;
+            max-width: none;
+            padding: 14px 8px;
+            border-radius: 12px;
+            font-size: 0.72em;
+            color: rgba(255,255,255,0.55);
+        }
+
+        .bnav-more-drawer .bottom-nav-item:hover {
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.9);
+        }
+
+        .bnav-more-drawer .bottom-nav-item.active {
+            background: rgba(102,126,234,0.15);
+            color: #a5b4fc;
+        }
+
+        .bnav-more-drawer .bottom-nav-item.active::after {
+            display: none;
+        }
+
+        /* Backdrop overlay for more drawer */
+        .bnav-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 998;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+
+        .bnav-backdrop.open {
+            display: block;
+        }
+
+        @keyframes drawerSlideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         @media (max-width: 1024px) {
@@ -4306,8 +4456,12 @@
                 display: flex;
             }
 
+            .bottom-nav-more {
+                display: flex;
+            }
+
             .app-main {
-                padding: 20px 16px calc(70px + env(safe-area-inset-bottom));
+                padding: 20px 16px calc(72px + env(safe-area-inset-bottom));
             }
 
             .home-quick-actions {
@@ -4317,7 +4471,7 @@
 
         @media (max-width: 480px) {
             .app-main {
-                padding: 16px 12px calc(70px + env(safe-area-inset-bottom));
+                padding: 16px 12px calc(72px + env(safe-area-inset-bottom));
             }
 
             .home-welcome {
