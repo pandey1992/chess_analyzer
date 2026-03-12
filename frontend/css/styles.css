@@ -17,7 +17,8 @@
         [data-page="puzzles"],
         [data-page="openings"],
         [data-page="study-plan"],
-        [data-page="coaching"] {
+        [data-page="coaching"],
+        [data-page="opponent-prep"] {
             background: transparent;
         }
 
@@ -3111,6 +3112,22 @@
             border: 2px solid #90cdf4;
         }
 
+        .checking-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #90cdf4;
+            border-top-color: #2b6cb0;
+            border-radius: 50%;
+            animation: spinCheck 0.7s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes spinCheck {
+            to { transform: rotate(360deg); }
+        }
+
         @keyframes feedbackPop {
             0% { transform: scale(0.8); opacity: 0; }
             50% { transform: scale(1.05); }
@@ -3193,13 +3210,7 @@
                 padding-top: 64px;
             }
 
-            .app-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .app-sidebar {
-                display: none;
-            }
+            /* sidebar & layout grid now handled by mobile-first base + min-width media query */
 
             .progress-grid {
                 grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -3682,35 +3693,51 @@
 
         .app-layout {
             display: grid;
-            grid-template-columns: 240px 1fr;
+            grid-template-columns: 1fr;
             max-width: 1440px;
             margin: 0 auto;
             gap: 0;
             min-height: calc(100vh - 72px);
         }
 
-        /* ---- Premium Dark Sidebar ---- */
-        .app-sidebar {
-            position: sticky;
-            top: 72px;
-            height: calc(100vh - 72px);
-            background: linear-gradient(180deg, #1a1f2e 0%, #151923 100%);
-            border-right: 1px solid rgba(255,255,255,0.06);
-            padding: 24px 14px 20px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.1) transparent;
+        /* Desktop: show sidebar column */
+        @media (min-width: 1025px) {
+            .app-layout {
+                grid-template-columns: 240px 1fr;
+            }
         }
 
-        .app-sidebar::-webkit-scrollbar {
-            width: 4px;
+        /* ---- Premium Dark Sidebar ---- */
+        .app-sidebar {
+            display: none;
         }
-        .app-sidebar::-webkit-scrollbar-track {
-            background: transparent;
+
+        @media (min-width: 1025px) {
+            .app-sidebar {
+                display: block;
+                position: sticky;
+                top: 72px;
+                height: calc(100vh - 72px);
+                background: linear-gradient(180deg, #1a1f2e 0%, #151923 100%);
+                border-right: 1px solid rgba(255,255,255,0.06);
+                padding: 24px 14px 20px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(255,255,255,0.1) transparent;
+            }
         }
-        .app-sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
+
+        @media (min-width: 1025px) {
+            .app-sidebar::-webkit-scrollbar {
+                width: 4px;
+            }
+            .app-sidebar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .app-sidebar::-webkit-scrollbar-thumb {
+                background: rgba(255,255,255,0.1);
+                border-radius: 4px;
+            }
         }
 
         .app-sidebar-title {

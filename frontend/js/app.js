@@ -496,7 +496,14 @@ function handleProPuzzleMove(puzzleId, from, to) {
     state.selectedSquare = null;
 
     renderProPuzzleBoard(puzzleId);
-    submitCurrentProPuzzle(uci);
+    submitCurrentProPuzzle(uci).catch(err => {
+        console.error('[ProPuzzle] Unhandled move submission error:', err);
+        const fb = document.getElementById('proPuzzleFeedback');
+        if (fb) {
+            fb.innerHTML = '<span style="font-size:1.3em">&#9888;</span> Error checking move. Please try again.';
+            fb.className = 'pro-puzzle-feedback error';
+        }
+    });
 }
 
 function pieceToCode(piece) {
@@ -526,9 +533,17 @@ function resetProPuzzleBoard() {
 
 async function submitCurrentProPuzzle(moveOverride = null) {
     const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
-    if (!puzzle) return;
-    const feedback = document.getElementById('proPuzzleFeedback');
-    if (!feedback) return;
+    if (!puzzle) {
+        console.warn('[ProPuzzle] No puzzle at index', AppStore.proPuzzleCurrentIndex);
+        return;
+    }
+
+    // Always get a fresh reference to the feedback element
+    let feedback = document.getElementById('proPuzzleFeedback');
+    if (!feedback) {
+        console.warn('[ProPuzzle] Feedback element not found in DOM');
+        return;
+    }
 
     const move = moveOverride || '';
     if (!move) {
@@ -537,15 +552,35 @@ async function submitCurrentProPuzzle(moveOverride = null) {
         return;
     }
 
+    // Ensure progress entry exists (defensive guard)
+    if (!AppStore.proPuzzleProgress[puzzle.id]) {
+        AppStore.proPuzzleProgress[puzzle.id] = { status: 'unsolved', attempts: 0 };
+    }
+
     // Extract from/to squares from the UCI move for highlighting
     const moveFrom = move.substring(0, 2);
     const moveTo = move.substring(2, 4);
 
-    feedback.innerHTML = 'Checking...';
+    feedback.innerHTML = '<span class="checking-spinner"></span> Checking your move...';
     feedback.className = 'pro-puzzle-feedback checking';
+    feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     try {
+        console.log('[ProPuzzle] Submitting move', move, 'for puzzle', puzzle.id);
         const result = await ChessAPI.attemptProPuzzle(puzzle.id, move);
+        console.log('[ProPuzzle] API response:', result);
+
+        // Re-fetch feedback element in case DOM changed during async call
+        feedback = document.getElementById('proPuzzleFeedback');
+        if (!feedback) {
+            console.warn('[ProPuzzle] Feedback element lost after API call');
+            return;
+        }
+
+        // Safely increment attempts
+        if (!AppStore.proPuzzleProgress[puzzle.id]) {
+            AppStore.proPuzzleProgress[puzzle.id] = { status: 'unsolved', attempts: 0 };
+        }
         AppStore.proPuzzleProgress[puzzle.id].attempts += 1;
 
         if (result.correct) {
@@ -554,6 +589,7 @@ async function submitCurrentProPuzzle(moveOverride = null) {
 
             feedback.innerHTML = '<span style="font-size:1.3em">&#10004;</span> Correct! Well done.';
             feedback.className = 'pro-puzzle-feedback success';
+            feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             AppStore.proPuzzleStreak += 1;
             AppStore.proPuzzleBestStreak = Math.max(AppStore.proPuzzleBestStreak, AppStore.proPuzzleStreak);
             AppStore.proPuzzleProgress[puzzle.id].status = 'solved';
@@ -581,6 +617,7 @@ async function submitCurrentProPuzzle(moveOverride = null) {
             const attemptText = attempts === 1 ? '1st attempt' : attempts === 2 ? '2nd attempt' : `${attempts} attempts`;
             feedback.innerHTML = `<span style="font-size:1.3em">&#10008;</span> Incorrect - Try again! <span style="font-size:0.85em;opacity:0.7">(${attemptText})</span>`;
             feedback.className = 'pro-puzzle-feedback error';
+            feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             AppStore.proPuzzleStreak = 0;
             const streakPill = document.getElementById('proStreakPill');
             if (streakPill) streakPill.textContent = `Streak ${AppStore.proPuzzleStreak}`;
@@ -596,8 +633,14 @@ async function submitCurrentProPuzzle(moveOverride = null) {
             // Keep the feedback visible until user makes next move (don't auto-clear)
         }
     } catch (error) {
-        feedback.innerHTML = '<span style="font-size:1.3em">&#9888;</span> ' + (error.message || 'Could not submit answer. Please try again.');
-        feedback.className = 'pro-puzzle-feedback error';
+        console.error('[ProPuzzle] Submit error:', error);
+        // Re-fetch feedback element in case DOM changed
+        feedback = document.getElementById('proPuzzleFeedback');
+        if (feedback) {
+            feedback.innerHTML = '<span style="font-size:1.3em">&#9888;</span> ' + (error.message || 'Could not submit answer. Please try again.');
+            feedback.className = 'pro-puzzle-feedback error';
+            feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 }
 
@@ -675,6 +718,9 @@ function skipCurrentProPuzzle() {
     const puzzle = AppStore.proPuzzles[AppStore.proPuzzleCurrentIndex];
     if (!puzzle) return;
     AppStore.proPuzzleStreak = 0;
+    if (!AppStore.proPuzzleProgress[puzzle.id]) {
+        AppStore.proPuzzleProgress[puzzle.id] = { status: 'unsolved', attempts: 0 };
+    }
     AppStore.proPuzzleProgress[puzzle.id].status = 'skipped';
     moveToNextUnsolvedOrStay();
 }
